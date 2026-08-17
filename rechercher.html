@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rechercher.html</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1000px;margin:40px auto;padding:20px}
+input,button{padding:10px;font-size:16px}
+.result{border:1px solid #ccc;padding:10px;margin:10px 0}
+</style>
+</head>
+<body>
+<h1>Recherche dans le dépôt Postes</h1>
+<input type="text" id="search" placeholder="Numéro du dépôt">
+<button onclick="rechercher()">Rechercher</button>
+<div id="results"></div>
+<script>
+const USER='martinlefebvre73-bit';
+const REPO='Postes';
+
+async function getAllFiles(path=''){
+ const api=`https://api.github.com/repos/${USER}/${REPO}/contents/${path}`;
+ const response=await fetch(api);
+ const data=await response.json();
+ let files=[];
+ for(const item of data){
+  if(item.type==='file' && item.name.toLowerCase().endsWith('.html')) files.push(item.download_url);
+  if(item.type==='dir') files=files.concat(await getAllFiles(item.path));
+ }
+ return files;
+}
+
+async function rechercher(){
+ const terme=document.getElementById('search').value.toLowerCase();
+ const results=document.getElementById('results');
+ results.innerHTML='<p>Recherche en cours...</p>';
+ const fichiers=await getAllFiles();
+ let out='';
+ for(const fichier of fichiers){
+  try{
+   const contenu=await fetch(fichier).then(r=>r.text());
+   if(contenu.toLowerCase().includes(terme)){
+    out+=`<div class="result"><a href="${fichier}" target="_blank">${fichier}</a></div>`;
+   }
+  }catch(e){console.error(e)}
+ }
+ results.innerHTML=out||'<p>Aucun résultat trouvé.</p>';
+}
+</script>
+</body>
+</html>
