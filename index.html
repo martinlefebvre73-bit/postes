@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -66,13 +67,13 @@
       <h1>Menu principal</h1>
       <button onclick="location.href='casier 1.html'">Vérification casier</button>
       <button onclick="ouvrirDirectoire()">Directoire</button>
+      <button class="btn-danger" onclick="location.href='rapport.html'">Problème de livraison</button>
     </div>
 
     <div class="menu" id="menuSecondaire">
       <h2>Menu secondaire</h2>
       <button onclick="ouvrirRoute()">Route</button>
       <button onclick="location.href='recherche.html'">Recherche</button>
-      <button class="btn-danger" onclick="location.href='rapport.html'">Problème de livraison</button>
       <button class="btn-secondary" onclick="retourMenu()">Retour</button>
     </div>
   </div>
@@ -91,7 +92,9 @@
     function ouvrirRoute() {
       const numero = prompt('Entrez le numéro de route :');
       if (numero && numero.trim() !== '') {
-        location.href = encodeURIComponent(numero.trim()) + '.html';
+        const routeNettoyee = numero.trim();
+        localStorage.setItem('numeroRoute', routeNettoyee);
+        location.href = encodeURIComponent(routeNettoyee) + '.html';
       }
     }
   </script>
