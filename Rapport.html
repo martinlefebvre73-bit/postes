@@ -43,6 +43,23 @@
     ul {
       margin-top: 5px;
     }
+    .btn-container {
+      margin-top: 25px;
+    }
+    button {
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #003366;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #002244;
+    }
     .footer {
       margin-top: 30px;
       font-size: 12px;
@@ -59,6 +76,7 @@
     <div class="meta-info">
       <p><strong>Organisme :</strong> Postes Canada</p>
       <p><strong>Emplacement :</strong> Dépôt Aéroport</p>
+      <p><strong>Route active :</strong> <span id="affichageRoute">Non spécifiée</span></p>
       <p><strong>Statut :</strong> Signalement d'incident / Utilisation de camion</p>
     </div>
 
@@ -71,11 +89,23 @@
       <li>Coordination avec la supervision de dépôt.</li>
       <li>Amélioration des flux de transport et de livraison.</li>
     </ul>
+
+    <div class="btn-container">
+      <button onclick="location.href='index.html'">Retour au menu</button>
+    </div>
   </div>
 
   <div class="footer">
     Document interne généré pour suivi opérationnel.
   </div>
 
+  <script>
+    const routeEnregistree = localStorage.getItem('numeroRoute');
+    if (routeEnregistree) {
+      document.getElementById('affichageRoute').textContent = routeEnregistree;
+    }
+  </script>
+
 </body>
 </html>
+
