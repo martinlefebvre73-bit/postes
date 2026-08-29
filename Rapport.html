@@ -125,6 +125,11 @@
             color: white;
         }
 
+        .btn-print {
+            background-color: #0288d1;
+            color: white;
+        }
+
         .btn-save {
             background-color: #2e7d32;
             color: white;
@@ -314,6 +319,29 @@
             font-size: 11px;
             margin-top: 10px;
         }
+
+        /* Styles spécifiques pour l'impression papier */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .controls-bar, .btn-field-dictate {
+                display: none !important;
+            }
+
+            .form-container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            textarea, input[type="text"], input[type="date"] {
+                border: none !important;
+                background: transparent !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -327,6 +355,9 @@
         </button>
         <button id="btn-reset" class="btn btn-reset">
             🔄 Réinitialiser
+        </button>
+        <button id="btn-print" class="btn btn-print">
+            🖨️ Imprimer
         </button>
         <button id="btn-save" class="btn btn-save">
             💾 Sauvegarder & Exporter PDF
@@ -422,6 +453,11 @@
             const dateInput = document.getElementById("inspection-date");
             const today = new Date().toISOString().split('T')[0];
             dateInput.value = today;
+        });
+
+        // Impression
+        document.getElementById("btn-print").addEventListener("click", () => {
+            window.print();
         });
 
         // 1. Reset
@@ -573,7 +609,6 @@
                 const remElem = document.getElementById("remarks");
                 remElem.value = remElem.value ? remElem.value + " " + val : val;
             } else if (lower.includes("cocher") || lower.includes("problème") || lower.includes("case")) {
-                // Extrait le numéro même s'il est en fin de phrase
                 const numMatch = lower.match(/(1[0-2]|[1-9])/);
                 if (numMatch) {
                     const num = numMatch[1];
@@ -605,10 +640,8 @@
                     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
                 };
 
-                // Téléchargement local
                 html2pdf().set(opt).from(element).save();
 
-                // Génération du blob pour Firebase
                 const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
                 const timestamp = Date.now();
                 const fileName = `rapports/livraison_${timestamp}.pdf`;
