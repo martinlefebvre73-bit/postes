@@ -318,7 +318,6 @@
 </head>
 <body>
 
-    <!-- Barres de commandes globales -->
     <div class="controls-bar" data-html2canvas-ignore="true">
         <button id="btn-dictate" class="btn btn-dictate">
             🎙️ Dictée vocale globale
@@ -330,7 +329,7 @@
             🔄 Réinitialiser
         </button>
         <button id="btn-save" class="btn btn-save">
-            💾 Sauvegarder dans Firebase
+            💾 Sauvegarder & Exporter PDF
         </button>
         
         <input type="file" id="backup-file-input" accept=".json" style="display: none;">
@@ -340,7 +339,6 @@
         </div>
     </div>
 
-    <!-- Formulaire principal Postes Canada -->
     <div id="delivery-report" class="form-container">
         <table class="header-table">
             <tr>
@@ -379,7 +377,6 @@
             <div class="problem-item"><input type="checkbox" id="prob-12" class="prob-checkbox" data-num="12"><span class="problem-num">12</span><div class="problem-text"><strong>Other (specified below)</strong><span class="en">Autre (voir Remarques ci-dessous)</span></div></div>
         </div>
 
-        <!-- Section Remarques avec bouton de dictée vocale dédié -->
         <div class="remarks-box">
             <div class="remarks-header">
                 <label for="remarks">Remarks / Remarques & Détails :</label>
@@ -420,7 +417,6 @@
         </div>
     </div>
 
-    <!-- JavaScript Handling Core Functionality -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const dateInput = document.getElementById("inspection-date");
@@ -428,7 +424,7 @@
             dateInput.value = today;
         });
 
-        // 1. Reset Button Logic (Remise à zéro complète)
+        // 1. Reset
         document.getElementById("btn-reset").addEventListener("click", () => {
             document.getElementById("lc-number").value = "";
             document.getElementById("customer-address").value = "";
@@ -440,16 +436,15 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById("inspection-date").value = today;
 
-            document.getElementById("status-msg").textContent = "Formulaire réinitialisé (champ LC réinitialisé à vide).";
+            document.getElementById("status-msg").style.color = "#555";
+            document.getElementById("status-msg").textContent = "Formulaire réinitialisé.";
         });
 
-        // 2. Backup Recovery Logic (JSON File Upload)
+        // 2. Backup Recovery
         const btnLoadBackup = document.getElementById("btn-load-backup");
         const backupFileInput = document.getElementById("backup-file-input");
 
-        btnLoadBackup.addEventListener("click", () => {
-            backupFileInput.click();
-        });
+        btnLoadBackup.addEventListener("click", () => backupFileInput.click());
 
         backupFileInput.addEventListener("change", (event) => {
             const file = event.target.files[0];
@@ -476,7 +471,7 @@
                     document.getElementById("status-msg").style.color = "#2e7d32";
                     document.getElementById("status-msg").textContent = "📂 Sauvegarde chargée avec succès !";
                 } catch (err) {
-                    console.error("Erreur de chargement du fichier JSON:", err);
+                    console.error("Erreur de chargement JSON:", err);
                     alert("Fichier de sauvegarde non valide.");
                 }
             };
@@ -484,11 +479,10 @@
             backupFileInput.value = '';
         });
 
-        // 3. Speech Recognition Logic
+        // 3. Reconnaissance vocale
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
-            // Global Speech Recognition
             const globalRec = new SpeechRecognition();
             globalRec.continuous = true;
             globalRec.interimResults = false;
@@ -507,7 +501,7 @@
                 isGlobalListening = true;
                 btnDictateGlobal.classList.add("listening");
                 btnDictateGlobal.innerHTML = "🛑 Arrêter la dictée globale";
-                statusMsg.textContent = "Écoute globale active... (dites 'lc ...', 'adresse ...', 'cocher 3', ou 'remarque ...')";
+                statusMsg.textContent = "Écoute globale active... (dites 'lc 12', 'adresse ...', 'cocher 3', ou 'remarque ...')";
             };
 
             globalRec.onend = () => {
@@ -523,7 +517,7 @@
                 parseVoiceCommand(transcript);
             };
 
-            // Dedicated Remarks Speech Recognition
+            // Dictée dédiée aux remarques
             const remarksRec = new SpeechRecognition();
             remarksRec.continuous = true;
             remarksRec.interimResults = false;
@@ -579,9 +573,10 @@
                 const remElem = document.getElementById("remarks");
                 remElem.value = remElem.value ? remElem.value + " " + val : val;
             } else if (lower.includes("cocher") || lower.includes("problème") || lower.includes("case")) {
-                const match = lower.match(/ (1[0-2]|[1-9]) /);
-                if (match) {
-                    const num = match[1];
+                // Extrait le numéro même s'il est en fin de phrase
+                const numMatch = lower.match(/(1[0-2]|[1-9])/);
+                if (numMatch) {
+                    const num = numMatch[1];
                     const cb = document.getElementById(`prob-${num}`);
                     if (cb) cb.checked = true;
                 }
@@ -591,22 +586,29 @@
             }
         }
 
-        // 4. Save to Firebase Logic
+        // 4. Save to Firebase + Download PDF
         document.getElementById("btn-save").addEventListener("click", async () => {
             const saveBtn = document.getElementById("btn-save");
+            const statusMsg = document.getElementById("status-msg");
             saveBtn.disabled = true;
-            statusMsg.textContent = "Génération du PDF et sauvegarde dans Firebase Firestore & Storage...";
+            statusMsg.style.color = "#0288d1";
+            statusMsg.textContent = "Génération du PDF et sauvegarde dans Firebase...";
 
             try {
                 const element = document.getElementById("delivery-report");
+                const pdfName = `Rapport_Livraison_${new Date().toISOString().split('T')[0]}.pdf`;
                 const opt = {
                     margin: 0.3,
-                    filename: `Rapport_Livraison_${new Date().toISOString().split('T')[0]}.pdf`,
+                    filename: pdfName,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2 },
                     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
                 };
 
+                // Téléchargement local
+                html2pdf().set(opt).from(element).save();
+
+                // Génération du blob pour Firebase
                 const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
                 const timestamp = Date.now();
                 const fileName = `rapports/livraison_${timestamp}.pdf`;
@@ -630,13 +632,11 @@
                 await window.addDoc(window.collection(window.db, "rapports_livraison"), docData);
 
                 statusMsg.style.color = "#2e7d32";
-                statusMsg.textContent = "✅ Rapport enregistré avec succès dans Firebase Firestore!";
-                alert("Rapport enregistré avec succès dans Firebase Firestore !");
+                statusMsg.textContent = "✅ Rapport enregistré dans Firebase et PDF téléchargé !";
             } catch (err) {
                 console.error(err);
                 statusMsg.style.color = "#d32f2f";
                 statusMsg.textContent = "❌ Erreur de sauvegarde: " + err.message;
-                alert("Erreur lors de la sauvegarde: " + err.message);
             } finally {
                 saveBtn.disabled = false;
             }
