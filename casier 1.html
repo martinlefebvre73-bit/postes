@@ -1,10 +1,345 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Casier</title><style>body{font-family:Arial,sans-serif;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #444;padding:4px;font-size:12px;text-align:center}th{background:#eaeaea}textarea{width:95%;height:60px}.toolbar{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap}.group{background:#dfe8f6}<style>body{font-family:Segoe UI,Arial,sans-serif;background:#f4f7fb}h2{color:#0b5cab}.stats{background:#fff;padding:10px;border-radius:8px;margin:10px 0;font-weight:bold}tr:nth-child(even) td{background:#fafcff}th{position:sticky;top:0;z-index:5}.toolbar button{background:#0b5cab;color:white;border:none;padding:8px 12px;border-radius:6px}textarea:focus{background:#fff9d6} .anomaly{background:#ffd6d6!important}</style></style></head><body><h2>CHEF D'ÉQUIPE : Martin</h2><div>Heure et Date : <input type="datetime-local"></div><div class="stats">Anomalies: <span id="anomalyCount">0</span></div><div class="toolbar"><button onclick="saveCopy()">💾 Sauvegarder une copie</button><button onclick="document.getElementById('openFile').click()">📂 Ouvrir une sauvegarde</button><button onclick="resetForm()">🔄 Réinitialiser</button><input type="file" id="openFile" accept=".html" style="display:none" onchange="openBackup(event)"></div><table><tr><th rowspan="2">Nom</th><th rowspan="2">Itinéraire</th><th class="group" colspan="2">BCL et conformité du balayage<br><label><input type="checkbox" onchange="toggleCol(0,this.checked)"> Cocher tout OK</label></th><th rowspan="2" class="group">Couleur NM</th><th class="group" colspan="2">Envois CQ expirés<br><label><input type="checkbox" onchange="toggleCol(2,this.checked)"> Cocher tout OK</label></th><th class="group" colspan="2">CQ disposent d’un BCL<br><label><input type="checkbox" onchange="toggleCol(3,this.checked)"> Cocher tout OK</label></th><th class="group" colspan="2">Excédents identifiés<br><label><input type="checkbox" onchange="toggleCol(4,this.checked)"> Cocher tout OK</label></th><th class="group" colspan="2">Emboîtement CQ/articles laissés<br><label><input type="checkbox" onchange="toggleCol(5,this.checked)"> Cocher tout OK</label></th><th class="group" colspan="2">Courrier sans explication<br><label><input type="checkbox" onchange="toggleCol(6,this.checked)"> Cocher tout OK</label></th><th class="group" colspan="2">Paquets/colis sans explication<br><label><input type="checkbox" onchange="toggleCol(7,this.checked)"> Cocher tout OK</label></th><th class="group" colspan="2">Transferts COP matinée<br><label><input type="checkbox" onchange="toggleCol(8,this.checked)"> Cocher tout OK</label></th><th rowspan="2" class="group">CAMION<br><label><input type="checkbox" onchange="toggleCamion(this.checked)"> Cocher tout</label></th><th rowspan="2">Commentaires</th></tr><tr><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th><th>OK</th><th>Anomalie</th></tr><tr><td>Celine</td><td>12</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm0"></textarea><br><button type="button" onclick="startDictation('nm0')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion0"></td><td><textarea id="t0"></textarea><br><button type="button" onclick="startDictation('t0')">🎤</button></td></tr><tr><td>Sopheap</td><td>14</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm1"></textarea><br><button type="button" onclick="startDictation('nm1')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion1"></td><td><textarea id="t1"></textarea><br><button type="button" onclick="startDictation('t1')">🎤</button></td></tr><tr><td>wang</td><td>216</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm2"></textarea><br><button type="button" onclick="startDictation('nm2')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion2"></td><td><textarea id="t2"></textarea><br><button type="button" onclick="startDictation('t2')">🎤</button></td></tr><tr><td>durocher</td><td>218</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm3"></textarea><br><button type="button" onclick="startDictation('nm3')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion3"></td><td><textarea id="t3"></textarea><br><button type="button" onclick="startDictation('t3')">🎤</button></td></tr><tr><td>foray</td><td>224</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm4"></textarea><br><button type="button" onclick="startDictation('nm4')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion4"></td><td><textarea id="t4"></textarea><br><button type="button" onclick="startDictation('t4')">🎤</button></td></tr><tr><td>perez</td><td>228</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm5"></textarea><br><button type="button" onclick="startDictation('nm5')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion5"></td><td><textarea id="t5"></textarea><br><button type="button" onclick="startDictation('t5')">🎤</button></td></tr><tr><td>ortiz</td><td>230</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm6"></textarea><br><button type="button" onclick="startDictation('nm6')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion6"></td><td><textarea id="t6"></textarea><br><button type="button" onclick="startDictation('t6')">🎤</button></td></tr><tr><td>andrei</td><td>232</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm7"></textarea><br><button type="button" onclick="startDictation('nm7')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion7"></td><td><textarea id="t7"></textarea><br><button type="button" onclick="startDictation('t7')">🎤</button></td></tr><tr><td>leblanc</td><td>236</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm8"></textarea><br><button type="button" onclick="startDictation('nm8')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion8"></td><td><textarea id="t8"></textarea><br><button type="button" onclick="startDictation('t8')">🎤</button></td></tr><tr><td>laplante</td><td>238</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm9"></textarea><br><button type="button" onclick="startDictation('nm9')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion9"></td><td><textarea id="t9"></textarea><br><button type="button" onclick="startDictation('t9')">🎤</button></td></tr><tr><td>chavez</td><td>240</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm10"></textarea><br><button type="button" onclick="startDictation('nm10')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion10"></td><td><textarea id="t10"></textarea><br><button type="button" onclick="startDictation('t10')">🎤</button></td></tr><tr><td>therrien</td><td>244</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm11"></textarea><br><button type="button" onclick="startDictation('nm11')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion11"></td><td><textarea id="t11"></textarea><br><button type="button" onclick="startDictation('t11')">🎤</button></td></tr><tr><td>christiane</td><td>246</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm12"></textarea><br><button type="button" onclick="startDictation('nm12')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion12"></td><td><textarea id="t12"></textarea><br><button type="button" onclick="startDictation('t12')">🎤</button></td></tr><tr><td>veronneau</td><td>248</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm13"></textarea><br><button type="button" onclick="startDictation('nm13')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion13"></td><td><textarea id="t13"></textarea><br><button type="button" onclick="startDictation('t13')">🎤</button></td></tr><tr><td>Barbe</td><td>250</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm14"></textarea><br><button type="button" onclick="startDictation('nm14')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion14"></td><td><textarea id="t14"></textarea><br><button type="button" onclick="startDictation('t14')">🎤</button></td></tr><tr><td>berube</td><td>252</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm15"></textarea><br><button type="button" onclick="startDictation('nm15')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion15"></td><td><textarea id="t15"></textarea><br><button type="button" onclick="startDictation('t15')">🎤</button></td></tr><tr><td>hugron</td><td>254</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm16"></textarea><br><button type="button" onclick="startDictation('nm16')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion16"></td><td><textarea id="t16"></textarea><br><button type="button" onclick="startDictation('t16')">🎤</button></td></tr><tr><td>lamoureux</td><td>256</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm17"></textarea><br><button type="button" onclick="startDictation('nm17')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion17"></td><td><textarea id="t17"></textarea><br><button type="button" onclick="startDictation('t17')">🎤</button></td></tr><tr><td>brunet</td><td>258</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm18"></textarea><br><button type="button" onclick="startDictation('nm18')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion18"></td><td><textarea id="t18"></textarea><br><button type="button" onclick="startDictation('t18')">🎤</button></td></tr><tr><td>anderson</td><td>260</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm19"></textarea><br><button type="button" onclick="startDictation('nm19')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion19"></td><td><textarea id="t19"></textarea><br><button type="button" onclick="startDictation('t19')">🎤</button></td></tr><tr><td>peragine</td><td>262</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm20"></textarea><br><button type="button" onclick="startDictation('nm20')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion20"></td><td><textarea id="t20"></textarea><br><button type="button" onclick="startDictation('t20')">🎤</button></td></tr><tr><td>Yaqi</td><td>264</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm21"></textarea><br><button type="button" onclick="startDictation('nm21')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion21"></td><td><textarea id="t21"></textarea><br><button type="button" onclick="startDictation('t21')">🎤</button></td></tr><tr><td>turcotte</td><td>272</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm22"></textarea><br><button type="button" onclick="startDictation('nm22')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion22"></td><td><textarea id="t22"></textarea><br><button type="button" onclick="startDictation('t22')">🎤</button></td></tr><tr><td>Georges</td><td>282</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm23"></textarea><br><button type="button" onclick="startDictation('nm23')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion23"></td><td><textarea id="t23"></textarea><br><button type="button" onclick="startDictation('t23')">🎤</button></td></tr><tr><td>hebert</td><td>290</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm24"></textarea><br><button type="button" onclick="startDictation('nm24')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion24"></td><td><textarea id="t24"></textarea><br><button type="button" onclick="startDictation('t24')">🎤</button></td></tr><tr><td>leduc</td><td>310</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm25"></textarea><br><button type="button" onclick="startDictation('nm25')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion25"></td><td><textarea id="t25"></textarea><br><button type="button" onclick="startDictation('t25')">🎤</button></td></tr></table><script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Casier</title>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD11KHhTufTrL0eGBKWglghoArZhca3OI",
+        authDomain: "postes-26884.firebaseapp.com",
+        projectId: "postes-26884",
+        storageBucket: "postes-26884.firebasestorage.app",
+        messagingSenderId: "75974397689",
+        appId: "1:75974397689:web:5fd12942788612c62b1c28",
+        measurementId: "G-83YPF62ET5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.db = db;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.query = query;
+    window.orderBy = orderBy;
+</script>
+
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;background:#f4f7fb;margin:20px}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #444;padding:4px;font-size:12px;text-align:center}
+th{background:#eaeaea;position:sticky;top:0;z-index:5}
+textarea{width:95%;height:60px}
+textarea:focus{background:#fff9d6}
+.toolbar{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;align-items:center}
+.toolbar button{background:#0b5cab;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+.toolbar button:hover{opacity:0.9}
+.group{background:#dfe8f6}
+h2{color:#0b5cab}
+.stats{background:#fff;padding:10px;border-radius:8px;margin:10px 0;font-weight:bold}
+tr:nth-child(even) td{background:#fafcff}
+.anomaly{background:#ffd6d6!important}
+.firebase-panel{background:#e8f5e9;padding:10px;border:1px solid #c8e6c9;border-radius:6px;margin:10px 0;display:none;gap:10px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<h2>CHEF D'ÉQUIPE : Martin</h2>
+<div>Heure et Date : <input type="datetime-local" id="dateTime"></div>
+<div class="stats">Anomalies: <span id="anomalyCount">0</span></div>
+
+<div class="toolbar">
+    <button onclick="saveCopy()">💾 Sauvegarder une copie</button>
+    <button onclick="saveToFirebase()" style="background-color: #2e7d32;">☁️ Sauvegarder dans Firebase</button>
+    <button onclick="toggleFirebasePanel()" style="background-color: #1565c0;">📥 Charger depuis Firebase</button>
+    <button onclick="document.getElementById('openFile').click()">📂 Ouvrir une sauvegarde (.html)</button>
+    <button onclick="resetForm()">🔄 Réinitialiser</button>
+    <input type="file" id="openFile" accept=".html" style="display:none" onchange="openBackup(event)">
+</div>
+
+<div id="firebasePanel" class="firebase-panel">
+    <label>Filtrer par date : <input type="date" id="searchDate" onchange="filterFirebaseDocs()"></label>
+    <label>Sélectionner un rapport : 
+        <select id="firebaseSelect">
+            <option value="">-- Sélectionnez un enregistrement --</option>
+        </select>
+    </label>
+    <button onclick="loadSelectedFirebaseDoc()" style="background-color: #2e7d32; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Charger</button>
+</div>
+
+<table>
+<tr>
+    <th rowspan="2">Nom</th>
+    <th rowspan="2">Itinéraire</th>
+    <th class="group" colspan="2">BCL et conformité du balayage<br><label><input type="checkbox" onchange="toggleCol(0,this.checked)"> Cocher tout OK</label></th>
+    <th rowspan="2" class="group">Couleur NM</th>
+    <th class="group" colspan="2">Envois CQ expirés<br><label><input type="checkbox" onchange="toggleCol(2,this.checked)"> Cocher tout OK</label></th>
+    <th class="group" colspan="2">CQ disposent d’un BCL<br><label><input type="checkbox" onchange="toggleCol(3,this.checked)"> Cocher tout OK</label></th>
+    <th class="group" colspan="2">Excédents identifiés<br><label><input type="checkbox" onchange="toggleCol(4,this.checked)"> Cocher tout OK</label></th>
+    <th class="group" colspan="2">Emboîtement CQ/articles laissés<br><label><input type="checkbox" onchange="toggleCol(5,this.checked)"> Cocher tout OK</label></th>
+    <th class="group" colspan="2">Courrier sans explication<br><label><input type="checkbox" onchange="toggleCol(6,this.checked)"> Cocher tout OK</label></th>
+    <th class="group" colspan="2">Paquets/colis sans explication<br><label><input type="checkbox" onchange="toggleCol(7,this.checked)"> Cocher tout OK</label></th>
+    <th class="group" colspan="2">Transferts COP matinée<br><label><input type="checkbox" onchange="toggleCol(8,this.checked)"> Cocher tout OK</label></th>
+    <th rowspan="2" class="group">CAMION<br><label><input type="checkbox" onchange="toggleCamion(this.checked)"> Cocher tout</label></th>
+    <th rowspan="2">Commentaires</th>
+</tr>
+<tr>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+    <th>OK</th><th>Anomalie</th>
+</tr>
+<tr><td>Celine</td><td>12</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm0"></textarea><br><button type="button" onclick="startDictation('nm0')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion0"></td><td><textarea id="t0"></textarea><br><button type="button" onclick="startDictation('t0')">🎤</button></td></tr>
+<tr><td>Sopheap</td><td>14</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm1"></textarea><br><button type="button" onclick="startDictation('nm1')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion1"></td><td><textarea id="t1"></textarea><br><button type="button" onclick="startDictation('t1')">🎤</button></td></tr>
+<tr><td>wang</td><td>216</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm2"></textarea><br><button type="button" onclick="startDictation('nm2')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion2"></td><td><textarea id="t2"></textarea><br><button type="button" onclick="startDictation('t2')">🎤</button></td></tr>
+<tr><td>durocher</td><td>218</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm3"></textarea><br><button type="button" onclick="startDictation('nm3')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion3"></td><td><textarea id="t3"></textarea><br><button type="button" onclick="startDictation('t3')">🎤</button></td></tr>
+<tr><td>foray</td><td>224</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm4"></textarea><br><button type="button" onclick="startDictation('nm4')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion4"></td><td><textarea id="t4"></textarea><br><button type="button" onclick="startDictation('t4')">🎤</button></td></tr>
+<tr><td>perez</td><td>228</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm5"></textarea><br><button type="button" onclick="startDictation('nm5')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion5"></td><td><textarea id="t5"></textarea><br><button type="button" onclick="startDictation('t5')">🎤</button></td></tr>
+<tr><td>ortiz</td><td>230</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm6"></textarea><br><button type="button" onclick="startDictation('nm6')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion6"></td><td><textarea id="t6"></textarea><br><button type="button" onclick="startDictation('t6')">🎤</button></td></tr>
+<tr><td>andrei</td><td>232</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm7"></textarea><br><button type="button" onclick="startDictation('nm7')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion7"></td><td><textarea id="t7"></textarea><br><button type="button" onclick="startDictation('t7')">🎤</button></td></tr>
+<tr><td>leblanc</td><td>236</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm8"></textarea><br><button type="button" onclick="startDictation('nm8')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion8"></td><td><textarea id="t8"></textarea><br><button type="button" onclick="startDictation('t8')">🎤</button></td></tr>
+<tr><td>laplante</td><td>238</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm9"></textarea><br><button type="button" onclick="startDictation('nm9')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion9"></td><td><textarea id="t9"></textarea><br><button type="button" onclick="startDictation('t9')">🎤</button></td></tr>
+<tr><td>chavez</td><td>240</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm10"></textarea><br><button type="button" onclick="startDictation('nm10')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion10"></td><td><textarea id="t10"></textarea><br><button type="button" onclick="startDictation('t10')">🎤</button></td></tr>
+<tr><td>therrien</td><td>244</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm11"></textarea><br><button type="button" onclick="startDictation('nm11')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion11"></td><td><textarea id="t11"></textarea><br><button type="button" onclick="startDictation('t11')">🎤</button></td></tr>
+<tr><td>christiane</td><td>246</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm12"></textarea><br><button type="button" onclick="startDictation('nm12')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion12"></td><td><textarea id="t12"></textarea><br><button type="button" onclick="startDictation('t12')">🎤</button></td></tr>
+<tr><td>veronneau</td><td>248</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm13"></textarea><br><button type="button" onclick="startDictation('nm13')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion13"></td><td><textarea id="t13"></textarea><br><button type="button" onclick="startDictation('t13')">🎤</button></td></tr>
+<tr><td>Barbe</td><td>250</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm14"></textarea><br><button type="button" onclick="startDictation('nm14')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion14"></td><td><textarea id="t14"></textarea><br><button type="button" onclick="startDictation('t14')">🎤</button></td></tr>
+<tr><td>berube</td><td>252</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm15"></textarea><br><button type="button" onclick="startDictation('nm15')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion15"></td><td><textarea id="t15"></textarea><br><button type="button" onclick="startDictation('t15')">🎤</button></td></tr>
+<tr><td>hugron</td><td>254</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm16"></textarea><br><button type="button" onclick="startDictation('nm16')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion16"></td><td><textarea id="t16"></textarea><br><button type="button" onclick="startDictation('t16')">🎤</button></td></tr>
+<tr><td>lamoureux</td><td>256</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm17"></textarea><br><button type="button" onclick="startDictation('nm17')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion17"></td><td><textarea id="t17"></textarea><br><button type="button" onclick="startDictation('t17')">🎤</button></td></tr>
+<tr><td>brunet</td><td>258</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm18"></textarea><br><button type="button" onclick="startDictation('nm18')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion18"></td><td><textarea id="t18"></textarea><br><button type="button" onclick="startDictation('t18')">🎤</button></td></tr>
+<tr><td>anderson</td><td>260</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm19"></textarea><br><button type="button" onclick="startDictation('nm19')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion19"></td><td><textarea id="t19"></textarea><br><button type="button" onclick="startDictation('t19')">🎤</button></td></tr>
+<tr><td>peragine</td><td>262</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm20"></textarea><br><button type="button" onclick="startDictation('nm20')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion20"></td><td><textarea id="t20"></textarea><br><button type="button" onclick="startDictation('t20')">🎤</button></td></tr>
+<tr><td>Yaqi</td><td>264</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm21"></textarea><br><button type="button" onclick="startDictation('nm21')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion21"></td><td><textarea id="t21"></textarea><br><button type="button" onclick="startDictation('t21')">🎤</button></td></tr>
+<tr><td>turcotte</td><td>272</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm22"></textarea><br><button type="button" onclick="startDictation('nm22')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion22"></td><td><textarea id="t22"></textarea><br><button type="button" onclick="startDictation('t22')">🎤</button></td></tr>
+<tr><td>Georges</td><td>282</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm23"></textarea><br><button type="button" onclick="startDictation('nm23')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion23"></td><td><textarea id="t23"></textarea><br><button type="button" onclick="startDictation('t23')">🎤</button></td></tr>
+<tr><td>hebert</td><td>290</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm24"></textarea><br><button type="button" onclick="startDictation('nm24')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion24"></td><td><textarea id="t24"></textarea><br><button type="button" onclick="startDictation('t24')">🎤</button></td></tr>
+<tr><td>leduc</td><td>310</td><td><input class="ok col0" type="checkbox"></td><td><input type="checkbox"></td><td><textarea id="nm25"></textarea><br><button type="button" onclick="startDictation('nm25')">🎤</button></td><td><input class="ok col2" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col3" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col4" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col5" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col6" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col7" type="checkbox"></td><td><input type="checkbox"></td><td><input class="ok col8" type="checkbox"></td><td><input type="checkbox"></td><td><input class="camionchk" type="checkbox" id="camion25"></td><td><textarea id="t25"></textarea><br><button type="button" onclick="startDictation('t25')">🎤</button></td></tr>
+</table>
+
+<br><br>
+<div style="width:100%;border:2px solid #444;padding:15px;box-sizing:border-box;">
+    <h2>VARIA</h2>
+    <textarea id="varia" style="width:100%;height:250px;font-size:14px;box-sizing:border-box;"></textarea><br><br>
+    <button type="button" onclick="startDictation('varia')">🎤 Dictée vocale VARIA</button>
+</div>
+
+<script>
+let firebaseDocsCache = [];
+
 function toggleCol(col,val){document.querySelectorAll('.col'+col).forEach(x=>x.checked=val)}
 function toggleCamion(val){document.querySelectorAll('.camionchk').forEach(x=>x.checked=val)}
-function resetForm(){document.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);document.querySelectorAll('textarea').forEach(x=>x.value='');document.querySelectorAll('input[type=date],input[type=datetime-local]').forEach(x=>x.value='');}
+function resetForm(){document.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);document.querySelectorAll('textarea').forEach(x=>x.value='');document.querySelectorAll('input[type=date],input[type=datetime-local]').forEach(x=>x.value='');updateStats();}
 function startDictation(id){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Dictée vocale non supportée');return;}const r=new SR();r.lang='fr-CA';r.onresult=e=>document.getElementById(id).value+=(document.getElementById(id).value?' ':'')+e.results[0][0].transcript;r.start();}
-function saveCopy(){const clone=document.documentElement.cloneNode(true);document.querySelectorAll('input').forEach((e,i)=>{const c=clone.querySelectorAll('input')[i];if(e.type==='checkbox'){if(e.checked)c.setAttribute('checked','checked');else c.removeAttribute('checked');}else c.setAttribute('value',e.value);});document.querySelectorAll('textarea').forEach((e,i)=>clone.querySelectorAll('textarea')[i].textContent=e.value);const blob=new Blob(['<!DOCTYPE html>'+clone.outerHTML],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='casier_'+new Date().toISOString().replace(/[:]/g,'-')+'.html';a.click();}
-function openBackup(event){const file=event.target.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{document.open();document.write(e.target.result);document.close();};r.readAsText(file);}
 
-function updateStats(){let c=0;document.querySelectorAll("input[type=checkbox]").forEach(x=>{if(!x.classList.contains("ok")&&x.checked){c++;x.closest("td")?.classList.add("anomaly");}else{x.closest("td")?.classList.remove("anomaly");}});let el=document.getElementById("anomalyCount");if(el)el.textContent=c;}document.addEventListener("change",updateStats);window.addEventListener("load",()=>{updateStats();let d=document.querySelector('input[type=datetime-local]');if(d&&!d.value){let n=new Date();d.value=new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,16);}});
-</script><br><br><div style="width:100%;border:2px solid #444;padding:15px;box-sizing:border-box;"><h2>VARIA</h2><textarea id="varia" style="width:100%;height:250px;font-size:14px;box-sizing:border-box;"></textarea><br><br><button type="button" onclick="startDictation('varia')">🎤 Dictée vocale VARIA</button></div></body></html>
+function saveCopy(){
+    const clone=document.documentElement.cloneNode(true);
+    document.querySelectorAll('input').forEach((e,i)=>{
+        const c=clone.querySelectorAll('input')[i];
+        if(e.type==='checkbox'){
+            if(e.checked)c.setAttribute('checked','checked');
+            else c.removeAttribute('checked');
+        }else c.setAttribute('value',e.value);
+    });
+    document.querySelectorAll('textarea').forEach((e,i)=>clone.querySelectorAll('textarea')[i].textContent=e.value);
+    const blob=new Blob(['<!DOCTYPE html>'+clone.outerHTML],{type:'text/html'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='casier_'+new Date().toISOString().replace(/[:]/g,'-')+'.html';
+    a.click();
+}
+
+function openBackup(event){
+    const file=event.target.files[0];
+    if(!file)return;
+    const r=new FileReader();
+    r.onload=e=>{
+        document.open();
+        document.write(e.target.result);
+        document.close();
+    };
+    r.readAsText(file);
+}
+
+function updateStats(){
+    let c=0;
+    document.querySelectorAll("input[type=checkbox]").forEach(x=>{
+        if(!x.classList.contains("ok")&&x.checked){
+            c++;
+            x.closest("td")?.classList.add("anomaly");
+        }else{
+            x.closest("td")?.classList.remove("anomaly");
+        }
+    });
+    let el=document.getElementById("anomalyCount");
+    if(el)el.textContent=c;
+}
+
+document.addEventListener("change",updateStats);
+window.addEventListener("load",()=>{
+    updateStats();
+    let d=document.querySelector('input[type=datetime-local]');
+    if(d&&!d.value){
+        let n=new Date();
+        d.value=new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    }
+});
+
+// Enregistrement dans la collection Firebase "casiers"
+async function saveToFirebase() {
+    if (!window.db || !window.addDoc || !window.collection) {
+        alert("Firebase n'est pas encore initialisé. Veuillez réessayer dans un instant.");
+        return;
+    }
+
+    const rowsData = [];
+    const tableRows = document.querySelectorAll("table tr");
+
+    for (let i = 2; i < tableRows.length; i++) {
+        const row = tableRows[i];
+        const cells = row.querySelectorAll("td");
+        if (cells.length === 0) continue;
+
+        const nom = cells[0].textContent.trim();
+        const itineraire = cells[1].textContent.trim();
+        const checkboxes = row.querySelectorAll("input[type=checkbox]");
+        const textareas = row.querySelectorAll("textarea");
+
+        rowsData.push({
+            nom: nom,
+            itineraire: itineraire,
+            couleurNM: textareas[0] ? textareas[0].value : "",
+            commentaires: textareas[1] ? textareas[1].value : "",
+            checkboxesStates: Array.from(checkboxes).map(cb => cb.checked)
+        });
+    }
+
+    const casierData = {
+        chefEquipe: "Martin",
+        dateHeure: document.getElementById("dateTime")?.value || new Date().toISOString(),
+        anomaliesCount: parseInt(document.getElementById("anomalyCount")?.textContent || "0", 10),
+        varia: document.getElementById("varia")?.value || "",
+        lignes: rowsData,
+        createdAt: new Date()
+    };
+
+    try {
+        const docRef = await window.addDoc(window.collection(window.db, "casiers"), casierData);
+        alert("✅ Données enregistrées avec succès dans Firebase 'casiers' ! (ID: " + docRef.id + ")");
+    } catch (error) {
+        console.error("Erreur d'enregistrement Firebase : ", error);
+        alert("❌ Erreur lors de l'enregistrement Firebase : " + error.message);
+    }
+}
+
+// Fonctionnalités de chargement Firebase
+async function toggleFirebasePanel() {
+    const panel = document.getElementById("firebasePanel");
+    if (panel.style.display === "none" || panel.style.display === "") {
+        panel.style.display = "flex";
+        await fetchFirebaseDocs();
+    } else {
+        panel.style.display = "none";
+    }
+}
+
+async function fetchFirebaseDocs() {
+    if (!window.db || !window.getDocs || !window.collection) {
+        alert("Firebase n'est pas encore initialisé.");
+        return;
+    }
+    try {
+        const q = window.query(window.collection(window.db, "casiers"), window.orderBy("dateHeure", "desc"));
+        const querySnapshot = await window.getDocs(q);
+        firebaseDocsCache = [];
+        querySnapshot.forEach((doc) => {
+            firebaseDocsCache.push({ id: doc.id, ...doc.data() });
+        });
+        populateSelect(firebaseDocsCache);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des rapports :", error);
+        alert("Erreur lors de la récupération depuis Firebase : " + error.message);
+    }
+}
+
+function populateSelect(docs) {
+    const select = document.getElementById("firebaseSelect");
+    select.innerHTML = '<option value="">-- Sélectionnez un enregistrement --</option>';
+    docs.forEach(doc => {
+        const dateFormatted = doc.dateHeure ? doc.dateHeure.replace('T', ' ') : 'Sans date';
+        const opt = document.createElement("option");
+        opt.value = doc.id;
+        opt.textContent = `${dateFormatted} - ${doc.chefEquipe || 'Martin'} (${doc.anomaliesCount || 0} anomalies)`;
+        select.appendChild(opt);
+    });
+}
+
+function filterFirebaseDocs() {
+    const selectedDate = document.getElementById("searchDate").value;
+    if (!selectedDate) {
+        populateSelect(firebaseDocsCache);
+        return;
+    }
+    const filtered = firebaseDocsCache.filter(doc => doc.dateHeure && doc.dateHeure.startsWith(selectedDate));
+    populateSelect(filtered);
+}
+
+function loadSelectedFirebaseDoc() {
+    const selectedId = document.getElementById("firebaseSelect").value;
+    if (!selectedId) {
+        alert("Veuillez choisir un rapport dans la liste.");
+        return;
+    }
+
+    const docData = firebaseDocsCache.find(d => d.id === selectedId);
+    if (!docData) return;
+
+    resetForm();
+
+    // Remplissage des données principales
+    if (docData.dateHeure) {
+        document.getElementById("dateTime").value = docData.dateHeure;
+    }
+    if (docData.varia) {
+        document.getElementById("varia").value = docData.varia;
+    }
+
+    // Remplissage des lignes
+    if (docData.lignes && Array.isArray(docData.lignes)) {
+        const tableRows = document.querySelectorAll("table tr");
+        docData.lignes.forEach((ligneData, idx) => {
+            const row = tableRows[idx + 2]; // Décalage pour l'en-tête du tableau
+            if (!row) return;
+
+            const textareas = row.querySelectorAll("textarea");
+            if (textareas[0] && ligneData.couleurNM !== undefined) textareas[0].value = ligneData.couleurNM;
+            if (textareas[1] && ligneData.commentaires !== undefined) textareas[1].value = ligneData.commentaires;
+
+            const checkboxes = row.querySelectorAll("input[type=checkbox]");
+            if (ligneData.checkboxesStates && Array.isArray(ligneData.checkboxesStates)) {
+                checkboxes.forEach((cb, cbIdx) => {
+                    if (ligneData.checkboxesStates[cbIdx] !== undefined) {
+                        cb.checked = ligneData.checkboxesStates[cbIdx];
+                    }
+                });
+            }
+        });
+    }
+
+    updateStats();
+    alert("✅ Rapport chargé avec succès !");
+}
+</script>
+
+</body>
+</html>
