@@ -8,7 +8,7 @@
     <!-- Firebase SDK (Modular CDN / ES Modules) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -28,6 +28,12 @@
         window.db = db;
         window.storage = storage;
         window.addDoc = addDoc;
+        window.updateDoc = updateDoc;
+        window.doc = doc;
+        window.getDocs = getDocs;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.limit = limit;
         window.collection = collection;
         window.ref = ref;
         window.uploadBytes = uploadBytes;
@@ -58,7 +64,7 @@
         }
 
         .controls-bar {
-            max-width: 850px;
+            max-width: 8.5in;
             margin: 0 auto 20px auto;
             background: white;
             padding: 15px 20px;
@@ -66,48 +72,38 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
             justify-content: space-between;
         }
 
         .btn {
-            padding: 10px 18px;
+            padding: 8px 14px;
             border: none;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.2s ease;
         }
 
-        .btn-dictate {
-            background-color: var(--cp-red);
-            color: white;
-        }
-
-        .btn-dictate.listening {
-            background-color: #ff9800;
-            animation: pulse 1.5s infinite;
-        }
-
+        .btn-dictate { background-color: var(--cp-red); color: white; }
+        .btn-dictate.listening { background-color: #ff9800; animation: pulse 1.5s infinite; }
+        
         .btn-field-dictate {
             background-color: #0288d1;
             color: white;
-            padding: 5px 12px;
-            font-size: 12px;
+            padding: 4px 10px;
+            font-size: 11px;
             border-radius: 4px;
             margin-left: 10px;
             cursor: pointer;
+            border: none;
         }
-
-        .btn-field-dictate.listening {
-            background-color: #ff9800;
-            animation: pulse 1.5s infinite;
-        }
+        .btn-field-dictate.listening { background-color: #ff9800; animation: pulse 1.5s infinite; }
 
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -115,29 +111,13 @@
             100% { transform: scale(1); }
         }
 
-        .btn-reset {
-            background-color: #78909c;
-            color: white;
-        }
+        .btn-reset { background-color: #78909c; color: white; }
+        .btn-load { background-color: #4b5563; color: white; }
+        .btn-firebase-get { background-color: #6b21a8; color: white; }
+        .btn-print { background-color: #0288d1; color: white; }
+        .btn-save { background-color: #2e7d32; color: white; }
 
-        .btn-load {
-            background-color: #4b5563;
-            color: white;
-        }
-
-        .btn-print {
-            background-color: #0288d1;
-            color: white;
-        }
-
-        .btn-save {
-            background-color: #2e7d32;
-            color: white;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
+        .btn:hover { opacity: 0.9; }
 
         .status-indicator {
             font-size: 13px;
@@ -147,31 +127,71 @@
             margin-top: 5px;
         }
 
-        /* Form Container */
+        /* Panneau de récupération Firebase */
+        .firebase-panel {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .firebase-panel h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--dark-gray);
+        }
+
+        .firebase-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .firebase-list-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .firebase-list-item:hover { background-color: #f5f5f5; }
+
+        /* Form Container - Format 8.5 x 11 exact */
         .form-container {
-            max-width: 850px;
+            width: 8.5in;
+            min-height: 10.5in;
             margin: 0 auto;
             background: white;
-            padding: 30px;
+            padding: 0.4in;
             border-radius: 4px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
         }
 
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .header-logo {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 900;
             color: var(--cp-red);
         }
 
         .header-title {
             text-align: right;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: var(--dark-gray);
         }
@@ -183,59 +203,59 @@
 
         .customer-info-box {
             border: 1px solid var(--border-color);
-            padding: 12px;
+            padding: 8px 12px;
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .customer-info-box label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #555;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .customer-info-box textarea {
             width: 100%;
             border: 1px solid #ccc;
             border-radius: 4px;
-            padding: 8px;
-            font-size: 14px;
+            padding: 6px;
+            font-size: 13px;
             resize: vertical;
-            min-height: 50px;
+            min-height: 42px;
         }
 
         .problems-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px 20px;
-            margin-bottom: 20px;
+            gap: 6px 15px;
+            margin-bottom: 12px;
         }
 
         .problem-item {
             display: flex;
             align-items: flex-start;
-            font-size: 12px;
-            line-height: 1.3;
-            padding: 6px;
+            font-size: 11px;
+            line-height: 1.25;
+            padding: 5px;
             border-radius: 4px;
             background: #fafafa;
             border: 1px solid #eee;
         }
 
         .problem-item input[type="checkbox"] {
-            margin-right: 10px;
-            margin-top: 2px;
-            width: 16px;
-            height: 16px;
+            margin-right: 8px;
+            margin-top: 1px;
+            width: 14px;
+            height: 14px;
             cursor: pointer;
         }
 
         .problem-num {
             font-weight: bold;
-            margin-right: 8px;
-            min-width: 18px;
+            margin-right: 6px;
+            min-width: 16px;
             color: var(--cp-red);
         }
 
@@ -249,25 +269,25 @@
 
         .problem-text .en {
             color: #666;
-            font-size: 11px;
+            font-size: 10px;
         }
 
         .remarks-box {
             border: 1px solid var(--border-color);
-            padding: 12px;
+            padding: 8px 12px;
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .remarks-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .remarks-box label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #555;
         }
@@ -276,70 +296,87 @@
             width: 100%;
             border: 1px solid #ccc;
             border-radius: 4px;
-            padding: 8px;
-            font-size: 14px;
+            padding: 6px;
+            font-size: 13px;
             resize: vertical;
-            min-height: 80px;
+            min-height: 65px;
         }
 
         .footer-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-            margin-top: 15px;
+            font-size: 11px;
+            margin-top: 10px;
         }
 
         .footer-table td {
             vertical-align: top;
-            padding: 6px;
+            padding: 4px;
         }
 
         .form-input {
             width: 100%;
-            padding: 6px;
+            padding: 5px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .legal-notice {
-            font-size: 10.5px;
+            font-size: 9.5px;
             color: #444;
-            line-height: 1.4;
-            margin-top: 15px;
-            padding-top: 10px;
+            line-height: 1.35;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid #eee;
         }
 
         .postal-unit-info {
             background-color: #f9f9f9;
             border: 1px dashed var(--border-color);
-            padding: 10px;
+            padding: 8px;
             border-radius: 4px;
-            font-size: 11px;
-            margin-top: 10px;
+            font-size: 10.5px;
+            margin-top: 8px;
         }
 
-        /* Styles spécifiques pour l'impression papier */
+        /* Réglages stricts d'impression (8.5 x 11 pouces) */
+        @page {
+            size: 8.5in 11in;
+            margin: 0;
+        }
+
         @media print {
-            body {
-                background-color: white;
-                padding: 0;
+            html, body {
+                width: 8.5in;
+                height: 11in;
+                background-color: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: hidden;
             }
 
-            .controls-bar, .btn-field-dictate {
+            .controls-bar, .firebase-panel, .btn-field-dictate {
                 display: none !important;
             }
 
             .form-container {
-                box-shadow: none;
-                padding: 0;
-                max-width: 100%;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0.4in !important;
+                width: 8.5in !important;
+                height: 11in !important;
+                max-height: 11in !important;
+                box-sizing: border-box;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
             }
 
             textarea, input[type="text"], input[type="date"] {
                 border: none !important;
                 background: transparent !important;
+                appearance: none;
+                -webkit-appearance: none;
             }
         }
     </style>
@@ -348,10 +385,13 @@
 
     <div class="controls-bar" data-html2canvas-ignore="true">
         <button id="btn-dictate" class="btn btn-dictate">
-            🎙️ Dictée vocale globale
+            🎙️ Dictée vocale
+        </button>
+        <button id="btn-load-firebase" class="btn btn-firebase-get">
+            ☁️ Charger depuis Firebase
         </button>
         <button id="btn-load-backup" class="btn btn-load">
-            📂 Récupérer une sauvegarde
+            📂 Fichier JSON
         </button>
         <button id="btn-reset" class="btn btn-reset">
             🔄 Réinitialiser
@@ -360,14 +400,22 @@
             🖨️ Imprimer
         </button>
         <button id="btn-save" class="btn btn-save">
-            💾 Sauvegarder & Exporter PDF
+            💾 Sauvegarder (Firebase & PDF)
         </button>
         
         <input type="file" id="backup-file-input" accept=".json" style="display: none;">
 
         <div id="status-msg" class="status-indicator">
-            Appuyez sur "Dictée vocale globale", utilisez le bouton de dictée dédié aux Remarques, ou chargez une sauvegarde JSON.
+            Formulaire prêt. Utilisez la dictée, chargez un rapport existant ou enregistrez.
         </div>
+    </div>
+
+    <!-- Panneau déroulant d'affichage des rapports Firebase -->
+    <div id="firebase-panel" class="firebase-panel" data-html2canvas-ignore="true">
+        <h3>Derniers rapports enregistrés dans Firestore</h3>
+        <ul id="firebase-list" class="firebase-list">
+            <li class="firebase-list-item">Chargement...</li>
+        </ul>
     </div>
 
     <div id="delivery-report" class="form-container">
@@ -389,7 +437,7 @@
             <textarea id="customer-address" placeholder="Entrez ou dictez l'adresse complète ici..."></textarea>
         </div>
 
-        <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">
+        <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px;">
             We have had difficulty in delivering your mail recently due to / Nous avons eu de la difficulté à livrer votre courrier récemment pour la raison suivante :
         </div>
 
@@ -426,7 +474,7 @@
                 </td>
                 <td style="width: 33%;">
                     <label><strong>Signature :</strong></label>
-                    <input type="text" id="signature" class="form-input" value="M. Lefebvre" style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 16px; font-weight: bold;">
+                    <input type="text" id="signature" class="form-input" value="M. Lefebvre" style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 15px; font-weight: bold;">
                 </td>
                 <td style="width: 34%;">
                     <label><strong>Date of Inspection / Date de l'inspection :</strong></label>
@@ -436,10 +484,10 @@
         </table>
 
         <div class="legal-notice">
-            <p><strong>Dear Client / Cher client, Chère cliente,</strong><br>
+            <p style="margin: 0 0 4px 0;"><strong>Dear Client / Cher client, Chère cliente,</strong><br>
             In order to better serve you, we ask that you correct the problem described above before: <strong>The next delivery / La prochaine livraison</strong>.<br>
             Should the corrections not be made, we will have to unfortunately temporarily suspend delivery service to your box. Your mail may be held at no charge for 15 business days, at the Postal Unit listed below. Once the 15 days have expired you will be required to submit a "Request to Hold Mail" for which a fee will be charged. Failure on your part to contact us or submit a "Request to Hold Mail" will result in your mail being returned to sender.</p>
-            <p>Si aucune correction n'est apportée, nous serons malheureusement dans l'obligation d'interrompre temporairement le service de livraison à votre boîte aux lettres. Votre courrier peut être retenu sans frais pendant quinze jours ouvrables à l'unité postale désignée ci-dessous. À la fin de ces quinze jours, vous devrez présenter une Demande de retenue du courrier moyennant quelques frais.</p>
+            <p style="margin: 0;">Si aucune correction n'est apportée, nous serons malheureusement dans l'obligation d'interrompre temporairement le service de livraison à votre boîte aux lettres. Votre courrier peut être retenu sans frais pendant quinze jours ouvrables à l'unité postale désignée ci-dessous. À la fin de ces quinze jours, vous devrez présenter une Demande de retenue du courrier moyennant quelques frais.</p>
         </div>
 
         <div class="postal-unit-info">
@@ -460,7 +508,7 @@
             window.print();
         });
 
-        // 1. Reset
+        // Réinitialisation
         document.getElementById("btn-reset").addEventListener("click", () => {
             document.getElementById("lc-number").value = "";
             document.getElementById("customer-address").value = "";
@@ -476,7 +524,7 @@
             document.getElementById("status-msg").textContent = "Formulaire réinitialisé.";
         });
 
-        // 2. Backup Recovery
+        // Sauvegarde locale JSON
         const btnLoadBackup = document.getElementById("btn-load-backup");
         const backupFileInput = document.getElementById("backup-file-input");
 
@@ -490,22 +538,9 @@
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    
-                    document.getElementById("lc-number").value = data.lcNumber !== undefined ? data.lcNumber : "";
-                    if (data.adresse) document.getElementById("customer-address").value = data.adresse;
-                    if (data.remarques) document.getElementById("remarks").value = data.remarques;
-                    if (data.agent) document.getElementById("inspecting-officer").value = data.agent;
-                    if (data.signature) document.getElementById("signature").value = data.signature;
-                    if (data.date) document.getElementById("inspection-date").value = data.date;
-
-                    if (data.problemesCoches && Array.isArray(data.problemesCoches)) {
-                        document.querySelectorAll(".prob-checkbox").forEach(cb => {
-                            cb.checked = data.problemesCoches.includes(cb.dataset.num);
-                        });
-                    }
-
+                    populateForm(data);
                     document.getElementById("status-msg").style.color = "#2e7d32";
-                    document.getElementById("status-msg").textContent = "📂 Sauvegarde chargée avec succès !";
+                    document.getElementById("status-msg").textContent = "📂 Sauvegarde JSON chargée avec succès !";
                 } catch (err) {
                     console.error("Erreur de chargement JSON:", err);
                     alert("Fichier de sauvegarde non valide.");
@@ -515,7 +550,84 @@
             backupFileInput.value = '';
         });
 
-        // 3. Reconnaissance vocale
+        // Fonction d'injection des données dans le formulaire
+        function populateForm(data) {
+            document.getElementById("lc-number").value = data.lcNumber !== undefined ? data.lcNumber : "";
+            document.getElementById("customer-address").value = data.adresse || "";
+            document.getElementById("remarks").value = data.remarques || "";
+            document.getElementById("inspecting-officer").value = data.agent || "M. Lefebvre";
+            document.getElementById("signature").value = data.signature || "M. Lefebvre";
+            document.getElementById("inspection-date").value = data.date || new Date().toISOString().split('T')[0];
+
+            document.querySelectorAll(".prob-checkbox").forEach(cb => {
+                cb.checked = data.problemesCoches && data.problemesCoches.includes(cb.dataset.num);
+            });
+        }
+
+        // --- Récupération des données dans Firestore ---
+        document.getElementById("btn-load-firebase").addEventListener("click", async () => {
+            const panel = document.getElementById("firebase-panel");
+            const listContainer = document.getElementById("firebase-list");
+            const statusMsg = document.getElementById("status-msg");
+
+            if (panel.style.display === "block") {
+                panel.style.display = "none";
+                return;
+            }
+
+            statusMsg.style.color = "#0288d1";
+            statusMsg.textContent = "Récupération des rapports Firestore...";
+            listContainer.innerHTML = "<li class='firebase-list-item'>Chargement en cours...</li>";
+            panel.style.display = "block";
+
+            try {
+                const rapportsRef = window.collection(window.db, "rapports_livraison");
+                const q = window.query(rapportsRef, window.orderBy("createdAt", "desc"), window.limit(10));
+                const querySnapshot = await window.getDocs(q);
+
+                listContainer.innerHTML = "";
+
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = "<li class='firebase-list-item'>Aucun rapport enregistré trouvé.</li>";
+                } else {
+                    querySnapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        const li = document.createElement("li");
+                        li.className = "firebase-list-item";
+                        
+                        const addrShort = data.adresse ? (data.adresse.substring(0, 30) + "...") : "Adresse non spécifiée";
+
+                        li.innerHTML = `
+                            <div>
+                                <strong>Date :</strong> ${data.date || 'N/A'} | 
+                                <strong>LC :</strong> ${data.lcNumber || 'N/A'} | 
+                                <strong>Client :</strong> ${addrShort}
+                            </div>
+                            <div>
+                                <button class="btn btn-load btn-select-doc" style="font-size:11px; padding:4px 8px;"> Charger</button>
+                                ${data.pdfUrl ? `<a href="${data.pdfUrl}" target="_blank" class="btn btn-print" style="font-size:11px; padding:4px 8px; text-decoration:none;">📄 PDF</a>` : ''}
+                            </div>
+                        `;
+
+                        li.querySelector(".btn-select-doc").addEventListener("click", () => {
+                            populateForm(data);
+                            panel.style.display = "none";
+                            statusMsg.style.color = "#2e7d32";
+                            statusMsg.textContent = `Rapport du ${data.date} chargé dans le formulaire !`;
+                        });
+
+                        listContainer.appendChild(li);
+                    });
+                }
+                statusMsg.textContent = "Choisissez un rapport à charger ci-dessus.";
+            } catch (err) {
+                console.error(err);
+                statusMsg.style.color = "#d32f2f";
+                statusMsg.textContent = "❌ Erreur de récupération Firestore: " + err.message;
+            }
+        });
+
+        // --- Reconnaissance Vocale ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (SpeechRecognition) {
@@ -536,14 +648,14 @@
             globalRec.onstart = () => {
                 isGlobalListening = true;
                 btnDictateGlobal.classList.add("listening");
-                btnDictateGlobal.innerHTML = "🛑 Arrêter la dictée globale";
-                statusMsg.textContent = "Écoute globale active... (dites 'lc 12', 'adresse ...', 'cocher 3', ou 'remarque ...')";
+                btnDictateGlobal.innerHTML = "🛑 Arrêter";
+                statusMsg.textContent = "Écoute globale active... (ex: 'lc 12', 'adresse ...', 'cocher 3', 'remarque ...')";
             };
 
             globalRec.onend = () => {
                 isGlobalListening = false;
                 btnDictateGlobal.classList.remove("listening");
-                btnDictateGlobal.innerHTML = "🎙️ Dictée vocale globale";
+                btnDictateGlobal.innerHTML = "🎙️ Dictée vocale";
                 statusMsg.textContent = "Dictée globale arrêtée.";
             };
 
@@ -571,7 +683,7 @@
                 isRemarksListening = true;
                 btnDictateRemarks.classList.add("listening");
                 btnDictateRemarks.innerHTML = "🛑 Arrêter";
-                statusMsg.textContent = "Dictée active exclusivement pour la section Remarques...";
+                statusMsg.textContent = "Dictée active pour la section Remarques...";
             };
 
             remarksRec.onend = () => {
@@ -591,7 +703,7 @@
         } else {
             document.getElementById("btn-dictate").disabled = true;
             document.getElementById("btn-dictate-remarks").disabled = true;
-            document.getElementById("status-msg").textContent = "La reconnaissance vocale n'est pas supportée par ce navigateur (utilisez Chrome/Edge).";
+            document.getElementById("status-msg").textContent = "La reconnaissance vocale n'est pas supportée par votre navigateur (Chrome/Edge recommandé).";
         }
 
         function parseVoiceCommand(text) {
@@ -607,7 +719,7 @@
             } else if (lower.startsWith("remarque") || lower.startsWith("détail") || lower.startsWith("détails")) {
                 const val = text.replace(/^(remarque|remarques|détail|détails)\s*/i, '');
                 const remElem = document.getElementById("remarks");
-                remElem.value = remElem.value ? remElem.value + " " + val : val;
+                remElem.value = remElem.value ? remElem.value + " " + text : text;
             } else if (lower.includes("cocher") || lower.includes("problème") || lower.includes("case")) {
                 const numMatch = lower.match(/(1[0-2]|[1-9])/);
                 if (numMatch) {
@@ -621,56 +733,87 @@
             }
         }
 
-        // 4. Save to Firebase + Download PDF
+        // --- Fonction de nettoyage de chaîne pour créer un nom de fichier valide ---
+        function getSanitizedFileName(rawAddress) {
+            if (!rawAddress || !rawAddress.trim()) {
+                const today = new Date().toISOString().split('T')[0];
+                return `Adresse_Inconnue_${today}`;
+            }
+            return rawAddress
+                .trim()
+                .replace(/[\r\n]+/g, " ")       
+                .replace(/[/\\?%*:|"<>]/g, "-")  
+                .replace(/\s+/g, "_");          
+        }
+
+        // --- Sauvegarde Optimisée (Firestore rapide + PDF/Storage en arrière-plan) ---
         document.getElementById("btn-save").addEventListener("click", async () => {
             const saveBtn = document.getElementById("btn-save");
             const statusMsg = document.getElementById("status-msg");
+            
             saveBtn.disabled = true;
             statusMsg.style.color = "#0288d1";
-            statusMsg.textContent = "Génération du PDF et sauvegarde dans Firebase...";
+            statusMsg.textContent = "⚡ Sauvegarde des données Firestore...";
+
+            const element = document.getElementById("delivery-report");
+            const rawAddress = document.getElementById("customer-address").value;
+            const safeFileName = getSanitizedFileName(rawAddress);
+            const pdfDownloadName = `${safeFileName}.pdf`;
+            const timestamp = Date.now();
+            const storagePath = `rapports/${safeFileName}_${timestamp}.pdf`;
+
+            // 1. Préparation immédiate des données
+            const docData = {
+                date: document.getElementById("inspection-date").value,
+                agent: document.getElementById("inspecting-officer").value,
+                signature: document.getElementById("signature").value,
+                lcNumber: document.getElementById("lc-number").value,
+                adresse: rawAddress,
+                nomFichier: pdfDownloadName,
+                remarques: document.getElementById("remarks").value,
+                problemesCoches: Array.from(document.querySelectorAll('.prob-checkbox:checked')).map(cb => cb.dataset.num),
+                pdfUrl: "",
+                createdAt: new Date()
+            };
 
             try {
-                const element = document.getElementById("delivery-report");
-                const pdfName = `Rapport_Livraison_${new Date().toISOString().split('T')[0]}.pdf`;
+                // 2. Écriture ultra-rapide dans Firestore
+                const docRef = await window.addDoc(window.collection(window.db, "rapports_livraison"), docData);
+
+                statusMsg.style.color = "#2e7d32";
+                statusMsg.textContent = "✅ Données sauvegardées ! Génération du PDF...";
+                saveBtn.disabled = false; // L'utilisateur peut continuer sans attendre le PDF
+
+                // 3. Traitement lourd du PDF en arrière-plan (échelle 1.5 pour accélérer html2canvas)
                 const opt = {
-                    margin: 0.3,
-                    filename: pdfName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
+                    margin: 0,
+                    filename: pdfDownloadName,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { scale: 1.5, useCORS: true },
                     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
                 };
 
-                html2pdf().set(opt).from(element).save();
+                const worker = html2pdf().set(opt).from(element);
+                const pdfBlob = await worker.output('blob');
+                worker.save(); // Téléchargement local du PDF
 
-                const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-                const timestamp = Date.now();
-                const fileName = `rapports/livraison_${timestamp}.pdf`;
-                const storageRef = window.ref(window.storage, fileName);
+                // 4. Envoi du PDF dans Firebase Storage sans bloquer l'UI
+                const storageRef = window.ref(window.storage, storagePath);
+                window.uploadBytes(storageRef, pdfBlob).then(async () => {
+                    const downloadURL = await window.getDownloadURL(storageRef);
+                    // Mise à jour du document Firestore avec l'URL de téléchargement finale
+                    await window.updateDoc(window.doc(window.db, "rapports_livraison", docRef.id), {
+                        pdfUrl: downloadURL
+                    });
+                    console.log("PDF téléversé et Firestore mis à jour avec succès !");
+                }).catch(storageErr => {
+                    console.warn("Erreur lors du téléversement Storage :", storageErr);
+                });
 
-                await window.uploadBytes(storageRef, pdfBlob);
-                const downloadURL = await window.getDownloadURL(storageRef);
-
-                const docData = {
-                    date: document.getElementById("inspection-date").value,
-                    agent: document.getElementById("inspecting-officer").value,
-                    signature: document.getElementById("signature").value,
-                    lcNumber: document.getElementById("lc-number").value,
-                    adresse: document.getElementById("customer-address").value,
-                    remarques: document.getElementById("remarks").value,
-                    problemesCoches: Array.from(document.querySelectorAll('.prob-checkbox:checked')).map(cb => cb.dataset.num),
-                    pdfUrl: downloadURL,
-                    createdAt: new Date()
-                };
-
-                await window.addDoc(window.collection(window.db, "rapports_livraison"), docData);
-
-                statusMsg.style.color = "#2e7d32";
-                statusMsg.textContent = "✅ Rapport enregistré dans Firebase et PDF téléchargé !";
             } catch (err) {
                 console.error(err);
                 statusMsg.style.color = "#d32f2f";
-                statusMsg.textContent = "❌ Erreur de sauvegarde: " + err.message;
-            } finally {
+                statusMsg.textContent = "❌ Erreur de sauvegarde Firestore: " + err.message;
                 saveBtn.disabled = false;
             }
         });
