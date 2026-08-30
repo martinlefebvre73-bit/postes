@@ -144,8 +144,23 @@
             color: var(--dark-gray);
         }
 
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .search-box:focus {
+            border-color: var(--cp-blue);
+            box-shadow: 0 0 4px rgba(2, 136, 209, 0.3);
+        }
+
         .firebase-list {
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -413,6 +428,7 @@
     <!-- Panneau déroulant d'affichage des rapports Firebase -->
     <div id="firebase-panel" class="firebase-panel" data-html2canvas-ignore="true">
         <h3>Derniers rapports enregistrés dans Firestore</h3>
+        <input type="text" id="firebase-search" class="search-box" placeholder="🔍 Rechercher par N° civique ou adresse (ex: 6155, René-Lévesque)...">
         <ul id="firebase-list" class="firebase-list">
             <li class="firebase-list-item">Chargement...</li>
         </ul>
@@ -497,6 +513,9 @@
     </div>
 
     <script>
+        // Stockage local des rapports récupérés pour la recherche rapide
+        let fetchedReports = [];
+
         document.addEventListener("DOMContentLoaded", () => {
             const dateInput = document.getElementById("inspection-date");
             const today = new Date().toISOString().split('T')[0];
@@ -564,11 +583,54 @@
             });
         }
 
-        // --- Récupération des données dans Firestore ---
+        // --- Rendu de la liste des rapports dans le panneau ---
+        function renderReportsList(reports) {
+            const listContainer = document.getElementById("firebase-list");
+            const panel = document.getElementById("firebase-panel");
+            const statusMsg = document.getElementById("status-msg");
+
+            listContainer.innerHTML = "";
+
+            if (!reports || reports.length === 0) {
+                listContainer.innerHTML = "<li class='firebase-list-item'>Aucun rapport correspondant.</li>";
+                return;
+            }
+
+            reports.forEach((data) => {
+                const li = document.createElement("li");
+                li.className = "firebase-list-item";
+                
+                const addrShort = data.adresse ? (data.adresse.substring(0, 35) + "...") : "Adresse non spécifiée";
+
+                li.innerHTML = `
+                    <div>
+                        <strong>Date :</strong> ${data.date || 'N/A'} | 
+                        <strong>LC :</strong> ${data.lcNumber || 'N/A'}<br>
+                        <strong>Client :</strong> ${addrShort}
+                    </div>
+                    <div>
+                        <button class="btn btn-load btn-select-doc" style="font-size:11px; padding:4px 8px;"> Charger</button>
+                        ${data.pdfUrl ? `<a href="${data.pdfUrl}" target="_blank" class="btn btn-print" style="font-size:11px; padding:4px 8px; text-decoration:none;">📄 PDF</a>` : ''}
+                    </div>
+                `;
+
+                li.querySelector(".btn-select-doc").addEventListener("click", () => {
+                    populateForm(data);
+                    panel.style.display = "none";
+                    statusMsg.style.color = "#2e7d32";
+                    statusMsg.textContent = `Rapport du ${data.date} (${data.adresse || ''}) chargé !`;
+                });
+
+                listContainer.appendChild(li);
+            });
+        }
+
+        // --- Récupération des données depuis Firestore ---
         document.getElementById("btn-load-firebase").addEventListener("click", async () => {
             const panel = document.getElementById("firebase-panel");
             const listContainer = document.getElementById("firebase-list");
             const statusMsg = document.getElementById("status-msg");
+            const searchInput = document.getElementById("firebase-search");
 
             if (panel.style.display === "block") {
                 panel.style.display = "none";
@@ -579,52 +641,44 @@
             statusMsg.textContent = "Récupération des rapports Firestore...";
             listContainer.innerHTML = "<li class='firebase-list-item'>Chargement en cours...</li>";
             panel.style.display = "block";
+            searchInput.value = ""; // Réinitialiser le champ de recherche
 
             try {
+                // Augmentation de la limite à 50 pour couvrir davantage d'adresses
                 const rapportsRef = window.collection(window.db, "rapports_livraison");
-                const q = window.query(rapportsRef, window.orderBy("createdAt", "desc"), window.limit(10));
+                const q = window.query(rapportsRef, window.orderBy("createdAt", "desc"), window.limit(50));
                 const querySnapshot = await window.getDocs(q);
 
-                listContainer.innerHTML = "";
+                fetchedReports = [];
+                querySnapshot.forEach((docSnap) => {
+                    fetchedReports.push(docSnap.data());
+                });
 
-                if (querySnapshot.empty) {
-                    listContainer.innerHTML = "<li class='firebase-list-item'>Aucun rapport enregistré trouvé.</li>";
-                } else {
-                    querySnapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        const li = document.createElement("li");
-                        li.className = "firebase-list-item";
-                        
-                        const addrShort = data.adresse ? (data.adresse.substring(0, 30) + "...") : "Adresse non spécifiée";
-
-                        li.innerHTML = `
-                            <div>
-                                <strong>Date :</strong> ${data.date || 'N/A'} | 
-                                <strong>LC :</strong> ${data.lcNumber || 'N/A'} | 
-                                <strong>Client :</strong> ${addrShort}
-                            </div>
-                            <div>
-                                <button class="btn btn-load btn-select-doc" style="font-size:11px; padding:4px 8px;"> Charger</button>
-                                ${data.pdfUrl ? `<a href="${data.pdfUrl}" target="_blank" class="btn btn-print" style="font-size:11px; padding:4px 8px; text-decoration:none;">📄 PDF</a>` : ''}
-                            </div>
-                        `;
-
-                        li.querySelector(".btn-select-doc").addEventListener("click", () => {
-                            populateForm(data);
-                            panel.style.display = "none";
-                            statusMsg.style.color = "#2e7d32";
-                            statusMsg.textContent = `Rapport du ${data.date} chargé dans le formulaire !`;
-                        });
-
-                        listContainer.appendChild(li);
-                    });
-                }
-                statusMsg.textContent = "Choisissez un rapport à charger ci-dessus.";
+                renderReportsList(fetchedReports);
+                statusMsg.textContent = `${fetchedReports.length} rapport(s) récupéré(s). Tapez un numéro civique pour filtrer.`;
             } catch (err) {
                 console.error(err);
                 statusMsg.style.color = "#d32f2f";
                 statusMsg.textContent = "❌ Erreur de récupération Firestore: " + err.message;
             }
+        });
+
+        // --- Écouteur pour la recherche par Numéro Civique / Adresse ---
+        document.getElementById("firebase-search").addEventListener("input", (e) => {
+            const queryText = e.target.value.trim().toLowerCase();
+
+            if (!queryText) {
+                renderReportsList(fetchedReports);
+                return;
+            }
+
+            // Filtrage par numéro civique ou par n'importe quelle partie de l'adresse
+            const filtered = fetchedReports.filter(report => {
+                const address = (report.adresse || "").toLowerCase();
+                return address.includes(queryText);
+            });
+
+            renderReportsList(filtered);
         });
 
         // --- Reconnaissance Vocale ---
@@ -784,7 +838,7 @@
                 statusMsg.textContent = "✅ Données sauvegardées ! Génération du PDF...";
                 saveBtn.disabled = false; // L'utilisateur peut continuer sans attendre le PDF
 
-                // 3. Traitement lourd du PDF en arrière-plan (échelle 1.5 pour accélérer html2canvas)
+                // 3. Traitement lourd du PDF en arrière-plan
                 const opt = {
                     margin: 0,
                     filename: pdfDownloadName,
@@ -801,7 +855,7 @@
                 const storageRef = window.ref(window.storage, storagePath);
                 window.uploadBytes(storageRef, pdfBlob).then(async () => {
                     const downloadURL = await window.getDownloadURL(storageRef);
-                    // Mise à jour du document Firestore avec l'URL de téléchargement finale
+                    // Mise à jour du document Firestore avec l'URL finale
                     await window.updateDoc(window.doc(window.db, "rapports_livraison", docRef.id), {
                         pdfUrl: downloadURL
                     });
