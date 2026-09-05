@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -6,47 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menu Principal</title>
   <style>
-    :root {
-      --bg-dark: #121212;
-      --card-bg: #1e1e1e;
-      --border-color: #2d2d2d;
-      --text-main: #ffffff;
-      --text-muted: #e0e0e0;
-      --primary: #0d6efd;
-      --primary-hover: #0b5ed7;
-      --danger: #dc3545;
-      --danger-hover: #bb2d3b;
-      --secondary: #495057;
-      --secondary-hover: #343a40;
-    }
-
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
       padding: 40px;
-      background-color: var(--bg-dark);
-      color: var(--text-muted);
+      background-color: #121212;
+      color: #e0e0e0;
     }
-
     .card {
-      background: var(--card-bg);
+      background: #1e1e1e;
       max-width: 400px;
       margin: 0 auto;
       padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border: 1px solid #2d2d2d;
     }
-
     h1, h2 {
-      color: var(--text-main);
-      margin-top: 0;
+      color: #ffffff;
     }
-
     .menu {
       margin-top: 20px;
     }
-
     button {
       display: block;
       width: 100%;
@@ -54,133 +34,68 @@
       padding: 14px;
       font-size: 16px;
       font-weight: bold;
-      color: var(--text-main);
-      background-color: var(--primary);
+      color: #ffffff;
+      background-color: #0d6efd;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       transition: background-color 0.2s ease, transform 0.1s ease;
     }
-
     button:hover {
-      background-color: var(--primary-hover);
+      background-color: #0b5ed7;
     }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
     button.btn-danger {
-      background-color: var(--danger);
+      background-color: #dc3545;
     }
-
     button.btn-danger:hover {
-      background-color: var(--danger-hover);
+      background-color: #bb2d3b;
     }
-
     button.btn-secondary {
-      background-color: var(--secondary);
+      background-color: #495057;
     }
-
     button.btn-secondary:hover {
-      background-color: var(--secondary-hover);
+      background-color: #343a40;
     }
-
-    /* Style du champ de recherche de route */
-    .route-search-container {
-      margin: 15px 0;
-    }
-
-    .route-input-group {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .route-input-group input {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-      background-color: #2b2b2b;
-      color: var(--text-main);
-      outline: none;
-    }
-
-    .route-input-group input:focus {
-      border-color: var(--primary);
-    }
-
-    .route-input-group button {
-      width: auto;
-      margin: 0;
-      padding: 0 16px;
-    }
-
-    #menuSecondaire, #rechercheRoute {
+    #menuSecondaire {
       display: none;
     }
   </style>
 </head>
 <body>
 
-  <main class="card">
-    <!-- Menu Principal -->
-    <section class="menu" id="menuPrincipal">
+  <div class="card">
+    <div class="menu" id="menuPrincipal">
       <h1>Menu principal</h1>
-      <button type="button" onclick="location.href='casier%201.html'">Vérification casier</button>
-      <button type="button" onclick="afficherVue('menuSecondaire')">Directoire</button>
-      <button type="button" class="btn-danger" onclick="location.href='Rapport.html'">Problème de livraison</button>
-    </section>
+      <button onclick="location.href='casier 1.html'">Vérification casier</button>
+      <button onclick="ouvrirDirectoire()">Directoire</button>
+      <button class="btn-danger" onclick="location.href='Rapport.html'">Problème de livraison</button>
+    </div>
 
-    <!-- Menu Secondaire -->
-    <section class="menu" id="menuSecondaire">
+    <div class="menu" id="menuSecondaire">
       <h2>Menu secondaire</h2>
-      <button type="button" onclick="afficherVue('rechercheRoute')">Route</button>
-      <button type="button" class="btn-secondary" onclick="afficherVue('menuPrincipal')">Retour</button>
-    </section>
-
-    <!-- Zone de recherche de Route -->
-    <section class="menu" id="rechercheRoute">
-      <h2>Rechercher une route</h2>
-      <form class="route-search-container" onsubmit="ouvrirFichierRoute(event)">
-        <div class="route-input-group">
-          <input type="text" id="routeInput" placeholder="N° de route (ex: 102)" required autocomplete="off">
-          <button type="submit">Ouvrir</button>
-        </div>
-      </form>
-      <button type="button" class="btn-secondary" onclick="afficherVue('menuSecondaire')">Retour</button>
-    </section>
-  </main>
+      <button onclick="ouvrirRoute()">Route</button>
+      <button class="btn-secondary" onclick="retourMenu()">Retour</button>
+    </div>
+  </div>
 
   <script>
-    // Gestion de l'affichage des différentes vues
-    function afficherVue(idVue) {
+    function ouvrirDirectoire() {
       document.getElementById('menuPrincipal').style.display = 'none';
-      document.getElementById('menuSecondaire').style.display = 'none';
-      document.getElementById('rechercheRoute').style.display = 'none';
-
-      document.getElementById(idVue).style.display = 'block';
-
-      // Si on affiche la recherche, met automatiquement le focus sur le champ texte
-      if (idVue === 'rechercheRoute') {
-        const input = document.getElementById('routeInput');
-        input.value = '';
-        input.focus();
-      }
+      document.getElementById('menuSecondaire').style.display = 'block';
     }
 
-    // Fonction de redirection vers la route saisie
-    function ouvrirFichierRoute(event) {
-      event.preventDefault(); // Empêche le rechargement de la page par le formulaire
-      
-      const input = document.getElementById('routeInput');
-      const numero = input.value.trim();
+    function retourMenu() {
+      document.getElementById('menuSecondaire').style.display = 'none';
+      document.getElementById('menuPrincipal').style.display = 'block';
+    }
 
-      if (numero !== '') {
-        localStorage.setItem('numeroRoute', numero);
-        location.href = `${encodeURIComponent(numero)}.html`;
+    function ouvrirRoute() {
+      const numero = prompt('Entrez le numéro de route :');
+      if (numero && numero.trim() !== '') {
+        const routeNettoyee = numero.trim();
+        localStorage.setItem('numeroRoute', routeNettoyee);
+        // Redirection vers le fichier avec l'extension .htm
+        location.href = encodeURIComponent(routeNettoyee) + '.htm';
       }
     }
   </script>
