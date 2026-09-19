@@ -48,14 +48,18 @@ tr:nth-child(even) td{background:#fafcff}
 .firebase-panel{background:#e8f5e9;padding:10px;border:1px solid #c8e6c9;border-radius:6px;margin:10px 0;display:none;gap:10px;align-items:center;flex-wrap:wrap}
 .supervisor-container {display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;}
 .supervisor-container select, .supervisor-container input {padding: 6px; font-size: 14px; border-radius: 4px; border: 1px solid #ccc;}
+.btn-back {background-color: #495057; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: inline-block;}
+.btn-back:hover {background-color: #343a40;}
 
 @media print {
     body { background: white; margin: 0; }
-    .toolbar, .supervisor-container, .firebase-panel, button { display: none !important; }
+    .toolbar, .supervisor-container, .firebase-panel, button, .btn-back { display: none !important; }
 }
 </style>
 </head>
 <body>
+
+<button class="btn-back" onclick="location.href='index (1).html'">⬅️ Retour au menu</button>
 
 <div class="supervisor-container">
     <h2>CHEF D'ÉQUIPE / SUPERVISEUR : <span id="displayChef">Martin</span></h2>
@@ -468,7 +472,6 @@ async function printAllSupervisorsByDate() {
     const supervisors = ["Martin", "Jonathan", "Dany", "Jean", "Yves", "Pierre-Stephane"];
     let matchedDocs = [];
 
-    // Récupérer les rapports de chaque superviseur pour la date ciblée
     for (const sup of supervisors) {
         try {
             const q = window.query(window.collection(window.db, sup));
@@ -489,7 +492,6 @@ async function printAllSupervisorsByDate() {
         return;
     }
 
-    // Création d'une fenêtre d'impression personnalisée
     let printWindow = window.open('', '_blank');
     let htmlContent = `
         <!DOCTYPE html>
