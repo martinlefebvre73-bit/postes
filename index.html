@@ -9,9 +9,8 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 40px;
-      background-color: #121212;
+      background-color: #0d1b2a; /* Fond bleu foncé professionnel */
       color: #e0e0e0;
-      position: relative;
       min-height: 100vh;
       margin: 0;
       display: flex;
@@ -20,33 +19,28 @@
       align-items: center;
     }
 
-    /* Style du filigrane (logo en arrière-plan) */
-    body::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: url('poste.webp');[cite: 4]
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: 50% auto;
-      opacity: 0.1; /* Transparence du filigrane */
-      z-index: -1;
-    }
-
     .card {
-      background: rgba(30, 30, 30, 0.9);
-      max-width: 400px;
+      background: #1b263b;
+      max-width: 420px;
       width: 100%;
       margin: 0 auto;
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-      border: 1px solid #2d2d2d;
-      z-index: 1;
+      border: 1px solid #415a77;
     }
+
+    /* Style du logo placé en haut dans la carte */
+    .logo-container {
+      margin-bottom: 20px;
+    }
+    .logo-container img {
+      max-width: 80%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
     h1, h2 {
       color: #ffffff;
     }
@@ -96,13 +90,18 @@
 <body>
 
   <div class="card">
+    <!-- Logo en haut -->
+    <div class="logo-container">
+      <img src="poste.webp" alt="Logo Postes Canada">[cite: 4]
+    </div>
+
     <div class="menu" id="menuPrincipal">
       <h1>Menu principal</h1>
       <button onclick="location.href='casier 1.html'">Vérification casier</button>
       <button onclick="ouvrirDirectoire()">Directoire</button>
       <button class="btn-danger" onclick="location.href='Rapport.html'">Problème de livraison</button>
-      <!-- Redirection vers interventions.html -->
-      <button class="btn-success" onclick="location.href='interventions.html'">Intervention SST</button>
+      <!-- Bouton Intervention SST pointant vers interventions.html -->
+      <button class="btn-success" onclick="location.href='interventions.html'">Intervention SST</button>[cite: 3]
     </div>
 
     <div class="menu" id="menuSecondaire">
