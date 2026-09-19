@@ -1143,9 +1143,9 @@
             }
         };
 
-        // --- RECHERCHE ---
+        // --- RECHERCHE FLEXIBLE MISE À JOUR ---
         window.executerRecherche = async () => {
-            const critere = document.getElementById('critereRecherche').value.trim();
+            const critere = document.getElementById('critereRecherche').value.trim().toLowerCase();
             if (!critere) {
                 alert("Veuillez entrer un nom ou un ID.");
                 return;
@@ -1158,53 +1158,68 @@
             const contenu = document.getElementById('contenu-zone');
             
             zone.classList.remove('d-none');
-            titre.textContent = `Résultats de recherche pour : "${critere}"`;
+            titre.textContent = `Résultats de recherche pour : "${document.getElementById('critereRecherche').value.trim()}"`;
             containerSelect.innerHTML = "";
             contenu.innerHTML = "<p>Recherche en cours...</p>";
 
-            const qNom = query(collection(db, "interventions"), where("nom", "==", critere), orderBy("date", "asc"));
-            const qId = query(collection(db, "interventions"), where("idEmploye", "==", critere), orderBy("date", "asc"));
+            try {
+                // Récupération globale pour filtrer localement de manière souple et rapide
+                const querySnapshot = await getDocs(collection(db, "interventions"));
+                let interventionsMap = new Map();
 
-            const [snapNom, snapId] = await Promise.all([getDocs(qNom), getDocs(qId)]);
-            
-            let interventionsMap = new Map();
-            snapNom.forEach(d => interventionsMap.set(d.id, { id: d.id, ...d.data() }));
-            snapId.forEach(d => interventionsMap.set(d.id, { id: d.id, ...d.data() }));
+                querySnapshot.forEach(d => {
+                    let data = d.data();
+                    let nomEmp = (data.nom || '').toLowerCase();
+                    let idEmp = (data.idEmploye || '').toLowerCase();
 
-            let resultats = Array.from(interventionsMap.values());
-            resultats.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            if (resultats.length === 0) {
-                contenu.innerHTML = "<p class='text-muted fs-5'>Aucune intervention trouvée pour cet employé.</p>";
-                return;
-            }
-
-            let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Type</th><th>Description</th><th>Prochaine intervention</th><th>Statut</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
-            resultats.forEach(data => {
-                let actionBtn = data.statut === "Ouvert" 
-                    ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
-                    : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`;
-                
-                let statutBadge = data.statut === "Ouvert" 
-                    ? `<span class="badge bg-info text-dark">Ouvert</span>` 
-                    : `<span class="badge bg-secondary">Fermé</span>`;
-
-                let detailsType = data.typeIntervention || 'N/A';
-                if (data.typeIntervention === 'SST') {
-                    if (data.graviteSst) {
-                        let badgeGravite = data.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
-                        detailsType += ` <span class="badge ${badgeGravite}">${data.graviteSst}</span>`;
+                    // Vérifie si le texte saisi est contenu dans le nom ou l'ID (partiel & insensible à la casse)
+                    if (nomEmp.includes(critere) || idEmp.includes(critere)) {
+                        interventionsMap.set(d.id, { id: d.id, ...data });
                     }
-                    if (data.categoriesSst && data.categoriesSst.length > 0) {
-                        detailsType += `<br><small class="text-muted">${data.categoriesSst.join(', ')}</small>`;
-                    }
+                });
+
+                let resultats = Array.from(interventionsMap.values());
+                resultats.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-muted fs-5'>Aucune intervention trouvée pour cet employé.</p>";
+                    return;
                 }
 
-                html += `<tr><td>${data.date}</td><td>${data.idEmploye}</td><td>${data.nom}</td><td>${data.anciennete || 'N/A'}</td><td><span class="badge bg-secondary">${detailsType}</span></td><td>${data.description}</td><td>Dans ${data.prochainRdvJours} jours</td><td>${statutBadge}</td><td>${data.superviseurEmail}</td><td>${actionBtn}</td></tr>`;
-            });
-            html += `</tbody></table></div>`;
-            contenu.innerHTML = html;
+                let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Type</th><th>Description</th><th>Prochaine intervention</th><th>Statut</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
+                
+                resultats.forEach(data => {
+                    let actionBtn = data.statut === "Ouvert" 
+                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
+                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`;
+                    
+                    let statutBadge = data.statut === "Ouvert" 
+                        ? `<span class="badge bg-info text-dark">Ouvert</span>` 
+                        : `<span class="badge bg-secondary">Fermé</span>`;
+
+                    let detailsType = data.typeIntervention || 'N/A';
+                    if (data.typeIntervention === 'SST') {
+                        if (data.graviteSst) {
+                            let badgeGravite = data.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                            detailsType += ` <span class="badge ${badgeGravite}">${data.graviteSst}</span>`;
+                        }
+                        if (data.categoriesSst && data.categoriesSst.length > 0) {
+                            detailsType += `<br><small class="text-muted">${data.categoriesSst.join(', ')}</small>`;
+                        }
+                    }
+
+                    html += `<tr><td>${data.date}</td><td>${data.idEmploye}</td><td>${data.nom}</td><td>${data.anciennete || 'N/A'}</td><td><span class="badge bg-secondary">${detailsType}</span></td><td>${data.description}</td><td>Dans ${data.prochainRdvJours} jours</td><td>${statutBadge}</td><td>${data.superviseurEmail}</td><td>${actionBtn}</td></tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la recherche :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors de la recherche des données.</p>";
+            }
         };
     </script>
 </body>
 </html>
+```[cite: 1]
