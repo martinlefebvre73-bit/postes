@@ -44,10 +44,56 @@
         /* Style pour des boutons de grandeur égale */
         .btn-menu-egal {
             flex: 1;
-            min-width: 220px;
-            padding: 15px;
-            font-size: 1.1rem;
+            min-width: 180px;
+            padding: 12px;
+            font-size: 1rem;
             font-weight: 600;
+        }
+
+        /* --- CONFIGURATION DE L'IMPRESSION --- */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            /* Masquer l'accueil, les statistiques, le menu et le bouton d'impression lui-même */
+            #vue-accueil, .btn, form, h1 {
+                display: none !important;
+            }
+            /* Afficher uniquement la zone de rapport active */
+            #zone-affichage {
+                display: block !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #zone-affichage h3 {
+                color: #000000 !important;
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+            /* Adapter les tableaux pour l'impression sur papier */
+            .table {
+                color: #000000 !important;
+                border-color: #000000 !important;
+            }
+            .table-striped > tbody > tr:nth-of-type(odd) {
+                background-color: rgba(0, 0, 0, 0.05) !important;
+                color: #000000 !important;
+            }
+            .table-bordered td, .table-bordered th {
+                border-color: #000000 !important;
+            }
+            .text-danger {
+                color: #dc3545 !important;
+                font-weight: bold;
+            }
+            .text-info {
+                color: #0d6efd !important;
+            }
         }
     </style>
 </head>
@@ -66,13 +112,15 @@
                     <table class="table table-bordered text-center align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th class="py-3 fs-5">Cas Ouverts</th>
+                                <th class="py-3 fs-5">Dossiers Ouverts</th>
+                                <th class="py-3 fs-5">Nombre d'Interventions</th>
                                 <th class="py-3 fs-5">Cas en Retard</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="py-4 fs-3 fw-bold text-info" id="kpi-ouverts">Chargement...</td>
+                                <td class="py-4 fs-3 fw-bold text-success" id="kpi-dossiers-ouverts">Chargement...</td>
+                                <td class="py-4 fs-3 fw-bold text-info" id="kpi-interventions">Chargement...</td>
                                 <td class="py-4 fs-3 fw-bold text-danger" id="kpi-retard">Chargement...</td>
                             </tr>
                         </tbody>
@@ -82,21 +130,23 @@
 
             <!-- BOUTONS DE NAVIGATION DE GRANDEUR ÉGALE -->
             <div class="card shadow-lg p-4 text-center">
-                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Saisie intervention</button>
                     <button class="btn btn-warning btn-menu-egal text-dark" onclick="afficherRetards()">Retard</button>
+                    <button class="btn btn-secondary btn-menu-egal text-light" onclick="afficherSuivisSemaine()">Semaine en cours</button>
+                    <button class="btn btn-success btn-menu-egal" onclick="genererRapportOuverts()">Rapport Ouverts</button>
                     <button class="btn btn-info btn-menu-egal text-dark" onclick="ouvrirModalRecherche()">Recherche</button>
                 </div>
             </div>
+        </div>
 
-            <!-- ZONE D'AFFICHAGE DYNAMIQUE (Pour les Retards ou la Recherche) -->
-            <div id="zone-affichage" class="card shadow-sm p-4 mt-4 d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 id="titre-zone" class="m-0"></h3>
-                    <button class="btn btn-outline-light btn-sm" onclick="retourAccueil()">Fermer / Retour</button>
-                </div>
-                <div id="contenu-zone"></div>
+        <!-- ZONE D'AFFICHAGE DYNAMIQUE (Rapports imprimables) -->
+        <div id="zone-affichage" class="card shadow-sm p-4 mt-4 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 id="titre-zone" class="m-0"></h3>
+                <button class="btn btn-outline-light btn-sm" onclick="retourAccueil()">Fermer / Retour</button>
             </div>
+            <div id="contenu-zone"></div>
         </div>
 
         <!-- VUE PAGE COMPLÈTE : SAISIE INTERVENTION -->
@@ -193,7 +243,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -218,7 +268,7 @@
             document.getElementById('vue-saisie').classList.add('d-none');
             document.getElementById('zone-affichage').classList.add('d-none');
             document.getElementById('vue-accueil').classList.remove('d-none');
-            chargerStatistiques(); // Rafraîchir les stats au retour
+            chargerStatistiques(); 
         };
 
         window.ouvrirModalRecherche = () => new bootstrap.Modal(document.getElementById('modalRecherche')).show();
@@ -230,40 +280,74 @@
             await chargerSuperviseurs();
         };
 
-        // Calcul et affichage du nombre de cas ouverts et en retard
+        // Calcul et affichage des statistiques basées sur la dernière intervention par employé
         window.chargerStatistiques = async () => {
             try {
                 const querySnapshot = await getDocs(collection(db, "interventions"));
-                let ouverts = 0;
-                let enRetard = 0;
+                let totalInterventions = 0;
+                let dossiersMap = new Map();
                 const aujourdHui = new Date().toISOString().split('T')[0];
 
-                querySnapshot.forEach((doc) => {
-                    let data = doc.data();
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    totalInterventions++;
+
                     if (data.statut === "Ouvert") {
-                        ouverts++;
-                        if (data.dateEcheance < aujourdHui) {
-                            enRetard++;
+                        let idEmp = data.idEmploye || data.nom;
+                        let dateCourante = new Date(data.date);
+
+                        if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
+                            dossiersMap.set(idEmp, {
+                                idDoc: docSnap.id,
+                                ...data
+                            });
                         }
                     }
                 });
 
-                document.getElementById('kpi-ouverts').textContent = ouverts;
-                document.getElementById('kpi-retard').textContent = enRetard;
+                let dossiersOuverts = dossiersMap.size;
+                let casRetard = 0;
+
+                dossiersMap.forEach((item) => {
+                    if (item.dateEcheance && item.dateEcheance < aujourdHui) {
+                        casRetard++;
+                    }
+                });
+
+                document.getElementById('kpi-dossiers-ouverts').textContent = dossiersOuverts;
+                document.getElementById('kpi-interventions').textContent = totalInterventions;
+                document.getElementById('kpi-retard').textContent = casRetard;
             } catch (e) {
                 console.error("Erreur lors du calcul des statistiques :", e);
-                document.getElementById('kpi-ouverts').textContent = "Erreur";
+                document.getElementById('kpi-dossiers-ouverts').textContent = "Erreur";
+                document.getElementById('kpi-interventions').textContent = "Erreur";
                 document.getElementById('kpi-retard').textContent = "Erreur";
             }
         };
 
+        // Chargement des employés triés par ordre alphabétique
         window.chargerEmployes = async () => {
             const selectEmp = document.getElementById('nomEmploye');
             try {
                 const querySnapshot = await getDocs(collection(db, "employes"));
                 selectEmp.innerHTML = '<option value="">-- Choisir un employé --</option>';
+                
+                let employes = [];
                 querySnapshot.forEach((doc) => {
-                    let emp = doc.data();
+                    employes.push(doc.data());
+                });
+
+                employes.sort((a, b) => {
+                    let nomA = (a.nom || '').toLowerCase();
+                    let nomB = (b.nom || '').toLowerCase();
+                    if (nomA < nomB) return -1;
+                    if (nomA > nomB) return 1;
+                    let prenomA = (a.prenom || '').toLowerCase();
+                    let prenomB = (b.prenom || '').toLowerCase();
+                    return prenomA.localeCompare(prenomB);
+                });
+
+                employes.forEach((emp) => {
                     let option = document.createElement('option');
                     let nomComplet = `${emp.nom || ''} ${emp.prenom || ''}`.trim();
                     let employeId = emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '');
@@ -353,6 +437,154 @@
             }
         });
 
+        // --- FERMER UN DOSSIER ---
+        window.fermerDossier = async (idDoc) => {
+            if (!confirm("Voulez-vous vraiment fermer ce dossier de suivi ?")) return;
+            try {
+                const docRef = doc(db, "interventions", idDoc);
+                await updateDoc(docRef, { statut: "Fermé" });
+                alert("Dossier fermé avec succès !");
+                retourAccueil();
+            } catch (e) {
+                console.error("Erreur lors de la fermeture du dossier :", e);
+                alert("Erreur lors de la fermeture du dossier.");
+            }
+        };
+
+        // --- SUIVIS DE LA SEMAINE EN COURS ---
+        window.afficherSuivisSemaine = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Suivis / Échéances de la Semaine en Cours";
+            contenu.innerHTML = "<p>Calcul des dates et chargement...</p>";
+
+            try {
+                const maintenant = new Date();
+                const jourSemaine = maintenant.getDay(); 
+                const distanceLundi = jourSemaine === 0 ? -6 : 1 - jourSemaine;
+                
+                const lundi = new Date(maintenant);
+                lundi.setDate(maintenant.getDate() + distanceLundi);
+                lundi.setHours(0, 0, 0, 0);
+
+                const dimanche = new Date(lundi);
+                dimanche.setDate(lundi.getDate() + 6);
+                dimanche.setHours(23, 59, 59, 999);
+
+                const q = query(collection(db, "interventions"), where("statut", "==", "Ouvert"));
+                const querySnapshot = await getDocs(q);
+                let resultats = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    if (data.dateEcheance) {
+                        let dateEch = new Date(data.dateEcheance + "T00:00:00");
+                        if (dateEch >= lundi && dateEch <= dimanche) {
+                            resultats.push({
+                                idDoc: docSnap.id,
+                                ...data
+                            });
+                        }
+                    }
+                });
+
+                resultats.sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun suivi ou échéance prévue pour cette semaine !</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                html += `<thead><tr><th>Échéance</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Dernière Description</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
+
+                resultats.forEach(item => {
+                    html += `<tr>
+                        <td class="text-warning fw-bold">${item.dateEcheance}</td>
+                        <td><strong>${item.nom}</strong></td>
+                        <td>${item.idEmploye}</td>
+                        <td>${item.anciennete || 'N/A'}</td>
+                        <td>${item.description || 'N/A'}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                        <td><button class="btn btn-sm btn-success" onclick="fermerDossier('${item.idDoc}')">Fermer</button></td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors du chargement des suivis de la semaine :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+
+        // --- RAPPORT DES DOSSIERS OUVERTS (AVEC DERNIER SUIVI) ---
+        window.genererRapportOuverts = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Rapport Global des Dossiers Ouverts (Dernier suivi)";
+            contenu.innerHTML = "<p>Génération du rapport en cours...</p>";
+
+            try {
+                const q = query(collection(db, "interventions"), where("statut", "==", "Ouvert"));
+                const querySnapshot = await getDocs(q);
+                let dossiersMap = new Map();
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let idEmp = data.idEmploye || data.nom;
+                    let dateCourante = new Date(data.date);
+
+                    if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
+                        dossiersMap.set(idEmp, {
+                            idDoc: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                let resultats = Array.from(dossiersMap.values());
+                resultats.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun dossier ouvert pour le moment !</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                html += `<thead><tr><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Date du Dernier Suivi</th><th>Description du Dernier Suivi</th><th>Échéance</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
+
+                resultats.forEach(item => {
+                    html += `<tr>
+                        <td><strong>${item.nom}</strong></td>
+                        <td>${item.idEmploye}</td>
+                        <td>${item.anciennete || 'N/A'}</td>
+                        <td>${item.date}</td>
+                        <td>${item.description || 'Aucune description'}</td>
+                        <td class="text-info">${item.dateEcheance}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                        <td><button class="btn btn-sm btn-success" onclick="fermerDossier('${item.idDoc}')">Fermer</button></td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la génération du rapport :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+
         // --- RETARDS ET COURRIEL ---
         window.afficherRetards = async () => {
             const zone = document.getElementById('zone-affichage');
@@ -361,39 +593,69 @@
             
             zone.classList.remove('d-none');
             titre.textContent = "Liste des suivis en retard";
-            contenu.innerHTML = "<p>Chargement...</p>";
+            contenu.innerHTML = "<p>Recherche des retards en cours...</p>";
 
             const aujourdHui = new Date().toISOString().split('T')[0];
-            const q = query(collection(db, "interventions"), where("dateEcheance", "<", aujourdHui), where("statut", "==", "Ouvert"));
             
-            const querySnapshot = await getDocs(q);
-            let html = `<div class="table-responsive"><table class="table table-striped table-bordered"><thead><tr><th>Date</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Échéance</th><th>Superviseur (Courriel)</th></tr></thead><tbody>`;
-            
-            let retardsParSuperviseur = {};
+            try {
+                const q = query(collection(db, "interventions"), where("statut", "==", "Ouvert"));
+                const querySnapshot = await getDocs(q);
+                
+                let dossiersMap = new Map();
 
-            querySnapshot.forEach((doc) => {
-                let data = doc.data();
-                let supEmail = data.superviseurEmail || "non-assigne@entreprise.com";
-                let ancienneteTxt = data.anciennete || 'N/A';
-                
-                html += `<tr><td>${data.date}</td><td>${data.nom}</td><td>${data.idEmploye}</td><td>${ancienneteTxt}</td><td class="text-danger fw-bold">${data.dateEcheance}</td><td>${supEmail}</td></tr>`;
-                
-                if (!retardsParSuperviseur[supEmail]) {
-                    retardsParSuperviseur[supEmail] = "";
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let idEmp = data.idEmploye || data.nom;
+                    let dateCourante = new Date(data.date);
+
+                    if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
+                        dossiersMap.set(idEmp, {
+                            idDoc: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                let retards = [];
+                let retardsParSuperviseur = {};
+
+                dossiersMap.forEach((item) => {
+                    if (item.dateEcheance && item.dateEcheance < aujourdHui) {
+                        let supEmail = item.superviseurEmail || "non-assigne@entreprise.com";
+                        let ancienneteTxt = item.anciennete || 'N/A';
+                        
+                        retards.push(item);
+
+                        if (!retardsParSuperviseur[supEmail]) {
+                            retardsParSuperviseur[supEmail] = "";
+                        }
+                        retardsParSuperviseur[supEmail] += `- Employé : ${item.nom} (ID: ${item.idEmploye}, Ancienneté: ${ancienneteTxt}), Échéance dépassée le : ${item.dateEcheance}%0A`;
+                    }
+                });
+
+                if (retards.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun fichier en retard</p>";
+                    return;
                 }
-                retardsParSuperviseur[supEmail] += `- Employé : ${data.nom} (ID: ${data.idEmploye}, Ancienneté: ${ancienneteTxt}), Échéance dépassée le : ${data.dateEcheance}%0A`;
-            });
 
-            html += `</tbody></table></div>`;
-            
-            if (querySnapshot.empty) {
-                contenu.innerHTML = "<p class='text-success fs-5'>Aucun retard détecté pour le moment !</p>";
-            } else {
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle"><thead><tr><th>Date</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Échéance</th><th>Superviseur (Courriel)</th><th>Action</th></tr></thead><tbody>`;
+                
+                retards.forEach(item => {
+                    html += `<tr><td>${item.date}</td><td>${item.nom}</td><td>${item.idEmploye}</td><td>${item.anciennete || 'N/A'}</td><td class="text-danger fw-bold">${item.dateEcheance}</td><td>${item.superviseurEmail || 'N/A'}</td><td><button class="btn btn-sm btn-success" onclick="fermerDossier('${item.idDoc}')">Fermer</button></td></tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                
                 html += `<h5 class="mt-4 text-light">Expédier les rapports aux superviseurs :</h5>`;
                 for (let [email, details] of Object.entries(retardsParSuperviseur)) {
                     html += `<button class="btn btn-danger m-1" onclick="window.location.href='mailto:${email}?subject=Rapport des retards de suivi&body=Voici vos dossiers en retard :%0A%0A${details}'">Envoyer à ${email}</button> `;
                 }
                 contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la récupération des retards :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des retards.</p>";
             }
         };
 
@@ -420,8 +682,8 @@
             const [snapNom, snapId] = await Promise.all([getDocs(qNom), getDocs(qId)]);
             
             let interventionsMap = new Map();
-            snapNom.forEach(d => interventionsMap.set(d.id, d.data()));
-            snapId.forEach(d => interventionsMap.set(d.id, d.data()));
+            snapNom.forEach(d => interventionsMap.set(d.id, { id: d.id, ...d.data() }));
+            snapId.forEach(d => interventionsMap.set(d.id, { id: d.id, ...d.data() }));
 
             let resultats = Array.from(interventionsMap.values());
             resultats.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -431,9 +693,17 @@
                 return;
             }
 
-            let html = `<div class="table-responsive"><table class="table table-bordered table-striped"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Description</th><th>Prochain RDV</th><th>Superviseur</th></tr></thead><tbody>`;
+            let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Description</th><th>Prochain RDV</th><th>Statut</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
             resultats.forEach(data => {
-                html += `<tr><td>${data.date}</td><td>${data.idEmploye}</td><td>${data.nom}</td><td>${data.anciennete || 'N/A'}</td><td>${data.description}</td><td>Dans ${data.prochainRdvJours} jours</td><td>${data.superviseurEmail}</td></tr>`;
+                let actionBtn = data.statut === "Ouvert" 
+                    ? `<button class="btn btn-sm btn-success" onclick="fermerDossier('${data.id}')">Fermer</button>` 
+                    : `<span class="badge bg-secondary">Clôturé</span>`;
+                
+                let statutBadge = data.statut === "Ouvert" 
+                    ? `<span class="badge bg-info text-dark">Ouvert</span>` 
+                    : `<span class="badge bg-secondary">Fermé</span>`;
+
+                html += `<tr><td>${data.date}</td><td>${data.idEmploye}</td><td>${data.nom}</td><td>${data.anciennete || 'N/A'}</td><td>${data.description}</td><td>Dans ${data.prochainRdvJours} jours</td><td>${statutBadge}</td><td>${data.superviseurEmail}</td><td>${actionBtn}</td></tr>`;
             });
             html += `</tbody></table></div>`;
             contenu.innerHTML = html;
