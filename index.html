@@ -20,6 +20,7 @@
     }
 
     .card {
+      position: relative;
       background: #1b263b;
       max-width: 420px;
       width: 100%;
@@ -28,17 +29,30 @@
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       border: 1px solid #415a77;
+      overflow: hidden; /* Empêche le filigrane de dépasser des bords arrondis */
     }
 
-    /* Style du logo placé en haut dans la carte */
-    .logo-container {
-      margin-bottom: 20px;
+    /* Style du logo en filigrane en arrière-plan de la carte */
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('poste.webp');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 60%;
+      opacity: 0.07; /* Ajustez la transparence ici (0.0 à 1.0) */
+      pointer-events: none; /* Permet de cliquer à travers le filigrane */
+      z-index: 0;
     }
-    .logo-container img {
-      max-width: 80%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
+
+    /* S'assure que le contenu reste au-dessus du filigrane */
+    .card > * {
+      position: relative;
+      z-index: 1;
     }
 
     h1, h2 {
@@ -90,18 +104,13 @@
 <body>
 
   <div class="card">
-    <!-- Logo en haut -->
-    <div class="logo-container">
-      <img src="poste.webp" alt="Logo Postes Canada">[cite: 4]
-    </div>
-
     <div class="menu" id="menuPrincipal">
       <h1>Menu principal</h1>
       <button onclick="location.href='casier 1.html'">Vérification casier</button>
       <button onclick="ouvrirDirectoire()">Directoire</button>
       <button class="btn-danger" onclick="location.href='Rapport.html'">Problème de livraison</button>
       <!-- Bouton Intervention SST pointant vers interventions.html -->
-      <button class="btn-success" onclick="location.href='interventions.html'">Intervention SST</button>[cite: 3]
+      <button class="btn-success" onclick="location.href='interventions.html'">Intervention SST</button>
     </div>
 
     <div class="menu" id="menuSecondaire">
