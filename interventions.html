@@ -182,17 +182,14 @@
             <div id="contenu-zone"></div>
         </div>
 
-        <!-- VUE PAGE COMPLÈTE : SAISIE / MODIFICATION INTERVENTION -->
+        <!-- VUE PAGE COMPLÈTE : SAISIE INTERVENTION -->
         <div id="vue-saisie" class="card shadow-lg p-5 d-none">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="text-light" id="titre-formulaire">Nouvelle Intervention</h2>
+                <h2 class="text-light">Nouvelle Intervention</h2>
                 <button class="btn btn-outline-light" onclick="retourAccueil()">← Retour au menu</button>
             </div>
             
             <form id="formIntervention">
-                <!-- Champ caché pour stocker l'ID du document en cas de modification -->
-                <input type="hidden" id="idDocumentModif" value="">
-
                 <div class="row">
                     <!-- Date -->
                     <div class="col-md-6 mb-3">
@@ -306,7 +303,7 @@
                 </div>
 
                 <div class="d-flex gap-3 mt-4">
-                    <button type="submit" class="btn btn-success btn-lg flex-grow-1" id="btnTexteSoumettre">Enregistrer l'intervention</button>
+                    <button type="submit" class="btn btn-success btn-lg flex-grow-1">Enregistrer l'intervention</button>
                     <button type="button" class="btn btn-secondary btn-lg" onclick="retourAccueil()">Annuler</button>
                 </div>
             </form>
@@ -332,11 +329,79 @@
         </div>
     </div>
 
+    <!-- MODAL : MODIFICATION D'UNE INTERVENTION -->
+    <div class="modal fade" id="modalModification" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">Modifier l'intervention</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formModifierIntervention">
+                        <input type="hidden" id="editIdDoc">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date de l'intervention</label>
+                                <input type="date" class="form-control" id="editDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Employé</label>
+                                <input type="text" class="form-control" id="editNom" readonly>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ID de l'employé</label>
+                                <input type="text" class="form-control" id="editIdEmploye" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ancienneté</label>
+                                <input type="text" class="form-control" id="editAnciennete" readonly>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Type d'intervention</label>
+                                <select class="form-select" id="editTypeIntervention" required>
+                                    <option value="Formation">Formation</option>
+                                    <option value="Observation">Observation</option>
+                                    <option value="Coaching">Coaching</option>
+                                    <option value="SST">SST</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" rows="4"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Délai prochaine intervention (jours)</label>
+                                <select class="form-select" id="editProchainRdv" required>
+                                    <option value="14">2 semaines</option>
+                                    <option value="28">4 semaines</option>
+                                    <option value="42">6 semaines</option>
+                                    <option value="84">12 semaines</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Superviseur responsable (Courriel)</label>
+                                <input type="text" class="form-control" id="editSuperviseur">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 text-dark fw-bold">Enregistrer les modifications</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -350,19 +415,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- CACHE GLOBAL POUR ÉVITER LES REQUÊTES RÉPÉTITIVES ---
-        let cacheInterventions = null;
-
         // --- GESTION DES VUES ---
         window.afficherPageSaisie = () => {
             document.getElementById('vue-accueil').classList.add('d-none');
             document.getElementById('vue-saisie').classList.remove('d-none');
-            
-            document.getElementById('formIntervention').reset();
-            document.getElementById('idDocumentModif').value = "";
-            document.getElementById('titre-formulaire').textContent = "Nouvelle Intervention";
-            document.getElementById('btnTexteSoumettre').textContent = "Enregistrer l'intervention";
-            
             document.getElementById('dateIntervention').valueAsDate = new Date();
             document.getElementById('blocSstOptions').classList.add('d-none');
         };
@@ -390,85 +446,75 @@
             }
         };
 
-        // --- CHARGEMENT INITIAL DES DONNÉES ET CACHE ---
+        // --- CHARGEMENT INITIAL DES DONNÉES ET STATISTIQUES ---
         window.initialiserDonnees = async () => {
-            await rafraichirCacheInterventions();
+            await chargerStatistiques();
             await chargerEmployes();
             await chargerSuperviseurs();
         };
 
-        // Fonction pour récupérer et stocker toutes les interventions en mémoire (Cache)
-        async function rafraichirCacheInterventions() {
+        // Calcul et affichage des statistiques (KPIs et compteurs par type d'intervention)
+        window.chargerStatistiques = async () => {
             try {
                 const querySnapshot = await getDocs(collection(db, "interventions"));
-                cacheInterventions = [];
+                let totalInterventions = 0;
+                let dossiersMap = new Map();
+                
+                let countCoaching = 0;
+                let countFormation = 0;
+                let countObservation = 0;
+                let countSst = 0;
+
+                const aujourdHui = new Date().toISOString().split('T')[0];
+
                 querySnapshot.forEach((docSnap) => {
-                    cacheInterventions.push({
-                        id: docSnap.id,
-                        ...docSnap.data()
-                    });
-                });
-                chargerStatistiquesDepuisCache();
-            } catch (e) {
-                console.error("Erreur lors du chargement du cache :", e);
-            }
-        }
+                    let data = docSnap.data();
+                    totalInterventions++;
 
-        // Calcul des statistiques instantanément depuis le cache en mémoire
-        window.chargerStatistiques = async () => {
-            if (!cacheInterventions) {
-                await rafraichirCacheInterventions();
-                return;
-            }
-            chargerStatistiquesDepuisCache();
-        };
+                    let type = (data.typeIntervention || '').trim().toLowerCase();
+                    if (type === 'coaching') countCoaching++;
+                    else if (type === 'formation') countFormation++;
+                    else if (type === 'observation') countObservation++;
+                    else if (type === 'sst') countSst++;
 
-        function chargerStatistiquesDepuisCache() {
-            let totalInterventions = cacheInterventions.length;
-            let dossiersMap = new Map();
-            
-            let countCoaching = 0;
-            let countFormation = 0;
-            let countObservation = 0;
-            let countSst = 0;
+                    if (data.statut === "Ouvert") {
+                        let idEmp = data.idEmploye || data.nom;
+                        let dateCourante = new Date(data.date);
 
-            const aujourdHui = new Date().toISOString().split('T')[0];
-
-            cacheInterventions.forEach((data) => {
-                let type = (data.typeIntervention || '').trim().toLowerCase();
-                if (type === 'coaching') countCoaching++;
-                else if (type === 'formation') countFormation++;
-                else if (type === 'observation') countObservation++;
-                else if (type === 'sst') countSst++;
-
-                if (data.statut === "Ouvert") {
-                    let idEmp = data.idEmploye || data.nom;
-                    let dateCourante = new Date(data.date);
-
-                    if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
-                        dossiersMap.set(idEmp, data);
+                        if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
+                            dossiersMap.set(idEmp, {
+                                idDoc: docSnap.id,
+                                ...data
+                            });
+                        }
                     }
-                }
-            });
+                });
 
-            let dossiersOuverts = dossiersMap.size;
-            let casRetard = 0;
+                let dossiersOuverts = dossiersMap.size;
+                let casRetard = 0;
 
-            dossiersMap.forEach((item) => {
-                if (item.dateEcheance && item.dateEcheance < aujourdHui) {
-                    casRetard++;
-                }
-            });
+                dossiersMap.forEach((item) => {
+                    if (item.dateEcheance && item.dateEcheance < aujourdHui) {
+                        casRetard++;
+                    }
+                });
 
-            document.getElementById('kpi-dossiers-ouverts').textContent = dossiersOuverts;
-            document.getElementById('kpi-interventions').textContent = totalInterventions;
-            document.getElementById('kpi-retard').textContent = casRetard;
+                document.getElementById('kpi-dossiers-ouverts').textContent = dossiersOuverts;
+                document.getElementById('kpi-interventions').textContent = totalInterventions;
+                document.getElementById('kpi-retard').textContent = casRetard;
 
-            document.getElementById('kpi-coaching').textContent = countCoaching;
-            document.getElementById('kpi-formation').textContent = countFormation;
-            document.getElementById('kpi-observation').textContent = countObservation;
-            document.getElementById('kpi-sst').textContent = countSst;
-        }
+                document.getElementById('kpi-coaching').textContent = countCoaching;
+                document.getElementById('kpi-formation').textContent = countFormation;
+                document.getElementById('kpi-observation').textContent = countObservation;
+                document.getElementById('kpi-sst').textContent = countSst;
+
+            } catch (e) {
+                console.error("Erreur lors du calcul des statistiques :", e);
+                document.getElementById('kpi-dossiers-ouverts').textContent = "Erreur";
+                document.getElementById('kpi-interventions').textContent = "Erreur";
+                document.getElementById('kpi-retard').textContent = "Erreur";
+            }
+        };
 
         // Chargement des employés triés par ordre alphabétique
         window.chargerEmployes = async () => {
@@ -494,14 +540,14 @@
 
                 employes.forEach((emp) => {
                     let option = document.createElement('option');
-                    let nomComplet = `${emp.nom \vert{}\vert{} ''}${emp.prenom || ''}`.trim();
+                    let nomComplet = `${emp.nom || ''} ${emp.prenom || ''}`.trim();
                     let employeId = emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '');
                     
                     option.value = nomComplet; 
                     option.dataset.id = employeId; 
                     option.dataset.anciennete = emp.anciennete || 'Non spécifiée';
                     
-                    option.textContent = `${emp.nom || ''}, ${emp.prenom \vert{}\vert{} ''} (ID:${employeId})`;
+                    option.textContent = `${emp.nom || ''}, ${emp.prenom || ''} (ID: ${employeId})`;
                     selectEmp.appendChild(option);
                 });
             } catch (e) {
@@ -524,7 +570,7 @@
                     let sup = doc.data();
                     let option = document.createElement('option');
                     option.value = sup.courriel || sup.email || ''; 
-                    option.textContent = `${sup.nom \vert{}\vert{} 'Sans nom'} (${sup.courriel || sup.email || ''})`;
+                    option.textContent = `${sup.nom || 'Sans nom'} (${sup.courriel || sup.email || ''})`;
                     selectSup.appendChild(option);
                 });
             } catch (e) {
@@ -547,10 +593,9 @@
             reconnaissance.start();
         };
 
-        // --- ENREGISTREMENT OU MISE À JOUR (AVEC MISE À JOUR DU CACHE) ---
+        // --- ENREGISTREMENT ---
         document.getElementById('formIntervention').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const idDocModif = document.getElementById('idDocumentModif').value;
             const dateStr = document.getElementById('dateIntervention').value;
             const delaiJours = parseInt(document.getElementById('prochainRdv').value);
             const typeInterv = document.getElementById('typeIntervention').value;
@@ -571,7 +616,7 @@
                 if (document.getElementById('sstAutre').checked) categoriesSst.push('Autre');
             }
 
-            const donneesIntervention = {
+            const nouvelleIntervention = {
                 date: dateStr,
                 nom: selectedOption.value,
                 idEmploye: document.getElementById('idEmploye').value,
@@ -583,82 +628,19 @@
                 prochainRdvJours: delaiJours,
                 dateEcheance: dateEcheance.toISOString().split('T')[0],
                 superviseurEmail: document.getElementById('superviseur').value,
+                statut: "Ouvert"
             };
 
             try {
-                if (idDocModif) {
-                    const docRef = doc(db, "interventions", idDocModif);
-                    await updateDoc(docRef, donneesIntervention);
-                    alert("Intervention modifiée avec succès !");
-                } else {
-                    donneesIntervention.statut = "Ouvert";
-                    await addDoc(collection(db, "interventions"), donneesIntervention);
-                    alert("Intervention enregistrée avec succès !");
-                }
-
-                // Actualiser immédiatement le cache local sans refaire un appel réseau lourd
-                await rafraichirCacheInterventions();
-
+                await addDoc(collection(db, "interventions"), nouvelleIntervention);
+                alert("Intervention enregistrée avec succès !");
                 document.getElementById('formIntervention').reset();
                 retourAccueil();
             } catch (erreur) {
                 console.error("Erreur : ", erreur);
-                alert("Erreur lors de l'enregistrement ou de la modification.");
+                alert("Erreur lors de l'enregistrement.");
             }
         });
-
-        // --- CHARGER UNE FICHE DANS LE FORMULAIRE POUR MODIFICATION ---
-        window.chargerFichePourModification = (
-            idDoc, date, nomEmp, idEmp, anciennete, typeInterv, 
-            graviteSst, catSstString, description, prochainRdv, superviseurEmail
-        ) => {
-            document.getElementById('vue-accueil').classList.add('d-none');
-            document.getElementById('zone-affichage').classList.add('d-none');
-            document.getElementById('vue-saisie').classList.remove('d-none');
-
-            document.getElementById('titre-formulaire').textContent = "Modifier l'intervention";
-            document.getElementById('btnTexteSoumettre').textContent = "Mettre à jour l'intervention";
-            document.getElementById('idDocumentModif').value = idDoc;
-
-            document.getElementById('dateIntervention').value = date;
-            document.getElementById('idEmploye').value = idEmp;
-            document.getElementById('ancienneteEmploye').value = anciennete;
-            document.getElementById('typeIntervention').value = typeInterv;
-            document.getElementById('description').value = description;
-            document.getElementById('prochainRdv').value = prochainRdv;
-
-            const selectEmp = document.getElementById('nomEmploye');
-            for (let i = 0; i < selectEmp.options.length; i++) {
-                if (selectEmp.options[i].value === nomEmp) {
-                    selectEmp.selectedIndex = i;
-                    break;
-                }
-            }
-
-            const selectSup = document.getElementById('superviseur');
-            for (let i = 0; i < selectSup.options.length; i++) {
-                if (selectSup.options[i].value === superviseurEmail) {
-                    selectSup.selectedIndex = i;
-                    break;
-                }
-            }
-
-            const blocSst = document.getElementById('blocSstOptions');
-            if (typeInterv === 'SST') {
-                blocSst.classList.remove('d-none');
-                if (graviteSst === 'Majeur') {
-                    document.getElementById('sstMajeur').checked = true;
-                } else {
-                    document.getElementById('sstMineur').checked = true;
-                }
-
-                document.getElementById('sstChuteGlissade').checked = catSstString.includes('Chute et Glissade');
-                document.getElementById('sstDistraction').checked = catSstString.includes('Distraction');
-                document.getElementById('sstAutre').checked = catSstString.includes('Autre');
-            } else {
-                blocSst.classList.add('d-none');
-            }
-        };
 
         // --- BASCULER STATUT DOSSIER (FERMER / ROUVRIR) ---
         window.basculerStatutDossier = async (idDoc, nouveauStatut) => {
@@ -670,7 +652,6 @@
             try {
                 const docRef = doc(db, "interventions", idDoc);
                 await updateDoc(docRef, { statut: nouveauStatut });
-                await rafraichirCacheInterventions();
                 alert(`Dossier ${nouveauStatut === "Fermé" ? "fermé" : "rouvert"} avec succès !`);
                 retourAccueil();
             } catch (e) {
@@ -679,7 +660,604 @@
             }
         };
 
-        // --- RECHERCHE INSTANTANÉE DEPUIS LE CACHE MÉMOIRE ---
+        // --- OUVRIR LA MODAL DE MODIFICATION AVEC LES DONNÉES ---
+        window.preparerModification = (id, date, nom, idEmploye, anciennete, typeIntervention, description, prochainRdvJours, superviseurEmail) => {
+            document.getElementById('editIdDoc').value = id;
+            document.getElementById('editDate').value = date;
+            document.getElementById('editNom').value = nom;
+            document.getElementById('editIdEmploye').value = idEmploye;
+            document.getElementById('editAnciennete').value = anciennete;
+            document.getElementById('editTypeIntervention').value = typeIntervention;
+            document.getElementById('editDescription').value = description;
+            document.getElementById('editProchainRdv').value = prochainRdvJours || 14;
+            document.getElementById('editSuperviseur').value = superviseurEmail;
+
+            new bootstrap.Modal(document.getElementById('modalModification')).show();
+        };
+
+        // --- SOUMISSION DE LA MODIFICATION ---
+        document.getElementById('formModifierIntervention').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idDoc = document.getElementById('editIdDoc').value;
+            const dateStr = document.getElementById('editDate').value;
+            const delaiJours = parseInt(document.getElementById('editProchainRdv').value);
+            
+            let dateEcheance = new Date(dateStr);
+            dateEcheance.setDate(dateEcheance.getDate() + delaiJours);
+
+            const champsMisAJour = {
+                date: dateStr,
+                typeIntervention: document.getElementById('editTypeIntervention').value,
+                description: document.getElementById('editDescription').value,
+                prochainRdvJours: delaiJours,
+                dateEcheance: dateEcheance.toISOString().split('T')[0],
+                superviseurEmail: document.getElementById('editSuperviseur').value
+            };
+
+            try {
+                const docRef = doc(db, "interventions", idDoc);
+                await updateDoc(docRef, champsMisAJour);
+                alert("Intervention modifiée avec succès !");
+                bootstrap.Modal.getInstance(document.getElementById('modalModification')).hide();
+                retourAccueil();
+            } catch (erreur) {
+                console.error("Erreur lors de la modification :", erreur);
+                alert("Erreur lors de la mise à jour de l'intervention.");
+            }
+        });
+
+        // --- RAPPORT PAR TYPE D'INTERVENTION ---
+        window.afficherSelecteurRapportType = () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const containerSelect = document.getElementById('select-type-container');
+            const contenu = document.getElementById('contenu-zone');
+
+            zone.classList.remove('d-none');
+            titre.textContent = "Rapport par Type d'Intervention";
+            contenu.innerHTML = "<p class='text-muted'>Veuillez sélectionner les critères de recherche ci-dessous.</p>";
+
+            containerSelect.innerHTML = `
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label text-light">Type d'intervention :</label>
+                        <select class="form-select" id="choixTypeRapport" onchange="chargerRapportParType()">
+                            <option value="">-- Choisir un type --</option>
+                            <option value="Toutes">Toutes</option>
+                            <option value="Coaching">Coaching</option>
+                            <option value="Formation">Formation</option>
+                            <option value="Observation">Observation</option>
+                            <option value="SST">SST</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-light">Ancienneté :</label>
+                        <select class="form-select" id="filtreAncienneteType" onchange="chargerRapportParType()">
+                            <option value="">-- Toutes --</option>
+                            <option value="1 ans">1 ans</option>
+                            <option value="2 ans">2 ans</option>
+                            <option value="3 ans">3 ans</option>
+                            <option value="4 ans">4 ans</option>
+                            <option value="5 ans">5 ans</option>
+                            <option value="10 ans">10 ans</option>
+                            <option value="15 ans">15 ans</option>
+                            <option value="20 ans">20 ans</option>
+                            <option value="25 ans">25 ans</option>
+                            <option value="30ans et plus">30ans et plus</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-light">Gravité SST (si applicable) :</label>
+                        <select class="form-select" id="filtreGraviteType" onchange="chargerRapportParType()">
+                            <option value="">-- Toutes --</option>
+                            <option value="Mineur">Mineur</option>
+                            <option value="Majeur">Majeur</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-light w-100" onclick="document.getElementById('choixTypeRapport').value=''; document.getElementById('filtreAncienneteType').value=''; document.getElementById('filtreGraviteType').value=''; chargerRapportParType();">Réinitialiser</button>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.chargerRapportParType = async () => {
+            const typeChoisi = document.getElementById('choixTypeRapport').value;
+            const filtreAnciennete = document.getElementById('filtreAncienneteType').value.trim().toLowerCase();
+            const filtreGravite = document.getElementById('filtreGraviteType').value.trim().toLowerCase();
+            const contenu = document.getElementById('contenu-zone');
+
+            if (!typeChoisi && !filtreAnciennete && !filtreGravite) {
+                contenu.innerHTML = "<p class='text-muted'>Veuillez sélectionner au moins un critère de filtre.</p>";
+                return;
+            }
+
+            contenu.innerHTML = "<p>Génération du rapport en cours...</p>";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "interventions"));
+                let resultats = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let matchType = !typeChoisi || typeChoisi === "Toutes" || (data.typeIntervention || '').trim().toLowerCase() === typeChoisi.toLowerCase();
+                    let matchAnciennete = !filtreAnciennete || (data.anciennete || '').toLowerCase().includes(filtreAnciennete);
+                    
+                    let matchGravite = true;
+                    if (filtreGravite) {
+                        matchGravite = (data.graviteSst || '').trim().toLowerCase() === filtreGravite;
+                    }
+
+                    if (matchType && matchAnciennete && matchGravite) {
+                        resultats.push({
+                            idDoc: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                resultats.sort((a, b) => {
+                    let compNom = (a.nom || '').localeCompare(b.nom || '');
+                    if (compNom !== 0) return compNom;
+                    return new Date(b.date) - new Date(a.date);
+                });
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = `<p class='text-warning fs-5'>Aucune intervention ne correspond aux critères sélectionnés.</p>`;
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                html += `<thead><tr><th>Date</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Type / Détails SST</th><th>Description</th><th>Statut</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
+
+                resultats.forEach(item => {
+                    let statutBadge = item.statut === "Ouvert" 
+                        ? `<span class="badge bg-info text-dark">Ouvert</span>` 
+                        : `<span class="badge bg-secondary">Fermé</span>`;
+
+                    let actionBtn = item.statut === "Ouvert"
+                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                    let detailsType = item.typeIntervention || 'N/A';
+                    if (item.typeIntervention === 'SST') {
+                        if (item.graviteSst) {
+                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                        }
+                        if (item.categoriesSst && item.categoriesSst.length > 0) {
+                            detailsType += `<br><small class="text-muted">Catégories: ${item.categoriesSst.join(', ')}</small>`;
+                        }
+                    }
+
+                    html += `<tr>
+                        <td>${item.date}</td>
+                        <td><strong>${item.nom}</strong></td>
+                        <td>${item.idEmploye}</td>
+                        <td>${item.anciennete || 'N/A'}</td>
+                        <td>${detailsType}</td>
+                        <td>${item.description || 'N/A'}</td>
+                        <td>${statutBadge}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                        <td>${actionBtn}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur chargement rapport par type :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+
+        // --- ANALYSE DES RISQUES SST ---
+        window.afficherRapportRisque = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const containerSelect = document.getElementById('select-type-container');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Analyse des Employés à Risque (Incidents SST)";
+            containerSelect.innerHTML = "";
+            contenu.innerHTML = "<p>Analyse des incidents SST en cours...</p>";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "interventions"));
+                let sstParEmploye = {};
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let type = (data.typeIntervention || '').trim().toLowerCase();
+                    
+                    if (type === 'sst') {
+                        let idEmp = data.idEmploye || data.nom;
+                        if (!sstParEmploye[idEmp]) {
+                            sstParEmploye[idEmp] = {
+                                nom: data.nom || 'Inconnu',
+                                idEmploye: data.idEmploye || 'N/A',
+                                anciennete: data.anciennete || 'N/A',
+                                incidents: []
+                            };
+                        }
+                        sstParEmploye[idEmp].incidents.push({
+                            date: data.date,
+                            gravite: data.graviteSst || 'Mineur',
+                            categories: data.categoriesSst || [],
+                            description: data.description || 'N/A',
+                            dateObj: new Date(data.date)
+                        });
+                    }
+                });
+
+                let profilsRisque = [];
+
+                for (let idEmp in sstParEmploye) {
+                    let empData = sstParEmploye[idEmp];
+                    empData.incidents.sort((a, b) => a.dateObj - b.dateObj);
+
+                    let nbIncidents = empData.incidents.length;
+                    let motifsRisque = [];
+
+                    if (nbIncidents >= 2) {
+                        let premierIncident = empData.incidents[0].dateObj;
+                        let dernierIncident = empData.incidents[nbIncidents - 1].dateObj;
+                        let diffJoursGlobal = (dernierIncident - premierIncident) / (1000 * 60 * 60 * 24);
+                        
+                        let groupeCourt = false;
+                        for (let i = 0; i < empData.incidents.length - 1; i++) {
+                            let diff = (empData.incidents[i+1].dateObj - empData.incidents[i].dateObj) / (1000 * 60 * 60 * 24);
+                            if (diff <= 90) {
+                                groupeCourt = true;
+                                break;
+                            }
+                        }
+
+                        if (groupeCourt || (diffJoursGlobal <= 90 && nbIncidents >= 2)) {
+                            motifsRisque.push(`⚠️ Fréquence rapprochée (${nbIncidents} incidents en 90 jours ou moins)`);
+                        }
+                    }
+
+                    let datesAnniversaire = false;
+                    for (let i = 0; i < empData.incidents.length; i++) {
+                        for (let j = i + 1; j < empData.incidents.length; j++) {
+                            let d1 = empData.incidents[i].dateObj;
+                            let d2 = empData.incidents[j].dateObj;
+                            if (d1.getFullYear() !== d2.getFullYear()) {
+                                let m1 = d1.getMonth(), day1 = d1.getDate();
+                                let m2 = d2.getMonth(), day2 = d2.getDate();
+                                let dateRef1 = new Date(2000, m1, day1);
+                                let dateRef2 = new Date(2000, m2, day2);
+                                let diffJoursAnnee = Math.abs((dateRef1 - dateRef2) / (1000 * 60 * 60 * 24));
+                                if (diffJoursAnnee <= 15 || diffJoursAnnee >= 350) {
+                                    datesAnniversaire = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (datesAnniversaire) break;
+                    }
+
+                    if (datesAnniversaire) {
+                        motifsRisque.push(`🔄 Récurrence saisonnière/annuelle (incidents aux mêmes dates d'une année à l'autre)`);
+                    }
+
+                    if (nbIncidents >= 2 || motifsRisque.length > 0) {
+                        profilsRisque.push({
+                            ...empData,
+                            nbIncidents: nbIncidents,
+                            motifs: motifsRisque.length > 0 ? motifsRisque.join('<br>') : `Suivi standard (${nbIncidents} incidents SST)`
+                        });
+                    }
+                }
+
+                profilsRisque.sort((a, b) => {
+                    if (b.nbIncidents !== a.nbIncidents) {
+                        return b.nbIncidents - a.nbIncidents;
+                    }
+                    return (b.anciennete || '').localeCompare(a.anciennete || '');
+                });
+
+                if (profilsRisque.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun employé identifié comme étant à risque élevé selon les critères SST actuels.</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                html += `<thead><tr><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Nombre d'incidents SST</th><th>Facteurs de Risque Identifiés</th><th>Détails des Dates, Gravité & Catégories</th></tr></thead><tbody>`;
+
+                profilsRisque.forEach(item => {
+                    let listeDates = item.incidents.map(inc => {
+                        let badgeColor = inc.gravite === 'Majeur' ? 'text-danger fw-bold' : 'text-warning';
+                        let catTxt = inc.categories && inc.categories.length > 0 ? ` [${inc.categories.join(', ')}]` : '';
+                        return `<small>${inc.date} - <span class="${badgeColor}">[${inc.gravite}]</span>${catTxt} : ${inc.description}</small>`;
+                    }).join('<br>');
+
+                    html += `<tr>
+                        <td><strong>${item.nom}</strong></td>
+                        <td>${item.idEmploye}</td>
+                        <td>${item.anciennete}</td>
+                        <td class="text-center fw-bold text-danger fs-5">${item.nbIncidents}</td>
+                        <td><span class="text-warning">${item.motifs}</span></td>
+                        <td>${listeDates}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de l'analyse des risques :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du calcul de l'analyse des risques.</p>";
+            }
+        };
+
+        // --- SUIVIS DE LA SEMAINE EN COURS ---
+        window.afficherSuivisSemaine = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const containerSelect = document.getElementById('select-type-container');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Suivis / Échéances de la Semaine en Cours";
+            containerSelect.innerHTML = ""; 
+            contenu.innerHTML = "<p>Calcul des dates et chargement...</p>";
+
+            try {
+                const maintenant = new Date();
+                const jourSemaine = maintenant.getDay(); 
+                const distanceLundi = jourSemaine === 0 ? -6 : 1 - jourSemaine;
+                
+                const lundi = new Date(maintenant);
+                lundi.setDate(maintenant.getDate() + distanceLundi);
+                lundi.setHours(0, 0, 0, 0);
+
+                const dimanche = new Date(lundi);
+                dimanche.setDate(lundi.getDate() + 6);
+                dimanche.setHours(23, 59, 59, 999);
+
+                const q = query(collection(db, "interventions"), where("statut", "==", "Ouvert"));
+                const querySnapshot = await getDocs(q);
+                let resultats = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    if (data.dateEcheance) {
+                        let dateEch = new Date(data.dateEcheance + "T00:00:00");
+                        if (dateEch >= lundi && dateEch <= dimanche) {
+                            resultats.push({
+                                idDoc: docSnap.id,
+                                ...data
+                            });
+                        }
+                    }
+                });
+
+                resultats.sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun suivi ou échéance prévue pour cette semaine !</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                html += `<thead><tr><th>Échéance</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Type</th><th>Dernière Description</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
+
+                resultats.forEach(item => {
+                    let detailsType = item.typeIntervention || 'N/A';
+                    if (item.typeIntervention === 'SST') {
+                        if (item.graviteSst) {
+                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                        }
+                        if (item.categoriesSst && item.categoriesSst.length > 0) {
+                            detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
+                        }
+                    }
+
+                    let actionBtn = item.statut === "Ouvert"
+                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                    html += `<tr>
+                        <td class="text-warning fw-bold">${item.dateEcheance}</td>
+                        <td><strong>${item.nom}</strong></td>
+                        <td>${item.idEmploye}</td>
+                        <td>${item.anciennete || 'N/A'}</td>
+                        <td><span class="badge bg-secondary">${detailsType}</span></td>
+                        <td>${item.description || 'N/A'}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                        <td>${actionBtn}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors du chargement des suivis de la semaine :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+
+        // --- RAPPORT DES DOSSIERS OUVERTS ---
+        window.genererRapportOuverts = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const containerSelect = document.getElementById('select-type-container');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Rapport Global des Dossiers Ouverts (Dernier suivi)";
+            containerSelect.innerHTML = "";
+            contenu.innerHTML = "<p>Génération du rapport en cours...</p>";
+
+            try {
+                const q = query(collection(db, "interventions"), where("statut", "==", "Ouvert"));
+                const querySnapshot = await getDocs(q);
+                let dossiersMap = new Map();
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let idEmp = data.idEmploye || data.nom;
+                    let dateCourante = new Date(data.date);
+
+                    if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
+                        dossiersMap.set(idEmp, {
+                            idDoc: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                let resultats = Array.from(dossiersMap.values());
+                resultats.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun dossier ouvert pour le moment !</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                html += `<thead><tr><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Date du Dernier Suivi</th><th>Type</th><th>Description du Dernier Suivi</th><th>Échéance</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
+
+                resultats.forEach(item => {
+                    let detailsType = item.typeIntervention || 'N/A';
+                    if (item.typeIntervention === 'SST') {
+                        if (item.graviteSst) {
+                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                        }
+                        if (item.categoriesSst && item.categoriesSst.length > 0) {
+                            detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
+                        }
+                    }
+
+                    let actionBtn = item.statut === "Ouvert"
+                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                    html += `<tr>
+                        <td><strong>${item.nom}</strong></td>
+                        <td>${item.idEmploye}</td>
+                        <td>${item.anciennete || 'N/A'}</td>
+                        <td>${item.date}</td>
+                        <td><span class="badge bg-secondary">${detailsType}</span></td>
+                        <td>${item.description || 'Aucune description'}</td>
+                        <td class="text-info">${item.dateEcheance}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                        <td>${actionBtn}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la génération du rapport :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+
+        // --- RETARDS ET COURRIEL ---
+        window.afficherRetards = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const containerSelect = document.getElementById('select-type-container');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Liste des suivis en retard";
+            containerSelect.innerHTML = "";
+            contenu.innerHTML = "<p>Recherche des retards en cours...</p>";
+
+            const aujourdHui = new Date().toISOString().split('T')[0];
+            
+            try {
+                const q = query(collection(db, "interventions"), where("statut", "==", "Ouvert"));
+                const querySnapshot = await getDocs(q);
+                
+                let dossiersMap = new Map();
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let idEmp = data.idEmploye || data.nom;
+                    let dateCourante = new Date(data.date);
+
+                    if (!dossiersMap.has(idEmp) || dateCourante > new Date(dossiersMap.get(idEmp).date)) {
+                        dossiersMap.set(idEmp, {
+                            idDoc: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                let retards = [];
+                let retardsParSuperviseur = {};
+
+                dossiersMap.forEach((item) => {
+                    if (item.dateEcheance && item.dateEcheance < aujourdHui) {
+                        let supEmail = item.superviseurEmail || "non-assigne@entreprise.com";
+                        let ancienneteTxt = item.anciennete || 'N/A';
+                        
+                        retards.push(item);
+
+                        if (!retardsParSuperviseur[supEmail]) {
+                            retardsParSuperviseur[supEmail] = "";
+                        }
+                        retardsParSuperviseur[supEmail] += `- Employé : ${item.nom} (ID: ${item.idEmploye}, Ancienneté: ${ancienneteTxt}), Échéance dépassée le : ${item.dateEcheance}%0A`;
+                    }
+                });
+
+                if (retards.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun fichier en retard</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle"><thead><tr><th>Date</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Type</th><th>Échéance</th><th>Superviseur (Courriel)</th><th>Action</th></tr></thead><tbody>`;
+                
+                retards.forEach(item => {
+                    let detailsType = item.typeIntervention || 'N/A';
+                    if (item.typeIntervention === 'SST') {
+                        if (item.graviteSst) {
+                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                        }
+                        if (item.categoriesSst && item.categoriesSst.length > 0) {
+                            detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
+                        }
+                    }
+
+                    let actionBtn = item.statut === "Ouvert"
+                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                    html += `<tr><td>${item.date}</td><td>${item.nom}</td><td>${item.idEmploye}</td><td>${item.anciennete || 'N/A'}</td><td><span class="badge bg-secondary">${detailsType}</span></td><td class="text-danger fw-bold">${item.dateEcheance}</td><td>${item.superviseurEmail || 'N/A'}</td><td>${actionBtn}</td></tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                
+                html += `<h5 class="mt-4 text-light">Expédier les rapports aux superviseurs :</h5>`;
+                for (let [email, details] of Object.entries(retardsParSuperviseur)) {
+                    html += `<button class="btn btn-danger m-1" onclick="window.location.href='mailto:${email}?subject=Rapport des retards de suivi&body=Voici vos dossiers en retard :%0A%0A${details}'">Envoyer à ${email}</button> `;
+                }
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la récupération des retards :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des retards.</p>";
+            }
+        };
+
+        // --- RECHERCHE ACCÉLÉRÉE AVEC BOUTON DE MODIFICATION ---
         window.executerRecherche = async () => {
             const critere = document.getElementById('critereRecherche').value.trim().toLowerCase();
             if (!critere) {
@@ -694,27 +1272,28 @@
             const contenu = document.getElementById('contenu-zone');
             
             zone.classList.remove('d-none');
-            titre.textContent = `Résultats de recherche pour : "${document.getElementById('critereRecherche').value.trim()}"`;
+            titre.textContent = `Résultats de recherche pour : "${critere}"`;
             containerSelect.innerHTML = "";
             contenu.innerHTML = "<p>Recherche en cours...</p>";
 
             try {
-                if (!cacheInterventions) {
-                    await rafraichirCacheInterventions();
-                }
-
+                const querySnapshot = await getDocs(collection(db, "interventions"));
                 let resultats = [];
-                cacheInterventions.forEach(data => {
-                    let nomEmp = (data.nom || '').toLowerCase();
-                    let idEmp = (data.idEmploye || '').toLowerCase();
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let nomEmp = (data.nom || "").toLowerCase();
+                    let idEmp = (data.idEmploye || "").toLowerCase();
 
                     if (nomEmp.includes(critere) || idEmp.includes(critere)) {
-                        resultats.push(data);
+                        resultats.push({
+                            id: docSnap.id,
+                            ...data
+                        });
                     }
                 });
 
-                // Tri de la plus récente à la plus vieille
-                resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
+                resultats.sort((a, b) => new Date(a.date) - new Date(b.date));
 
                 if (resultats.length === 0) {
                     contenu.innerHTML = "<p class='text-muted fs-5'>Aucune intervention trouvée pour cet employé.</p>";
@@ -728,13 +1307,6 @@
                         ? `<span class="badge bg-info text-dark">Ouvert</span>` 
                         : `<span class="badge bg-secondary">Fermé</span>`;
 
-                    let actionStatutBtn = data.statut === "Ouvert" 
-                        ? `<button class="btn btn-sm btn-success mb-1" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
-                        : `<button class="btn btn-sm btn-warning text-dark mb-1" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`;
-                    
-                    let catSstEscapes = data.categoriesSst ? data.categoriesSst.join(', ') : '';
-                    let btnModifier = `<button class="btn btn-sm btn-primary mb-1" onclick="chargerFichePourModification('${data.id}', '${data.date}', \`${data.nom}\`, '${data.idEmploye}', \`${data.anciennete || ''}\`, '${data.typeIntervention}', '${data.graviteSst || ''}', \`${catSstEscapes}\`, \`${(data.description || '').replace(/`/g, "'")}\`, '${data.prochainRdvJours || 14}', '${data.superviseurEmail || ''}')">✏️ Modifier</button>`;
-
                     let detailsType = data.typeIntervention || 'N/A';
                     if (data.typeIntervention === 'SST') {
                         if (data.graviteSst) {
@@ -746,6 +1318,21 @@
                         }
                     }
 
+                    // Échappement sécurisé des chaînes pour l'appel de la fonction de modification
+                    let safeNom = (data.nom || '').replace(/'/g, "\\'");
+                    let safeAnciennete = (data.anciennete || '').replace(/'/g, "\\'");
+                    let safeDesc = (data.description || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
+                    let safeSup = (data.superviseurEmail || '').replace(/'/g, "\\'");
+
+                    let boutonsAction = `
+                        <div class="d-flex gap-1 flex-column">
+                            <button class="btn btn-sm btn-primary" onclick="preparerModification('${data.id}', '${data.date}', '${safeNom}', '${data.idEmploye}', '${safeAnciennete}', '${data.typeIntervention}', '${safeDesc}', ${data.prochainRdvJours || 14}, '${safeSup}')">Modifier</button>
+                            ${data.statut === "Ouvert" 
+                                ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
+                                : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`}
+                        </div>
+                    `;
+
                     html += `<tr>
                         <td>${data.date}</td>
                         <td>${data.idEmploye}</td>
@@ -756,7 +1343,7 @@
                         <td>Dans ${data.prochainRdvJours} jours</td>
                         <td>${statutBadge}</td>
                         <td>${data.superviseurEmail}</td>
-                        <td>${btnModifier}<br>${actionStatutBtn}</td>
+                        <td>${boutonsAction}</td>
                     </tr>`;
                 });
                 
@@ -765,16 +1352,9 @@
 
             } catch (e) {
                 console.error("Erreur lors de la recherche :", e);
-                contenu.innerHTML = "<p class='text-danger'>Erreur lors de la recherche des données.</p>";
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données de recherche.</p>";
             }
         };
-
-        // --- (Les autres fonctions d'affichage de rapports restent pleinement compatibles) ---
-        window.afficherSelecteurRapportType = () => { /* ... */ };
-        window.afficherRapportRisque = () => { /* ... */ };
-        window.afficherSuivisSemaine = () => { /* ... */ };
-        window.genererRapportOuverts = () => { /* ... */ };
-        window.afficherRetards = () => { /* ... */ };
     </script>
 </body>
 </html>
