@@ -125,8 +125,7 @@
   <div class="card d-none" id="app-container">
     <div class="menu" id="menuPrincipal">
       <h1>Menu principal</h1>
-      <button onclick="location.href='casier 1.html'">Vérification casier</button>
-      <button onclick="ouvrirDirectoire()">Directoire</button>
+      <button onclick="ouvrirMenuDocuments()">Documents</button>
       <button class="btn-danger" onclick="location.href='Rapport.html'">Problème de livraison</button>
       <!-- Bouton Intervention SST pointant vers interventions.html -->
       <button class="btn-success" onclick="location.href='interventions.html'">Intervention SST</button>
@@ -135,7 +134,9 @@
 
     <div class="menu" id="menuSecondaire">
       <h2>Menu secondaire</h2>
-      <button onclick="ouvrirRoute()">Route</button>
+      <button onclick="ouvrirDirectoire()">Directoires</button>
+      <button onclick="location.href='casier 1.html'">Verification Casier</button>
+      <button onclick="location.href='controlcq.html'">Acceuil CQ</button>
       <button class="btn-secondary" onclick="retourMenu()">Retour</button>
     </div>
   </div>
@@ -196,7 +197,7 @@
   </script>
 
   <script>
-    function ouvrirDirectoire() {
+    function ouvrirMenuDocuments() {
       document.getElementById('menuPrincipal').style.display = 'none';
       document.getElementById('menuSecondaire').style.display = 'block';
     }
@@ -206,7 +207,7 @@
       document.getElementById('menuPrincipal').style.display = 'block';
     }
 
-    function ouvrirRoute() {
+    function ouvrirDirectoire() {
       const numero = prompt('Entrez le numéro de route :');
       if (numero && numero.trim() !== '') {
         const routeNettoyee = numero.trim();
