@@ -362,28 +362,32 @@
                         <input type="hidden" id="editIdDoc">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Date de l'intervention</label>
+                                <label class="form-label">Date de l'intervention (De)</label>
                                 <input type="date" class="form-control" id="editDate" required>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Échéance (à)</label>
+                                <input type="date" class="form-control" id="editDateEcheance" required>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Employé</label>
                                 <input type="text" class="form-control" id="editNom" readonly>
                             </div>
-                        </div>
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">ID de l'employé</label>
                                 <input type="text" class="form-control" id="editIdEmploye" readonly>
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Ancienneté</label>
                                 <input type="text" class="form-control" id="editAnciennete" readonly>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Type d'intervention</label>
-                                <select class="form-select" id="editTypeIntervention" required>
+                                <select class="form-select" id="editTypeIntervention" required onchange="verifierTypeInterventionEdit(this)">
                                     <option value="Formation">Formation</option>
                                     <option value="Observation">Observation</option>
                                     <option value="Coaching">Coaching</option>
@@ -391,6 +395,22 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Bloc optionnel SST pour la modification -->
+                        <div id="blocSstOptionsEdit" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
+                            <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :[cite: 1]</label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="graviteSstEdit" id="editSstMineur" value="Mineur" checked>
+                                    <label class="form-check-label text-light" for="editSstMineur">Mineur[cite: 1]</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="graviteSstEdit" id="editSstMajeur" value="Majeur">
+                                    <label class="form-check-label text-light" for="editSstMajeur">Majeur[cite: 1]</label>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Description</label>
                             <textarea class="form-control" id="editDescription" rows="4"></textarea>
@@ -439,19 +459,15 @@
 
         let listeEmployesMemoire = [];
 
-        // Vérification de la session active au chargement de la page
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Utilisateur connecté : charger les données de la page
                 initialiserDonnees();
             } else {
-                // Non connecté : Rediriger vers l'index pour s'authentifier
                 alert("Veuillez vous connecter pour accéder au suivi des interventions.");
                 window.location.href = "index.html";
             }
         });
 
-        // --- GESTION DES VUES ---
         window.afficherPageSaisie = () => {
             document.getElementById('vue-accueil').classList.add('d-none');
             document.getElementById('vue-saisie').classList.remove('d-none');
@@ -484,21 +500,28 @@
             }
         };
 
-        // --- CHARGEMENT INITIAL DES DONNÉES ET STATISTIQUES ---
+        window.verifierTypeInterventionEdit = (selectElement) => {
+            const blocSst = document.getElementById('blocSstOptionsEdit');
+            if (selectElement.value === 'SST') {
+                blocSst.classList.remove('d-none');
+            } else {
+                blocSst.classList.add('d-none');
+                document.getElementById('editSstMineur').checked = true;
+            }
+        };
+
         window.initialiserDonnees = async () => {
             await chargerStatistiques();
             await chargerEmployes();
             await chargerSuperviseurs();
         };
 
-        // Réinitialisation du filtre de période des statistiques
         window.reinitialiserFiltreStats = () => {
             document.getElementById('statDateDebut').value = '';
             document.getElementById('statDateFin').value = '';
             chargerStatistiques();
         };
 
-        // Calcul et affichage des statistiques (KPIs et compteurs par type d'intervention) avec filtre de période
         window.chargerStatistiques = async () => {
             try {
                 const dateDebut = document.getElementById('statDateDebut').value;
@@ -569,7 +592,6 @@
             }
         };
 
-        // Chargement des employés triés par ordre alphabétique
         window.chargerEmployes = async () => {
             const selectEmp = document.getElementById('nomEmploye');
             try {
@@ -608,7 +630,6 @@
             }
         };
 
-        // Remplissage automatique lors du choix par la liste déroulante (Nom)
         window.remplirParNom = (selectElement) => {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             if (selectedOption.value) {
@@ -620,7 +641,6 @@
             }
         };
 
-        // Remplissage automatique lors de la saisie manuelle de l'ID
         window.remplirParId = (inputElement) => {
             const saisieId = inputElement.value.trim().toLowerCase();
             const selectEmp = document.getElementById('nomEmploye');
@@ -631,7 +651,6 @@
                 return;
             }
 
-            // Chercher l'employé correspondant dans la mémoire par son ID
             let trouve = listeEmployesMemoire.find(emp => {
                 let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).toLowerCase();
                 return idEmp === saisieId;
@@ -664,7 +683,6 @@
             }
         };
 
-        // --- DICTÉE VOCALE ---
         window.demarrerDictee = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -679,7 +697,6 @@
             reconnaissance.start();
         };
 
-        // --- ENREGISTREMENT ---
         document.getElementById('formIntervention').addEventListener('submit', async (e) => {
             e.preventDefault();
             const dateStr = document.getElementById('dateIntervention').value;
@@ -732,7 +749,6 @@
             }
         });
 
-        // --- BASCULER STATUT DOSSIER (FERMER / ROUVRIR) ---
         window.basculerStatutDossier = async (idDoc, nouveauStatut) => {
             let messageConfirm = nouveauStatut === "Fermé" 
                 ? "Voulez-vous vraiment fermer ce dossier de suivi ?" 
@@ -750,10 +766,10 @@
             }
         };
 
-        // --- OUVRIR LA MODAL DE MODIFICATION AVEC LES DONNÉES ---
-        window.preparerModification = (id, date, nom, idEmploye, anciennete, typeIntervention, description, prochainRdvJours, superviseurEmail) => {
+        window.preparerModification = (id, date, nom, idEmploye, anciennete, typeIntervention, description, prochainRdvJours, superviseurEmail, dateEcheance, graviteSst) => {
             document.getElementById('editIdDoc').value = id;
             document.getElementById('editDate').value = date;
+            document.getElementById('editDateEcheance').value = dateEcheance || '';
             document.getElementById('editNom').value = nom;
             document.getElementById('editIdEmploye').value = idEmploye;
             document.getElementById('editAnciennete').value = anciennete;
@@ -762,25 +778,42 @@
             document.getElementById('editProchainRdv').value = prochainRdvJours || 14;
             document.getElementById('editSuperviseur').value = superviseurEmail;
 
+            const blocSstEdit = document.getElementById('blocSstOptionsEdit');
+            if (typeIntervention === 'SST') {
+                blocSstEdit.classList.remove('d-none');
+                if (graviteSst === 'Majeur') {
+                    document.getElementById('editSstMajeur').checked = true;
+                } else {
+                    document.getElementById('editSstMineur').checked = true;
+                }
+            } else {
+                blocSstEdit.classList.add('d-none');
+                document.getElementById('editSstMineur').checked = true;
+            }
+
             new bootstrap.Modal(document.getElementById('modalModification')).show();
         };
 
-        // --- SOUMISSION DE LA MODIFICATION ---
         document.getElementById('formModifierIntervention').addEventListener('submit', async (e) => {
             e.preventDefault();
             const idDoc = document.getElementById('editIdDoc').value;
             const dateStr = document.getElementById('editDate').value;
+            const dateEcheanceStr = document.getElementById('editDateEcheance').value;
+            const typeInterv = document.getElementById('editTypeIntervention').value;
             const delaiJours = parseInt(document.getElementById('editProchainRdv').value);
-            
-            let dateEcheance = new Date(dateStr);
-            dateEcheance.setDate(dateEcheance.getDate() + delaiJours);
+
+            let graviteSstValue = null;
+            if (typeInterv === 'SST') {
+                graviteSstValue = document.getElementById('editSstMajeur').checked ? 'Majeur' : 'Mineur';
+            }
 
             const champsMisAJour = {
                 date: dateStr,
-                typeIntervention: document.getElementById('editTypeIntervention').value,
+                dateEcheance: dateEcheanceStr,
+                typeIntervention: typeInterv,
+                graviteSst: graviteSstValue,
                 description: document.getElementById('editDescription').value,
                 prochainRdvJours: delaiJours,
-                dateEcheance: dateEcheance.toISOString().split('T')[0],
                 superviseurEmail: document.getElementById('editSuperviseur').value
             };
 
@@ -796,7 +829,6 @@
             }
         });
 
-        // --- RAPPORT PAR TYPE D'INTERVENTION ---
         window.afficherSelecteurRapportType = () => {
             const zone = document.getElementById('zone-affichage');
             const titre = document.getElementById('titre-zone');
@@ -943,7 +975,6 @@
             }
         };
 
-        // --- ANALYSE DES RISQUES SST ---
         window.afficherRapportRisque = async () => {
             const zone = document.getElementById('zone-affichage');
             const titre = document.getElementById('titre-zone');
@@ -1086,7 +1117,6 @@
             }
         };
 
-        // --- SUIVIS DE LA SEMAINE EN COURS ---
         window.afficherSuivisSemaine = async () => {
             const zone = document.getElementById('zone-affichage');
             const titre = document.getElementById('titre-zone');
@@ -1176,7 +1206,6 @@
             }
         };
 
-        // --- RAPPORT DES DOSSIERS OUVERTS ---
         window.genererRapportOuverts = async () => {
             const zone = document.getElementById('zone-affichage');
             const titre = document.getElementById('titre-zone');
@@ -1256,7 +1285,6 @@
             }
         };
 
-        // --- RETARDS ET COURRIEL ---
         window.afficherRetards = async () => {
             const zone = document.getElementById('zone-affichage');
             const titre = document.getElementById('titre-zone');
@@ -1347,7 +1375,6 @@
             }
         };
 
-        // --- RECHERCHE ACCÉLÉRÉE AVEC BOUTON DE MODIFICATION ---
         window.executerRecherche = async () => {
             const critere = document.getElementById('critereRecherche').value.trim().toLowerCase();
             if (!critere) {
@@ -1392,7 +1419,6 @@
 
                 let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Type</th><th>Description</th><th>Prochaine intervention</th><th>Statut</th><th>Superviseur</th><th>Actions</th></tr></thead><tbody>`;
                 
-                resultats.typeIntervention = resultats.typeIntervention || '';
                 resultats.forEach(data => {
                     let statutBadge = data.statut === "Ouvert" 
                         ? `<span class="badge bg-info text-dark">Ouvert</span>` 
@@ -1413,10 +1439,12 @@
                     let safeAnciennete = (data.anciennete || '').replace(/'/g, "\\'");
                     let safeDesc = (data.description || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
                     let safeSup = (data.superviseurEmail || '').replace(/'/g, "\\'");
+                    let safeDateEch = data.dateEcheance || '';
+                    let safeGravite = data.graviteSst || '';
 
                     let boutonsAction = `
                         <div class="d-flex gap-1 flex-column">
-                            <button class="btn btn-sm btn-primary" onclick="preparerModification('${data.id}', '${data.date}', '${safeNom}', '${data.idEmploye}', '${safeAnciennete}', '${data.typeIntervention}', '${safeDesc}', ${data.prochainRdvJours || 14}, '${safeSup}')">Modifier</button>
+                            <button class="btn btn-sm btn-primary" onclick="preparerModification('${data.id}', '${data.date}', '${safeNom}', '${data.idEmploye}', '${safeAnciennete}', '${data.typeIntervention}', '${safeDesc}', ${data.prochainRdvJours || 14}, '${safeSup}', '${safeDateEch}', '${safeGravite}')">Modifier</button>
                             ${data.statut === "Ouvert" 
                                 ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
                                 : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`}
