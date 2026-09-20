@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menu Principal</title>
+  <!-- Bootstrap CSS pour l'interface de connexion -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -55,7 +57,7 @@
       z-index: 1;
     }
 
-    h1, h2 {
+    h1, h2, h3 {
       color: #ffffff;
     }
     .menu {
@@ -103,7 +105,24 @@
 </head>
 <body>
 
-  <div class="card">
+  <!-- ÉCRAN DE CONNEXION (Affiché par défaut) -->
+  <div class="card" id="vue-connexion">
+    <h3 class="mb-4">Connexion Superviseur</h3>
+    <form id="formConnexion">
+      <div class="mb-3 text-start">
+        <label class="form-label text-light">Courriel</label>
+        <input type="email" class="form-control bg-dark text-light border-secondary" id="emailConnexion" required placeholder="nom@entreprise.com">
+      </div>
+      <div class="mb-4 text-start">
+        <label class="form-label text-light">Mot de passe</label>
+        <input type="password" class="form-control bg-dark text-light border-secondary" id="passwordConnexion" required placeholder="Mot de passe">
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+    </form>
+  </div>
+
+  <!-- APPLICATION PRINCIPALE / MENU (Masquée tant que non connecté) -->
+  <div class="card d-none" id="app-container">
     <div class="menu" id="menuPrincipal">
       <h1>Menu principal</h1>
       <button onclick="location.href='casier 1.html'">Vérification casier</button>
@@ -111,6 +130,7 @@
       <button class="btn-danger" onclick="location.href='Rapport.html'">Problème de livraison</button>
       <!-- Bouton Intervention SST pointant vers interventions.html -->
       <button class="btn-success" onclick="location.href='interventions.html'">Intervention SST</button>
+      <button class="btn-secondary mt-4" onclick="deconnecterUtilisateur()">Déconnexion</button>
     </div>
 
     <div class="menu" id="menuSecondaire">
@@ -119,6 +139,61 @@
       <button class="btn-secondary" onclick="retourMenu()">Retour</button>
     </div>
   </div>
+
+  <!-- SCRIPTS FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+        authDomain: "postesst.firebaseapp.com",
+        projectId: "postesst",
+        storageBucket: "postesst.firebasestorage.app",
+        messagingSenderId: "39362155503",
+        appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Gestion de la soumission de connexion
+    document.getElementById('formConnexion').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('emailConnexion').value;
+        const password = document.getElementById('passwordConnexion').value;
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            document.getElementById('formConnexion').reset();
+        } catch (error) {
+            alert("Erreur de connexion : Identifiants incorrects.");
+            console.error(error);
+        }
+    });
+
+    // Gestion de la déconnexion globale
+    window.deconnecterUtilisateur = async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Erreur lors de la déconnexion :", error);
+        }
+    };
+
+    // Vérification de l'état de l'authentification en temps réel
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Utilisateur connecté : Afficher le menu principal et masquer le formulaire
+            document.getElementById('vue-connexion').classList.add('d-none');
+            document.getElementById('app-container').classList.remove('d-none');
+        } else {
+            // Utilisateur déconnecté : Afficher le formulaire et masquer le menu
+            document.getElementById('app-container').classList.add('d-none');
+            document.getElementById('vue-connexion').classList.remove('d-none');
+        }
+    });
+  </script>
 
   <script>
     function ouvrirDirectoire() {
