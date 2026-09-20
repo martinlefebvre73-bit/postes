@@ -103,10 +103,14 @@
         }
     </style>
 </head>
-<body onload="initialiserDonnees()">
+<body>
 
     <div class="container my-5">
-        <h1 class="text-center mb-5 text-white fw-bold">Tableau de Bord - Suivi des Interventions</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <button class="btn btn-outline-light btn-sm" onclick="location.href='index.html'">← Retour au menu principal</button>
+            <h1 class="text-center text-white fw-bold m-0">Tableau de Bord - Suivi des Interventions</h1>
+            <div></div> <!-- Spacer pour alignement -->
+        </div>
 
         <!-- PAGE D'ACCUEIL -->
         <div id="vue-accueil">
@@ -418,6 +422,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -430,9 +435,21 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // Variable globale pour stocker la liste des employés en mémoire et faciliter la recherche par ID
         let listeEmployesMemoire = [];
+
+        // Vérification de la session active au chargement de la page
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Utilisateur connecté : charger les données de la page
+                initialiserDonnees();
+            } else {
+                // Non connecté : Rediriger vers l'index pour s'authentifier
+                alert("Veuillez vous connecter pour accéder au suivi des interventions.");
+                window.location.href = "index.html";
+            }
+        });
 
         // --- GESTION DES VUES ---
         window.afficherPageSaisie = () => {
@@ -1375,6 +1392,7 @@
 
                 let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Type</th><th>Description</th><th>Prochaine intervention</th><th>Statut</th><th>Superviseur</th><th>Actions</th></tr></thead><tbody>`;
                 
+                resultats.typeIntervention = resultats.typeIntervention || '';
                 resultats.forEach(data => {
                     let statutBadge = data.statut === "Ouvert" 
                         ? `<span class="badge bg-info text-dark">Ouvert</span>` 
