@@ -1,6 +1,6 @@
 {
   "name": "Postes Canada Dépôt Aéroport",
-  "short_name": "Postes SST",
+  "short_name": "Postes Perso",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d1b2a",
