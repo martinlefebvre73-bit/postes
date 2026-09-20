@@ -1,6 +1,401 @@
-<template id="mon-modele">
-  <div class="carte-produit">
-    <h2>Nom du produit</h2>
-    <p>Description...</p>
-  </div>
-</template>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrôle Remplaçant - Gestion C.A.M.S.</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SDKs Firebase (Compatiblité Web v9/v10) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-12">
+
+    <!-- En-tête -->
+    <header class="bg-slate-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-clipboard-check text-2xl text-amber-400"></i>
+                <h1 class="text-xl font-bold tracking-wide">Contrôle Remplaçant</h1>
+            </div>
+            <span class="text-xs bg-slate-700 text-slate-300 px-3 py-1 rounded-full font-mono">C.A.M.S.</span>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+        
+        <!-- Formulaire principal -->
+        <form id="controlForm" class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+            
+            <div class="p-6 space-y-6">
+
+                <!-- Zone de messages d'état -->
+                <div id="statusMessage" class="hidden p-4 rounded-lg text-sm font-medium"></div>
+
+                <!-- Section: Informations Générales -->
+                <div class="border-b border-slate-200 pb-4">
+                    <h2 class="text-lg font-semibold text-slate-700 mb-4 flex items-center">
+                        <i class="fa-solid fa-circle-info text-indigo-600 mr-2"></i> Informations Générales
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Champ Date -->
+                        <div>
+                            <label for="controlDate" class="block text-sm font-medium text-slate-700 mb-1">
+                                Date du contrôle <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" id="controlDate" required 
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <!-- Nom du Remplaçant -->
+                        <div>
+                            <label for="replacantName" class="block text-sm font-medium text-slate-700 mb-1">
+                                Nom du remplaçant <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="replacantName" placeholder="Nom et prénom" required 
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+
+                        <!-- Emplacement / Local -->
+                        <div class="md:col-span-2">
+                            <label for="location" class="block text-sm font-medium text-slate-700 mb-1">
+                                Emplacement / Immeuble / Local
+                            </label>
+                            <input type="text" id="location" placeholder="ex: 73 Jules-Duval, App. 2" 
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Observations & Dictée Vocale -->
+                <div class="border-b border-slate-200 pb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="observations" class="block text-sm font-medium text-slate-700">
+                            Observations / Remarques du contrôle
+                        </label>
+                        <!-- Bouton Activer la Dictée Vocale -->
+                        <button type="button" id="voiceBtn" onclick="toggleVoiceRecognition()" 
+                            class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-medium transition focus:outline-none">
+                            <i id="micIcon" class="fa-solid fa-microphone mr-2"></i>
+                            <span id="micStatus">Activer la dictée</span>
+                        </button>
+                    </div>
+                    
+                    <textarea id="observations" rows="4" placeholder="Appuyez sur le micro pour dicter vos remarques ou tapez votre texte ici..."
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"></textarea>
+                    <p id="speechNotice" class="text-xs text-slate-400 mt-1 italic hidden">Écoute en cours... Parlez clairement.</p>
+                </div>
+
+                <!-- Section: Fichier Joint / Document -->
+                <div class="border-b border-slate-200 pb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                        Fichier joint / Document justificatif
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="fileAttachment" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+                                <p class="mb-1 text-sm text-slate-500 font-medium"><span class="text-indigo-600 font-semibold">Cliquez pour ajouter un fichier</span> ou glissez-déposez</p>
+                                <p class="text-xs text-slate-400">PDF, PNG, JPG, DOC, etc.</p>
+                            </div>
+                            <input id="fileAttachment" type="file" class="hidden" onchange="handleFileSelect(event)">
+                        </label>
+                    </div>
+                    <div id="fileInfo" class="mt-2 text-sm text-slate-600 font-mono hidden flex items-center justify-between bg-slate-100 p-2 rounded">
+                        <span id="fileName" class="truncate max-w-xs"></span>
+                        <button type="button" onclick="clearFile()" class="text-red-500 hover:text-red-700 text-xs font-semibold ml-2">Supprimer</button>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+                    <button type="button" onclick="resetForm()" 
+                        class="w-full sm:w-auto px-5 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-medium transition text-sm">
+                        Réinitialiser
+                    </button>
+                    <button type="submit" id="saveBtn" 
+                        class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition text-sm flex items-center justify-center">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i> Sauvegarder dans Firebase
+                    </button>
+                </div>
+
+            </div>
+        </form>
+
+        <!-- Section: Historique & Chargement depuis Firebase -->
+        <section class="mt-10 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-folder-open text-amber-500 mr-2"></i> Historique des Contrôles
+                </h2>
+                <button onclick="loadControlsFromFirebase()" 
+                    class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition flex items-center">
+                    <i class="fa-solid fa-rotate mr-1.5"></i> Actualiser
+                </button>
+            </div>
+
+            <div id="recordsList" class="grid grid-cols-1 gap-4">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 text-center text-slate-400 italic">
+                    Cliquez sur "Actualiser" pour charger les enregistrements sauvegardés depuis Firebase.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript & Logique Firebase -->
+    <script>
+        // --- 1. Configuration Firebase ---
+        // Remplacez ces valeurs par celles fournies dans votre console Firebase
+        const firebaseConfig = {
+            apiKey: "VOTRE_API_KEY",
+            authDomain: "VOTRE_PROJECT_ID.firebaseapp.com",
+            projectId: "VOTRE_PROJECT_ID",
+            storageBucket: "VOTRE_PROJECT_ID.appspot.com",
+            messagingSenderId: "VOTRE_SENDER_ID",
+            appId: "VOTRE_APP_ID"
+        };
+
+        // Initialisation de Firebase
+        let db, storage;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+            storage = firebase.storage();
+        } catch (e) {
+            console.warn("Firebase n'est pas configuré. Veuillez insérer vos clés d'API Firebase.");
+        }
+
+        // Remplir automatiquement la date du jour
+        document.getElementById('controlDate').valueAsDate = new Date();
+
+        // --- 2. Dictée Vocale (Web Speech API) ---
+        let recognition = null;
+        let isListening = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'fr-FR';
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[event.results.length - 1][0].transcript;
+                const obsField = document.getElementById('observations');
+                obsField.value += (obsField.value ? ' ' : '') + transcript;
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Erreur de reconnaissance vocale :", event.error);
+                stopVoiceRecognition();
+            };
+
+            recognition.onend = function() {
+                if (isListening) stopVoiceRecognition();
+            };
+        } else {
+            document.getElementById('voiceBtn').disabled = true;
+            document.getElementById('voiceBtn').title = "Dictée vocale non supportée sur ce navigateur.";
+        }
+
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                alert("Votre navigateur ne prend pas en charge la dictée vocale.");
+                return;
+            }
+            if (isListening) {
+                stopVoiceRecognition();
+            } else {
+                startVoiceRecognition();
+            }
+        }
+
+        function startVoiceRecognition() {
+            try {
+                recognition.start();
+                isListening = true;
+                const micBtn = document.getElementById('voiceBtn');
+                micBtn.classList.remove('text-indigo-600', 'border-indigo-600', 'hover:bg-indigo-50');
+                micBtn.classList.add('bg-red-600', 'text-white', 'border-red-600', 'animate-pulse');
+                document.getElementById('micStatus').innerText = "Arrêter la dictée";
+                document.getElementById('speechNotice').classList.remove('hidden');
+            } catch (err) {
+                console.error("Erreur lors de l'activation du microphone:", err);
+            }
+        }
+
+        function stopVoiceRecognition() {
+            if (recognition && isListening) {
+                recognition.stop();
+            }
+            isListening = false;
+            const micBtn = document.getElementById('voiceBtn');
+            micBtn.classList.remove('bg-red-600', 'text-white', 'border-red-600', 'animate-pulse');
+            micBtn.classList.add('text-indigo-600', 'border-indigo-600', 'hover:bg-indigo-50');
+            document.getElementById('micStatus').innerText = "Activer la dictée";
+            document.getElementById('speechNotice').classList.add('hidden');
+        }
+
+        // --- 3. Gestion du Fichier Joint ---
+        let selectedFile = null;
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('fileName').innerText = file.name + " (" + (file.size / 1024).toFixed(1) + " KB)";
+                document.getElementById('fileInfo').classList.remove('hidden');
+            }
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('fileAttachment').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+        }
+
+        // --- 4. Sauvegarde dans Firebase ---
+        document.getElementById('controlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('controlDate').value;
+            const replacant = document.getElementById('replacantName').value;
+            const location = document.getElementById('location').value;
+            const observations = document.getElementById('observations').value;
+
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Sauvegarde en cours...`;
+
+            try {
+                let fileUrl = null;
+                let fileName = null;
+
+                // Téléversement dans Firebase Storage si un fichier est sélectionné
+                if (selectedFile && storage) {
+                    const storageRef = storage.ref(`remplacants/${Date.now()}_${selectedFile.name}`);
+                    const uploadTask = await storageRef.put(selectedFile);
+                    fileUrl = await uploadTask.ref.getDownloadURL();
+                    fileName = selectedFile.name;
+                }
+
+                // Document à insérer dans Firestore
+                const data = {
+                    date: date,
+                    replacant: replacant,
+                    location: location,
+                    observations: observations,
+                    fileUrl: fileUrl,
+                    fileName: fileName,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (db) {
+                    await db.collection('control_remplacant').add(data);
+                    showMessage('Formulaire et document enregistrés avec succès dans Firebase !', 'success');
+                    resetForm();
+                    loadControlsFromFirebase();
+                } else {
+                    showMessage('Firebase non configuré. Veuillez renseigner firebaseConfig.', 'error');
+                }
+
+            } catch (error) {
+                console.error("Erreur de sauvegarde :", error);
+                showMessage('Erreur lors de la sauvegarde : ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Sauvegarder dans Firebase`;
+            }
+        });
+
+        // --- 5. Chargement depuis Firebase ---
+        async function loadControlsFromFirebase() {
+            const recordsList = document.getElementById('recordsList');
+            recordsList.innerHTML = `<div class="text-center py-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl mr-2"></i> Chargement des données...</div>`;
+
+            if (!db) {
+                recordsList.innerHTML = `
+                    <div class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                        Veuillez configurer la variable <strong>firebaseConfig</strong> avec vos clés Firebase Firestore pour charger l'historique.
+                    </div>`;
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection('control_remplacant').orderBy('createdAt', 'desc').get();
+                if (snapshot.empty) {
+                    recordsList.innerHTML = `<div class="bg-white p-6 rounded-xl border border-slate-200 text-center text-slate-400">Aucun contrôle trouvé.</div>`;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    html += `
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">${escapeHtml(item.replacant || 'Sans nom')}</h3>
+                                    <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot mr-1"></i> ${escapeHtml(item.location || 'Emplacement non spécifié')}</p>
+                                </div>
+                                <span class="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md font-mono font-medium">${escapeHtml(item.date)}</span>
+                            </div>
+                            ${item.observations ? `<p class="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 my-2">${escapeHtml(item.observations)}</p>` : ''}
+                            ${item.fileUrl ? `
+                                <div class="mt-3 pt-2 border-t border-slate-100 flex items-center text-xs">
+                                    <i class="fa-solid fa-paperclip text-slate-400 mr-2"></i>
+                                    <a href="${item.fileUrl}" target="_blank" class="text-indigo-600 hover:underline font-medium flex items-center">
+                                        ${escapeHtml(item.fileName || 'Voir la pièce jointe')}
+                                        <i class="fa-solid fa-up-right-from-square text-[10px] ml-1"></i>
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                recordsList.innerHTML = html;
+
+            } catch (error) {
+                console.error("Erreur de chargement :", error);
+                recordsList.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm">Erreur au chargement: ${error.message}</div>`;
+            }
+        }
+
+        // --- Utilitaires ---
+        function resetForm() {
+            document.getElementById('controlForm').reset();
+            document.getElementById('controlDate').valueAsDate = new Date();
+            clearFile();
+            stopVoiceRecognition();
+        }
+
+        function showMessage(msg, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-blue-100', 'text-blue-800');
+            if (type === 'success') {
+                statusDiv.classList.add('bg-green-100', 'text-green-800');
+            } else if (type === 'error') {
+                statusDiv.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                statusDiv.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            statusDiv.innerText = msg;
+            setTimeout(() => { statusDiv.classList.add('hidden'); }, 5000);
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
