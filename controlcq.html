@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire d'Accueil et Contrôle de la Qualité du Service - Firebase & Dictée par Champ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .recording-pulse { animation: pulse-ring 1.5s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 h-full flex flex-col">
+
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 class="text-base md:text-lg font-bold tracking-tight">FORMULAIRE D'ACCUEIL ET CONTRÔLE DE LA QUALITÉ</h1>
+                <p class="text-xs text-slate-400">Dictée vocale par champ • Lignes dynamiques • Cloud Firebase</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2.5">
+                <div class="flex items-center bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs gap-2">
+                    <span class="text-slate-400 font-medium">Langue Dictée :</span>
+                    <select id="globalVoiceLang" class="bg-slate-700 text-white rounded px-2 py-1 border border-slate-600 focus:outline-none">
+                        <option value="fr-FR">Français (FR)</option>
+                        <option value="en-US">English (US)</option>
+                    </select>
+                </div>
+
+                <button onclick="saveReportToFirebase()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    <span>Enregistrer</span>
+                </button>
+
+                <button onclick="openLoadModal()" class="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <span>Récupérer / Modifier</span>
+                </button>
+
+                <button onclick="clearForm()" title="Nouveau" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 transition">
+                    Nouveau
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 overflow-y-auto">
+        <form id="qualityForm" class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 space-y-6 relative" onsubmit="event.preventDefault();">
+            
+            <input type="hidden" id="report_id" value="">
+
+            <div class="border-b-2 border-slate-800 pb-4 text-center">
+                <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-wide">
+                    FORMULAIRE D'ACCUEIL ET CONTRÔLE DE LA QUALITÉ DU SERVICE
+                </h2>
+                <h3 class="text-sm md:text-base font-semibold text-slate-600 mt-1">
+                    WELCOME AND SERVICE / QUALITY CONTROL FORM
+                </h3>
+            </div>
+
+            <!-- Section 1: Color, Date, PDR -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase">
+                        Couleur du jour / Color of the day
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="flex items-center justify-center gap-1 bg-orange-100 text-orange-900 px-2 py-2 rounded-lg border border-orange-300 cursor-pointer text-xs font-semibold hover:bg-orange-200">
+                            <input type="radio" name="couleur_jour" value="ORANGE" class="accent-orange-600"> ORANGE 1/3
+                        </label>
+                        <label class="flex items-center justify-center gap-1 bg-pink-100 text-pink-900 px-2 py-2 rounded-lg border border-pink-300 cursor-pointer text-xs font-semibold hover:bg-pink-200">
+                            <input type="radio" name="couleur_jour" value="ROSE" class="accent-pink-600"> ROSE 2/3
+                        </label>
+                        <label class="flex items-center justify-center gap-1 bg-blue-100 text-blue-900 px-2 py-2 rounded-lg border border-blue-300 cursor-pointer text-xs font-semibold hover:bg-blue-200">
+                            <input type="radio" name="couleur_jour" value="BLEU" class="accent-blue-600"> BLEU 3/3
+                        </label>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase" for="date_input">Date</label>
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="date_input" name="date_input" placeholder="ex: 17.04" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <button type="button" onclick="startFieldDictation('date_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-2 rounded-lg text-slate-700 transition" title="Dictée vocale">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase">Nbr PDR à livrer / Number of NM</label>
+                    <div class="grid grid-cols-4 gap-1">
+                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
+                            <input type="radio" name="nb_pdr" value="1/4"> 1/4
+                        </label>
+                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
+                            <input type="radio" name="nb_pdr" value="2/4"> 2/4
+                        </label>
+                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
+                            <input type="radio" name="nb_pdr" value="3/4"> 3/4
+                        </label>
+                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
+                            <input type="radio" name="nb_pdr" value="4/4"> 4/4
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Sector Type & Route & Substitutes -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Type de Secteur / Sector Types</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
+                            <input type="checkbox" name="secteur_type" value="Domicile"> Domicile / House
+                        </label>
+                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
+                            <input type="checkbox" name="secteur_type" value="Appartement"> Appartement
+                        </label>
+                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
+                            <input type="checkbox" name="secteur_type" value="Succursale"> Succursale / Depot
+                        </label>
+                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
+                            <input type="checkbox" name="secteur_type" value="Commerce"> Commerce / Business
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Route & Livraison / Route & Delivery</h4>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <label class="flex items-center gap-1.5 text-sm font-semibold">
+                            <input type="radio" name="route_num" value="17.04"> 17.04
+                        </label>
+                        <label class="flex items-center gap-1.5 text-sm font-semibold">
+                            <input type="radio" name="route_num" value="17.06"> 17.06
+                        </label>
+                        <label class="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold">
+                            <input type="checkbox" id="livraison_chk" value="Oui"> ☑ Livraison
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" for="remplacant_input">Remplaçant / Substitute</label>
+                        <div class="flex items-center gap-1">
+                            <input type="text" id="remplacant_input" name="remplacant_input" placeholder="Nom du remplaçant..." class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <button type="button" onclick="startFieldDictation('remplacant_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition" title="Dictée vocale">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Customer Pickup & Clearances -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Ramassage Client / Customer Pickup</h4>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs font-medium text-slate-600">Actif:</span>
+                        <label class="flex items-center gap-1 text-xs font-semibold"><input type="radio" name="ramassage_client" value="OUI"> OUI</label>
+                        <label class="flex items-center gap-1 text-xs font-semibold"><input type="radio" name="ramassage_client" value="NON"> NON</label>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" for="nb_ramassage">Nombre de ramassages</label>
+                        <div class="flex items-center gap-1">
+                            <input type="text" id="nb_ramassage" name="nb_ramassage" placeholder="ex: 3" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <button type="button" onclick="startFieldDictation('nb_ramassage')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Levées / Clearances (BLP / RPO)</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 space-y-1">
+                            <span class="text-xs font-bold text-slate-700 block">Levée BLP</span>
+                            <div class="flex items-center gap-3 text-xs">
+                                <label><input type="radio" name="levee_blp" value="OUI"> OUI</label>
+                                <label><input type="radio" name="levee_blp" value="NON"> NON</label>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200 space-y-1">
+                            <span class="text-xs font-bold text-slate-700 block">Levée Comptoir</span>
+                            <div class="flex items-center gap-3 text-xs">
+                                <label><input type="radio" name="levee_comptoir" value="OUI"> OUI</label>
+                                <label><input type="radio" name="levee_comptoir" value="NON"> NON</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Anomalies & Color dots -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2 bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold uppercase text-slate-700">Anomalies jour précédent et/ou particularité (Notes)</h4>
+                        <button type="button" onclick="startFieldDictation('anomalies_input')" class="text-xs flex items-center gap-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-1 rounded font-semibold transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            <span>Dicter notes</span>
+                        </button>
+                    </div>
+                    <textarea id="anomalies_input" name="anomalies_input" rows="3" placeholder="Saisissez ou dictez les anomalies..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                    
+                    <div class="grid grid-cols-3 gap-3 pt-2">
+                        <div class="flex items-center justify-between bg-rose-50 text-rose-800 p-2 rounded-lg border border-rose-200 text-xs font-bold">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Pts Rouges</span>
+                            <div class="flex items-center gap-1">
+                                <input type="text" id="pts_rouges" name="pts_rouges" placeholder="0" class="w-10 bg-white border border-rose-300 rounded text-center py-0.5 text-xs">
+                                <button type="button" onclick="startFieldDictation('pts_rouges')" class="p-1 hover:bg-rose-200 rounded"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-200 text-xs font-bold">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Pts Jaunes</span>
+                            <div class="flex items-center gap-1">
+                                <input type="text" id="pts_jaunes" name="pts_jaunes" placeholder="0" class="w-10 bg-white border border-amber-300 rounded text-center py-0.5 text-xs">
+                                <button type="button" onclick="startFieldDictation('pts_jaunes')" class="p-1 hover:bg-amber-200 rounded"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-200 text-xs font-bold">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Pts Verts</span>
+                            <div class="flex items-center gap-1">
+                                <input type="text" id="pts_verts" name="pts_verts" placeholder="0" class="w-10 bg-white border border-emerald-300 rounded text-center py-0.5 text-xs">
+                                <button type="button" onclick="startFieldDictation('pts_verts')" class="p-1 hover:bg-emerald-200 rounded"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="text-xs font-bold uppercase text-slate-700">Procédure des surplus</h4>
+                            <button type="button" onclick="startFieldDictation('surplus_input')" class="text-xs text-emerald-700 font-semibold flex items-center gap-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> Dicter</button>
+                        </div>
+                        <input type="text" id="surplus_input" name="surplus_input" placeholder="Détails..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="text-xs font-bold uppercase text-slate-700">Heure limite collection</h4>
+                            <button type="button" onclick="startFieldDictation('heure_limite')" class="text-xs text-emerald-700 font-semibold flex items-center gap-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> Dicter</button>
+                        </div>
+                        <input type="text" id="heure_limite" name="heure_limite" placeholder="ex: 16:30" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Neighborhood Mail Table (Dynamic Rows with Date inputs) -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between border-b pb-1">
+                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">Courrier de Quartier à Livrer / Neighborhood Mail to Deliver</h4>
+                    <button type="button" onclick="addNeighborhoodRow()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 shadow transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Ajouter une ligne</span>
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-800 text-white">
+                                <th class="p-2.5 font-semibold">Nom CQ (No Déclaration)</th>
+                                <th class="p-2.5 font-semibold text-center">Domicile</th>
+                                <th class="p-2.5 font-semibold text-center">Distribution</th>
+                                <th class="p-2.5 font-semibold text-center">Entreprise</th>
+                                <th class="p-2.5 font-semibold">Début (Date)</th>
+                                <th class="p-2.5 font-semibold">Fin (Date)</th>
+                                <th class="p-2.5 font-semibold">Nb Jours</th>
+                                <th class="p-2.5 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="neighborhood_tbody" class="divide-y divide-slate-200">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 6: RAMASSAGE / CUSTOMER PICKUP (Dynamic Rows) -->
+            <div class="space-y-3 pt-4 border-t border-slate-200">
+                <div class="flex items-center justify-between border-b pb-1">
+                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
+                        RAMASSAGE / CUSTOMER PICKUP
+                    </h4>
+                    <button type="button" onclick="addPickupRow()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 shadow transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Ajouter une ligne</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-800 text-white">
+                                <th class="p-2.5 font-semibold">Nom Client / Client Name</th>
+                                <th class="p-2.5 font-semibold">Adresse Client / Client Address</th>
+                                <th class="p-2.5 font-semibold">Plage Horaire / Time Frame</th>
+                                <th class="p-2.5 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pickup_tbody" class="divide-y divide-slate-200">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-inner space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400">
+                    Rappel sur les employés ciblés par cet accueil
+                </h4>
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-300">
+                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Employé Temporaire / Temporary Employee
+                    </li>
+                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Employé relève débutant dans une nouvelle itinéraire
+                    </li>
+                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Nouvel employé arrivant à votre succursale
+                    </li>
+                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Employé effectuant une portion de 17.04
+                    </li>
+                </ul>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t">
+                <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Imprimer le Rapport
+                </button>
+                <button type="button" onclick="saveReportToFirebase()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-semibold shadow transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Enregistrer dans Firebase
+                </button>
+            </div>
+
+        </form>
+    </main>
+
+    <div id="loadModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="text-base font-bold text-slate-900">Rapports Enregistrés (Collection 'acceuilcq')</h3>
+                <button onclick="closeLoadModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+            </div>
+            <div id="reportsListContainer" class="flex-1 overflow-y-auto space-y-2 py-2">
+                <p class="text-xs text-slate-500 text-center py-6">Chargement des rapports depuis Firebase...</p>
+            </div>
+            <div class="flex justify-end pt-2 border-t">
+                <button onclick="closeLoadModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-semibold">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="voiceHUD" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-emerald-500 z-50 hidden flex items-center gap-3">
+        <div class="w-3 h-3 rounded-full bg-emerald-500 recording-pulse"></div>
+        <div class="text-xs">
+            <p class="font-bold text-emerald-400" id="hudFieldName">Écoute en cours...</p>
+            <p class="text-slate-300 italic" id="hudTranscript">Parlez maintenant...</p>
+        </div>
+        <button onclick="stopFieldDictation()" class="ml-3 bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">Arrêter</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+            authDomain: "postes-26884.firebaseapp.com",
+            projectId: "postes-26884",
+            storageBucket: "postes-26884.firebasestorage.app",
+            messagingSenderId: "75974397689",
+            appId: "1:75974397689:web:5fd12942788612c62b1c28",
+            measurementId: "G-83YPF62ET5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        try { getAnalytics(app); } catch(e) {}
+
+        let activeTargetFieldId = null;
+        let activeRecognition = null;
+
+        window.startFieldDictation = function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+            activeTargetFieldId = fieldId;
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("La reconnaissance vocale n'est pas supportée par ce navigateur. Utilisez Google Chrome.");
+                return;
+            }
+
+            if (activeRecognition) {
+                try { activeRecognition.stop(); } catch(e) {}
+            }
+
+            activeRecognition = new SpeechRecognition();
+            const langSelect = document.getElementById('globalVoiceLang');
+            activeRecognition.lang = langSelect ? langSelect.value : 'fr-FR';
+            activeRecognition.continuous = false;
+            activeRecognition.interimResults = true;
+
+            const hud = document.getElementById('voiceHUD');
+            const hudName = document.getElementById('hudFieldName');
+            const hudTranscript = document.getElementById('hudTranscript');
+            hud.classList.remove('hidden');
+            hudName.innerText = `Dictée pour : ${fieldId}`;
+            hudTranscript.innerText = "Écoute en cours...";
+
+            activeRecognition.onresult = (event) => {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final += event.results[i][0].transcript;
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                if (interim) hudTranscript.innerText = `... ${interim}`;
+                if (final) {
+                    const text = final.trim();
+                    field.value = field.value ? field.value + ' ' + text : text;
+                    hudTranscript.innerText = `Reçu : "${text}"`;
+                }
+            };
+
+            activeRecognition.onerror = (event) => {
+                hudTranscript.innerText = `Erreur : ${event.error}`;
+            };
+
+            activeRecognition.onend = () => {
+                setTimeout(() => { hud.classList.add('hidden'); }, 1200);
+            };
+
+            try {
+                activeRecognition.start();
+            } catch(e) {
+                console.error(e);
+            }
+        };
+
+        window.stopFieldDictation = function() {
+            if (activeRecognition) {
+                try { activeRecognition.stop(); } catch(e) {}
+            }
+            document.getElementById('voiceHUD').classList.add('hidden');
+        };
+
+        let neighborhoodRowCounter = 0;
+        let pickupRowCounter = 0;
+
+        window.addNeighborhoodRow = function(data = {}) {
+            neighborhoodRowCounter++;
+            const id = neighborhoodRowCounter;
+            const tbody = document.getElementById('neighborhood_tbody');
+            const tr = document.createElement('tr');
+            tr.id = `neighborhood_row_${id}`;
+            tr.innerHTML = `
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="cq_nom_${id}" value="${data.nom || ''}" placeholder="Nom CQ..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
+                        <button type="button" onclick="startFieldDictation('cq_nom_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2 text-center"><input type="checkbox" id="cq_domicile_${id}" ${data.domicile ? 'checked' : ''} class="accent-slate-800"></td>
+                <td class="p-2 text-center"><input type="checkbox" id="cq_dist_${id}" ${data.distribution !== false ? 'checked' : ''} class="accent-slate-800"></td>
+                <td class="p-2 text-center"><input type="checkbox" id="cq_ent_${id}" ${data.entreprise ? 'checked' : ''} class="accent-slate-800"></td>
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="date" id="cq_debut_${id}" value="${data.debut || ''}" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs bg-white">
+                        <button type="button" onclick="startFieldDictation('cq_debut_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="date" id="cq_fin_${id}" value="${data.fin || ''}" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs bg-white">
+                        <button type="button" onclick="startFieldDictation('cq_fin_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="cq_jours_${id}" value="${data.jours || ''}" placeholder="3" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
+                        <button type="button" onclick="startFieldDictation('cq_jours_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2 text-center">
+                    <button type="button" onclick="document.getElementById('neighborhood_row_${id}').remove()" class="text-rose-600 hover:text-rose-800 p-1 font-bold text-sm" title="Supprimer">&times;</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        };
+
+        window.addPickupRow = function(data = {}) {
+            pickupRowCounter++;
+            const id = pickupRowCounter;
+            const tbody = document.getElementById('pickup_tbody');
+            const tr = document.createElement('tr');
+            tr.id = `pickup_row_${id}`;
+            tr.innerHTML = `
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="p_nom_${id}" value="${data.nom || ''}" placeholder="Nom client..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
+                        <button type="button" onclick="startFieldDictation('p_nom_${id}')" class="p-1 bg-slate-100 hover:bg-sky-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="p_adresse_${id}" value="${data.adresse || ''}" placeholder="Adresse client..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
+                        <button type="button" onclick="startFieldDictation('p_adresse_${id}')" class="p-1 bg-slate-100 hover:bg-sky-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2">
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="p_plage_${id}" value="${data.plage || ''}" placeholder="ex: 10:00 - 12:00" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
+                        <button type="button" onclick="startFieldDictation('p_plage_${id}')" class="p-1 bg-slate-100 hover:bg-sky-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    </div>
+                </td>
+                <td class="p-2 text-center">
+                    <button type="button" onclick="document.getElementById('pickup_row_${id}').remove()" class="text-rose-600 hover:text-rose-800 p-1 font-bold text-sm" title="Supprimer">&times;</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            addNeighborhoodRow();
+            addPickupRow();
+        });
+
+        function getFormData() {
+            const getRadioVal = (name) => {
+                const el = document.querySelector(`input[name="${name}"]:checked`);
+                return el ? el.value : '';
+            };
+            const getCheckboxes = (name) => {
+                const els = document.querySelectorAll(`input[name="${name}"]:checked`);
+                return Array.from(els).map(e => e.value);
+            };
+
+            const neighborhoodRows = [];
+            document.querySelectorAll('#neighborhood_tbody tr').forEach(tr => {
+                const rowIdMatch = tr.id.match(/neighborhood_row_(\d+)/);
+                if (rowIdMatch) {
+                    const id = rowIdMatch[1];
+                    neighborhoodRows.push({
+                        nom: document.getElementById(`cq_nom_${id}`)?.value || '',
+                        domicile: document.getElementById(`cq_domicile_${id}`)?.checked || false,
+                        distribution: document.getElementById(`cq_dist_${id}`)?.checked || false,
+                        entreprise: document.getElementById(`cq_ent_${id}`)?.checked || false,
+                        debut: document.getElementById(`cq_debut_${id}`)?.value || '',
+                        fin: document.getElementById(`cq_fin_${id}`)?.value || '',
+                        jours: document.getElementById(`cq_jours_${id}`)?.value || ''
+                    });
+                }
+            });
+
+            const pickupRows = [];
+            document.querySelectorAll('#pickup_tbody tr').forEach(tr => {
+                const rowIdMatch = tr.id.match(/pickup_row_(\d+)/);
+                if (rowIdMatch) {
+                    const id = rowIdMatch[1];
+                    pickupRows.push({
+                        nom: document.getElementById(`p_nom_${id}`)?.value || '',
+                        adresse: document.getElementById(`p_adresse_${id}`)?.value || '',
+                        plage: document.getElementById(`p_plage_${id}`)?.value || ''
+                    });
+                }
+            });
+
+            return {
+                reportId: document.getElementById('report_id').value || null,
+                couleurJour: getRadioVal('couleur_jour'),
+                date: document.getElementById('date_input').value,
+                nbPdr: getRadioVal('nb_pdr'),
+                secteurTypes: getCheckboxes('secteur_type'),
+                routeNum: getRadioVal('route_num'),
+                livraisonChecked: document.getElementById('livraison_chk').checked,
+                remplacant: document.getElementById('remplacant_input').value,
+                ramassageClient: getRadioVal('ramassage_client'),
+                nbRamassage: document.getElementById('nb_ramassage').value,
+                leveeBlp: getRadioVal('levee_blp'),
+                leveeComptoir: getRadioVal('levee_comptoir'),
+                anomalies: document.getElementById('anomalies_input').value,
+                ptsRouges: document.getElementById('pts_rouges').value,
+                ptsJaunes: document.getElementById('pts_jaunes').value,
+                ptsVerts: document.getElementById('pts_verts').value,
+                surplus: document.getElementById('surplus_input').value,
+                heureLimite: document.getElementById('heure_limite').value,
+                neighborhoodRows,
+                pickupRows,
+                updatedAt: new Date().toISOString()
+            };
+        }
+
+        window.saveReportToFirebase = async function() {
+            const data = getFormData();
+            try {
+                const colRef = collection(db, 'acceuilcq');
+                if (data.reportId) {
+                    const docRef = doc(db, 'acceuilcq', data.reportId);
+                    await updateDoc(docRef, data);
+                    alert("Rapport mis à jour avec succès dans Firebase !");
+                } else {
+                    const docRef = await addDoc(colRef, data);
+                    document.getElementById('report_id').value = docRef.id;
+                    alert("Nouveau rapport enregistré avec succès dans Firebase !");
+                }
+            } catch (error) {
+                console.error("Erreur d'enregistrement Firebase:", error);
+                alert("Erreur lors de la sauvegarde : " + error.message);
+            }
+        };
+
+        window.openLoadModal = async function() {
+            const modal = document.getElementById('loadModal');
+            const container = document.getElementById('reportsListContainer');
+            modal.classList.remove('hidden');
+            container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Chargement des rapports...</p>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, 'acceuilcq'));
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Aucun rapport trouvé dans Firebase.</p>';
+                    return;
+                }
+
+                let html = '';
+                querySnapshot.forEach((docSnap) => {
+                    const item = docSnap.data();
+                    const docId = docSnap.id;
+                    const dateStr = item.date || 'Sans date';
+                    const route = item.routeNum || 'Route non spécifiée';
+                    const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '';
+
+                    html += `
+                        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-4 hover:border-emerald-500 transition">
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Rapport Date : ${dateStr} • ${route}</p>
+                                <p class="text-[11px] text-slate-500">Modifié le : ${updated} | ID: ${docId}</p>
+                            </div>
+                            <button type="button" onclick="loadReportData('${docId}', ${escapeString(JSON.stringify(item))})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">
+                                Charger & Modifier
+                            </button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Erreur de récupération:", error);
+                container.innerHTML = `<p class="text-xs text-rose-600 text-center py-6">Erreur de chargement : ${error.message}</p>`;
+            }
+        };
+
+        function escapeString(str) {
+            return encodeURIComponent(str);
+        }
+
+        window.closeLoadModal = function() {
+            document.getElementById('loadModal').classList.add('hidden');
+        };
+
+        window.loadReportData = function(docId, encodedJson) {
+            const item = JSON.parse(decodeURIComponent(encodedJson));
+            
+            document.getElementById('report_id').value = docId;
+            document.getElementById('date_input').value = item.date || '';
+            document.getElementById('remplacant_input').value = item.remplacant || '';
+            document.getElementById('nb_ramassage').value = item.nbRamassage || '';
+            document.getElementById('anomalies_input').value = item.anomalies || '';
+            document.getElementById('pts_rouges').value = item.ptsRouges || '';
+            document.getElementById('pts_jaunes').value = item.ptsJaunes || '';
+            document.getElementById('pts_verts').value = item.ptsVerts || '';
+            document.getElementById('surplus_input').value = item.surplus || '';
+            document.getElementById('heure_limite').value = item.heureLimite || '';
+
+            if (item.couleurJour) {
+                const r = document.querySelector(`input[name="couleur_jour"][value="${item.couleurJour}"]`);
+                if (r) r.checked = true;
+            }
+            if (item.nbPdr) {
+                const r = document.querySelector(`input[name="nb_pdr"][value="${item.nbPdr}"]`);
+                if (r) r.checked = true;
+            }
+            if (item.routeNum) {
+                const r = document.querySelector(`input[name="route_num"][value="${item.routeNum}"]`);
+                if (r) r.checked = true;
+            }
+            if (item.ramassageClient) {
+                const r = document.querySelector(`input[name="ramassage_client"][value="${item.ramassageClient}"]`);
+                if (r) r.checked = true;
+            }
+            if (item.leveeBlp) {
+                const r = document.querySelector(`input[name="levee_blp"][value="${item.leveeBlp}"]`);
+                if (r) r.checked = true;
+            }
+            if (item.leveeComptoir) {
+                const r = document.querySelector(`input[name="levee_comptoir"][value="${item.leveeComptoir}"]`);
+                if (r) r.checked = true;
+            }
+
+            document.getElementById('livraison_chk').checked = !!item.livraisonChecked;
+
+            if (item.secteurTypes && Array.isArray(item.secteurTypes)) {
+                document.querySelectorAll('input[name="secteur_type"]').forEach(chk => {
+                    chk.checked = item.secteurTypes.includes(chk.value);
+                });
+            }
+
+            document.getElementById('neighborhood_tbody').innerHTML = '';
+            neighborhoodRowCounter = 0;
+            if (item.neighborhoodRows && item.neighborhoodRows.length > 0) {
+                item.neighborhoodRows.forEach(row => addNeighborhoodRow(row));
+            } else {
+                addNeighborhoodRow();
+            }
+
+            document.getElementById('pickup_tbody').innerHTML = '';
+            pickupRowCounter = 0;
+            if (item.pickupRows && item.pickupRows.length > 0) {
+                item.pickupRows.forEach(row => addPickupRow(row));
+            } else {
+                addPickupRow();
+            }
+
+            closeLoadModal();
+            alert("Rapport chargé avec succès ! Vous pouvez le modifier et l'enregistrer à nouveau.");
+        };
+
+        window.clearForm = function() {
+            if (confirm("Voulez-vous créer un nouveau formulaire (effacer les champs actuels) ?")) {
+                document.getElementById('qualityForm').reset();
+                document.getElementById('report_id').value = '';
+                document.getElementById('neighborhood_tbody').innerHTML = '';
+                document.getElementById('pickup_tbody').innerHTML = '';
+                neighborhoodRowCounter = 0;
+                pickupRowCounter = 0;
+                addNeighborhoodRow();
+                addPickupRow();
+            }
+        };
+    </script>
+</body>
+</html>
