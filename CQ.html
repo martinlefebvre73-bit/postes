@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Observation CQ - Suivi Professionnel</title>
+    <title>Feuille Observation CQ - Suivi</title>
     <!-- Bootstrap CSS pour l'interface -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -48,9 +48,6 @@
             font-size: 0.95rem;
             font-weight: 600;
         }
-        .text-rose-pale {
-            color: #ffb3c6 !important;
-        }
 
         /* --- CONFIGURATION DE L'IMPRESSION EN MODE PAYSAGE --- */
         @media print {
@@ -62,7 +59,7 @@
                 background-color: #ffffff !important;
                 color: #000000 !important;
             }
-            #vue-accueil, .btn, form, h1, #select-type-container {
+            #vue-accueil, .btn, form, h1, #select-type-container, .btn-danger, .btn-primary {
                 display: none !important;
             }
             #zone-affichage {
@@ -100,141 +97,236 @@
     <div class="container my-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <button class="btn btn-outline-light btn-sm" onclick="location.href='index.html'">← Retour au menu principal</button>
-            <h1 class="text-center text-white fw-bold m-0">Tableau de Bord - Observation CQ</h1>
+            <h1 class="text-center text-white fw-bold m-0">Feuille d'Observation CQ</h1>
             <div></div>
         </div>
 
-        <!-- PAGE D'ACCUEIL / LISTING -->
+        <!-- PAGE D'ACCUEIL / TABLEAU DE BORD OBSERVATION CQ -->
         <div id="vue-accueil">
-            <div class="card shadow-lg p-4 mb-4 text-center">
-                <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <button class="btn btn-success btn-menu-egal" onclick="afficherPageSaisie()">Nouvelle Observation CQ</button>
-                    <button class="btn btn-info btn-menu-egal text-dark" onclick="ouvrirModalRecherche()">Rechercher une observation</button>
-                    <button class="btn btn-outline-light btn-menu-egal" onclick="chargerToutesObservations()">Afficher toutes les observations</button>
+            
+            <div class="card shadow-lg p-4 mb-4">
+                <h4 class="text-light mb-3 text-center">Aperçu Global - Observations CQ</h4>
+                
+                <div class="row g-2 mb-4 justify-content-center align-items-end bg-dark p-3 rounded border border-secondary">
+                    <div class="col-md-4">
+                        <label class="form-label text-light small fw-bold">Période du :</label>
+                        <input type="date" class="form-control form-control-sm" id="statDateDebut" onchange="chargerStatistiques()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-light small fw-bold">Au :</label>
+                        <input type="date" class="form-control form-control-sm" id="statDateFin" onchange="chargerStatistiques()">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-light btn-sm w-100 mt-2 mt-md-0" onclick="reinitialiserFiltreStats()">Tout afficher</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered text-center align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="py-3 fs-5">Observations Totales</th>
+                                <th class="py-3 fs-5">Itinéraires Évalués</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="py-4 fs-3 fw-bold text-info" id="kpi-total-obs">Chargement...</td>
+                                <td class="py-4 fs-3 fw-bold text-success" id="kpi-itineraires">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- ZONE D'AFFICHAGE DES RAPPORTS / LISTES -->
-            <div id="zone-affichage" class="card shadow-sm p-4 mt-4">
-                <h3 id="titre-zone" class="m-0 mb-3">Liste des Observations CQ Récentes</h3>
-                <div id="contenu-zone">
-                    <p class="text-muted">Chargement des données...</p>
+            <!-- BOUTONS DE NAVIGATION -->
+            <div class="card shadow-lg p-4 text-center">
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Nouvelle Observation CQ</button>
+                    <button class="btn btn-success btn-menu-egal" onclick="afficherRapportCQ()">Rapport des Observations</button>
+                    <button class="btn btn-info btn-menu-egal text-dark fw-bold" onclick="ouvrirModalRecherche()">Rechercher par Employé</button>
                 </div>
             </div>
         </div>
 
-        <!-- VUE SAISIE / MODIFICATION : OBSERVATION CQ -->
+        <!-- ZONE D'AFFICHAGE DYNAMIQUE (Rapports imprimables) -->
+        <div id="zone-affichage" class="card shadow-sm p-4 mt-4 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 id="titre-zone" class="m-0"></h3>
+                <button class="btn btn-outline-light btn-sm" onclick="retourAccueil()">Fermer / Retour</button>
+            </div>
+            <div id="contenu-zone"></div>
+        </div>
+
+        <!-- VUE PAGE COMPLÈTE : SAISIE OBSERVATION CQ -->
         <div id="vue-saisie" class="card shadow-lg p-5 d-none">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="text-light" id="titreFormulaire">Nouvelle Observation CQ</h2>
-                <button class="btn btn-outline-light" onclick="retourAccueil()">← Retour</button>
+                <h2 class="text-light">Saisie - Observation Contrôle Qualité (CQ)</h2>
+                <button class="btn btn-outline-light" onclick="retourAccueil()">← Retour au menu</button>
             </div>
             
             <form id="formObservationCQ">
-                <input type="hidden" id="editIdDoc">
+                
+                <!-- SECTION 1 : IDENTIFICATION -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <h5 class="text-warning mb-3">Section 1 : Identification</h5>
+                    <div class="row">
+                        <!-- Date -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date de l'observation</label>
+                            <input type="date" class="form-control" id="dateObservation" required>
+                        </div>
+                        <!-- Itinéraire -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Itinéraire</label>
+                            <input type="text" class="form-control" id="itineraireEmploye" placeholder="Ex: Itinéraire 42, Tournée Sud..." required>
+                        </div>
+                    </div>
 
-                <!-- SECTION 1 : EMPLOYÉ OBSERVÉ -->
-                <h5 class="text-warning border-bottom border-secondary pb-2 mb-3">1. Identification de l'Employé Observé</h5>
+                    <div class="row">
+                        <!-- Sélection de l'employé (Nom & Prénom) par liste déroulante -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Employé (Liste déroulante par Nom)</label>
+                            <select class="form-select" id="nomEmploye" onchange="remplirParNom(this)">
+                                <option value="">-- Choisir par nom --</option>
+                            </select>
+                        </div>
+                        <!-- Saisie de l'ID de l'employé -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ID de l'employé</label>
+                            <input type="text" class="form-control" id="idEmploye" placeholder="Ex: 12345" oninput="remplirParId(this)">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Ancienneté -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Ancienneté</label>
+                            <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté automatique">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2 : DETAILS OBSERVATION -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <h5 class="text-warning mb-3">Section 2 : Détails observation</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-block mb-2">Tiers observé :</label>
+                        <div class="d-flex gap-4 flex-wrap">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tiers1_3" value="1/3 (Carré orange)">
+                                <label class="form-check-label text-light d-flex align-items-center gap-2" for="tiers1_3">
+                                    <span style="display:inline-block; width:15px; height:15px; background-color: orange; border:1px solid #fff;"></span> 1/3 (Carré orange)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tiers2_3" value="2/3 (Carré rose pâle)">
+                                <label class="form-check-label text-light d-flex align-items-center gap-2" for="tiers2_3">
+                                    <span style="display:inline-block; width:15px; height:15px; background-color: #ffb3ba; border:1px solid #fff;"></span> 2/3 (Carré rose pâle)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tiers3_3" value="3/3 (Carré bleu)">
+                                <label class="form-check-label text-light d-flex align-items-center gap-2" for="tiers3_3">
+                                    <span style="display:inline-block; width:15px; height:15px; background-color: #0dcaf0; border:1px solid #fff;"></span> 3/3 (Carré bleu)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Respect des procédures de tri / manipulation</label>
+                            <select class="form-select" id="critereTri">
+                                <option value="Conforme">Conforme</option>
+                                <option value="À améliorer">À améliorer</option>
+                                <option value="Non applicable">Non applicable</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sécurité et posture de travail</label>
+                            <select class="form-select" id="critereSecurite">
+                                <option value="Conforme">Conforme</option>
+                                <option value="À améliorer">À améliorer</option>
+                                <option value="Non applicable">Non applicable</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Description avec Dictée Vocale -->
+                    <div class="mb-3">
+                        <label class="form-label">Commentaires / Observations détaillées (Dictée vocale possible)</label>
+                        <div class="input-group">
+                            <textarea class="form-control" id="description" rows="4" placeholder="Cliquez sur le micro pour dicter vos observations..."></textarea>
+                            <button type="button" class="btn btn-outline-light" onclick="demarrerDictee()">🎤 Dicter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3 : CQ OBSERVÉ (Dynamique en lignes) -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-warning m-0">Section 3 : CQ observé</h5>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneCQ()">+ Ajouter un CQ</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small mb-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Nom du CQ</th>
+                                    <th>Date début</th>
+                                    <th>Date fin</th>
+                                    <th>PDR (Dom - Apts - Com)</th>
+                                    <th style="width: 90px;">Quantité</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lignesCqContainer">
+                                <!-- Lignes injectées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION 4 : SUIVI DES ADRESSES (Dynamique en lignes) -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-warning m-0">Section 4 : Suivi des adresses / tournées</h5>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneAdresse()">+ Ajouter une adresse</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small mb-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Adresse départ</th>
+                                    <th>Adresse fin</th>
+                                    <th style="width: 140px;">Conforme</th>
+                                    <th style="width: 130px;">Heure observé</th>
+                                    <th style="width: 70px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lignesAdresseContainer">
+                                <!-- Lignes injectées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Employé observé (Nom & Prénom)</label>
-                        <select class="form-select" id="nomEmploye" required onchange="remplirParNom(this)">
-                            <option value="">-- Choisir par nom --</option>
+                    <!-- Superviseur responsable -->
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Superviseur évaluateur</label>
+                        <select class="form-select" id="superviseur" required>
+                            <option value="">-- Chargement des superviseurs --</option>
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">ID de l'employé</label>
-                        <input type="text" class="form-control" id="idEmploye" placeholder="Ex: 12345" oninput="remplirParId(this)">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Ancienneté</label>
-                        <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Automatique">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Date observée</label>
-                        <input type="date" class="form-control" id="dateObserve" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Itinéraire</label>
-                        <input type="text" class="form-control" id="itineraire" placeholder="Ex: Itinéraire 42">
-                    </div>
-                </div>
-
-                <!-- SECTION 2 : TIERS OBSERVÉ -->
-                <h5 class="text-warning border-bottom border-secondary pb-2 mb-3">2. Tiers Observé</h5>
-                <div class="mb-4 p-3 border border-secondary rounded bg-dark">
-                    <label class="form-label text-warning fw-bold mb-2">Sélectionnez le profil du tiers (Choix unique) :</label>
-                    <div class="d-flex gap-4 flex-wrap">
-                        <div class="form-check">
-                            <input class="form-check-input tiers-radio" type="radio" name="tiersObserve" id="tiersCarreOrange" value="1/3 carré orange" required>
-                            <label class="form-check-label text-light" for="tiersCarreOrange">
-                                🟧 1/3 carré orange
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input tiers-radio" type="radio" name="tiersObserve" id="tiersCarreRose" value="2/3 carré rose">
-                            <label class="form-check-label text-rose-pale fw-bold" for="tiersCarreRose">
-                                <span style="display:inline-block; width:14px; height:14px; background-color:#ffb3c6; margin-right:4px; vertical-align:middle; border-radius:2px;"></span> 2/3 carré rose
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input tiers-radio" type="radio" name="tiersObserve" id="tiersCarreBleu" value="3/3 carré bleu">
-                            <label class="form-check-label text-light" for="tiersCarreBleu">
-                                🟦 3/3 carré bleu
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SECTION 3 : CQ OBSERVÉ -->
-                <h5 class="text-warning border-bottom border-secondary pb-2 mb-3">3. CQ Observé (8 lignes)</h5>
-                <div id="contenuLignesCQ" class="mb-3">
-                    <!-- Les 8 lignes dynamiques de CQ seront injectées ici -->
-                </div>
-                <div class="mb-4">
-                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneCQ()">+ Ajouter un CQ supplémentaire</button>
-                </div>
-
-                <!-- SECTION 4 : LOCALISATION ET TEMPOREL -->
-                <h5 class="text-warning border-bottom border-secondary pb-2 mb-3">4. Localisation et Horodatage</h5>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-light">Section rue observée - De :</label>
-                        <input type="text" class="form-control" id="sectionRueDe" placeholder="Ex: 100 rue Principale" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-light">Section rue observée - À :</label>
-                        <input type="text" class="form-control" id="sectionRueA" placeholder="Ex: 250 rue Principale" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label fw-bold text-light">Date et heure de l'observation</label>
-                        <input type="datetime-local" class="form-control" id="dateHeureObservation" required>
-                    </div>
-                </div>
-
-                <!-- SECTION 5 : COMMENTAIRES & PIÈCES JOINTES -->
-                <h5 class="text-warning border-bottom border-secondary pb-2 mb-3">5. Commentaires et Pièces Jointes</h5>
-                <div class="mb-3">
-                    <label class="form-label">Commentaires (Dictée vocale possible)</label>
-                    <div class="input-group">
-                        <textarea class="form-control" id="commentaires" rows="4" placeholder="Cliquez sur le micro pour dicter vos observations..."></textarea>
-                        <button type="button" class="btn btn-outline-light" onclick="demarrerDictee()">🎤 Dicter</button>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label">Pièces jointes (Style photo)</label>
-                    <input type="file" class="form-control" id="pieceJointe" accept="image/*" multiple>
-                    <div id="apercuFichiers" class="mt-2 text-muted small"></div>
                 </div>
 
                 <div class="d-flex gap-3 mt-4">
-                    <button type="submit" class="btn btn-success btn-lg flex-grow-1" id="btnEnregistrer">Enregistrer l'Observation CQ</button>
+                    <button type="submit" class="btn btn-success btn-lg flex-grow-1">Enregistrer l'Observation CQ</button>
                     <button type="button" class="btn btn-secondary btn-lg" onclick="retourAccueil()">Annuler</button>
                 </div>
             </form>
@@ -246,13 +338,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light">Rechercher une observation CQ</h5>
+                    <h5 class="modal-title text-light">Rechercher les observations d'un employé</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nom, ID, Itinéraire, CQ, Codage, PDR ou Rue</label>
-                        <input type="text" class="form-control" id="critereRecherche" placeholder="Entrez un nom, ID, itinéraire, CQ, codage, PDR ou mot-clé">
+                        <label class="form-label">Nom ou ID de l'employé</label>
+                        <input type="text" class="form-control" id="critereRecherche" placeholder="Entrez le nom ou l'ID">
                     </div>
                     <button type="button" class="btn btn-info w-100 text-dark fw-bold" onclick="executerRecherche()">Rechercher</button>
                 </div>
@@ -264,7 +356,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -281,119 +373,136 @@
         const auth = getAuth(app);
 
         let listeEmployesMemoire = [];
+        let indexLigneCQ = 0;
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                window.initialiserDonnees();
+                initialiserDonnees();
             } else {
-                alert("Veuillez vous connecter pour accéder aux observations CQ.");
+                alert("Veuillez vous connecter pour accéder au suivi des observations CQ.");
                 window.location.href = "index.html";
             }
         });
 
-        window.initialiserDonnees = async () => {
-            await chargerEmployes();
-            await chargerToutesObservations();
-        };
-
         window.afficherPageSaisie = () => {
             document.getElementById('vue-accueil').classList.add('d-none');
             document.getElementById('vue-saisie').classList.remove('d-none');
+            document.getElementById('dateObservation').valueAsDate = new Date();
             document.getElementById('formObservationCQ').reset();
-            document.getElementById('editIdDoc').value = '';
-            document.getElementById('titreFormulaire').textContent = "Nouvelle Observation CQ";
-            document.getElementById('btnEnregistrer').textContent = "Enregistrer l'Observation CQ";
+            document.getElementById('dateObservation').valueAsDate = new Date();
             
-            document.getElementById('contenuLignesCQ').innerHTML = '';
+            document.getElementById('lignesCqContainer').innerHTML = "";
+            document.getElementById('lignesAdresseContainer').innerHTML = "";
+            indexLigneCQ = 0;
             
-            // Génère 8 lignes de CQ par défaut à l'ouverture
-            for (let i = 0; i < 8; i++) {
-                window.ajouterLigneCQ(null, i === 0);
-            }
-
-            const maintenant = new Date();
-            const annee = maintenant.getFullYear();
-            const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
-            const jour = String(maintenant.getDate()).padStart(2, '0');
-            const heure = String(maintenant.getHours()).padStart(2, '0');
-            const minute = String(maintenant.getMinutes()).padStart(2, '0');
-            
-            document.getElementById('dateObserve').value = `${annee}-${mois}-${jour}`;
-            document.getElementById('dateHeureObservation').value = `${annee}-${mois}-${jour}T${heure}:${minute}`;
-        };
-
-        window.ajouterLigneCQ = (data = null, estPremiere = false) => {
-            const conteneur = document.getElementById('contenuLignesCQ');
-
-            const aujourdHui = new Date().toISOString().split('T')[0];
-            const nomCQ = data ? data.nomCQ || '' : '';
-            const dateDebut = data ? data.dateDebut || aujourdHui : aujourdHui;
-            const dateFin = data ? data.dateFin || aujourdHui : aujourdHui;
-            const codage = data ? data.codage || '' : '';
-            const domChecked = data && data.pdr?.dom ? 'checked' : '';
-            const aptsChecked = data && data.pdr?.apts ? 'checked' : '';
-            const comChecked = data && data.pdr?.com ? 'checked' : '';
-            const quantite = data ? data.quantite || '' : '';
-
-            const ligneDiv = document.createElement('div');
-            ligneDiv.className = 'row align-items-center mb-3 p-3 border border-secondary rounded bg-dark position-relative ligne-cq g-2';
-            
-            let boutonActionHtml = estPremiere 
-                ? `<div class="col-md-1 text-end pt-3"><span class="badge bg-secondary text-light mt-2" title="Ligne principale obligatoire">Principal</span></div>`
-                : `<div class="col-md-1 text-end pt-3"><button type="button" class="btn btn-outline-danger btn-sm mt-2" onclick="this.closest('.ligne-cq').remove()">✕</button></div>`;
-
-            ligneDiv.innerHTML = `
-                <div class="col-md-2">
-                    <label class="form-label small text-warning fw-bold">Nom du CQ</label>
-                    <input type="text" class="form-control form-control-sm cq-nom" placeholder="Nom du CQ" value="${nomCQ}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-warning fw-bold">Date début</label>
-                    <input type="date" class="form-control form-control-sm cq-debut" value="${dateDebut}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-warning fw-bold">Date fin</label>
-                    <input type="date" class="form-control form-control-sm cq-fin" value="${dateFin}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-warning fw-bold">Codage</label>
-                    <input type="text" class="form-control form-control-sm cq-codage" placeholder="Codage" value="${codage}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small text-warning fw-bold d-block">PDR</label>
-                    <div class="d-flex gap-2 pt-1">
-                        <div class="form-check form-check-inline m-0">
-                            <input class="form-check-input pdr-dom" type="checkbox" ${domChecked}>
-                            <label class="form-check-label text-light small">Dom</label>
-                        </div>
-                        <div class="form-check form-check-inline m-0">
-                            <input class="form-check-input pdr-apts" type="checkbox" ${aptsChecked}>
-                            <label class="form-check-label text-light small">Apts</label>
-                        </div>
-                        <div class="form-check form-check-inline m-0">
-                            <input class="form-check-input pdr-com" type="checkbox" ${comChecked}>
-                            <label class="form-check-label text-light small">Com</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label small text-warning fw-bold">Qté</label>
-                    <input type="number" class="form-control form-control-sm cq-qte" placeholder="Qté" value="${quantite}" min="0">
-                </div>
-                ${boutonActionHtml}
-            `;
-            contenu.appendChild(ligneDiv);
+            ajouterLigneCQ(); // Une ligne par défaut Section 3
+            ajouterLigneAdresse(); // Une ligne par défaut Section 4
         };
 
         window.retourAccueil = () => {
             document.getElementById('vue-saisie').classList.add('d-none');
+            document.getElementById('zone-affichage').classList.add('d-none');
             document.getElementById('vue-accueil').classList.remove('d-none');
-            window.chargerToutesObservations();
+            chargerStatistiques(); 
+        };
+
+        // Ajout dynamique des lignes Section 3
+        window.ajouterLigneCQ = () => {
+            indexLigneCQ++;
+            const container = document.getElementById('lignesCqContainer');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm cq-nom" placeholder="Nom du CQ"></td>
+                <td><input type="date" class="form-control form-control-sm cq-debut"></td>
+                <td><input type="date" class="form-control form-control-sm cq-fin"></td>
+                <td>
+                    <div class="d-flex justify-content-center align-items-center gap-3">
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input cq-dom" type="checkbox" id="pdrDom_${indexLigneCQ}" value="Dom">
+                            <label class="form-check-label text-light small" for="pdrDom_${indexLigneCQ}">Dom</label>
+                        </div>
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input cq-apts" type="checkbox" id="pdrApts_${indexLigneCQ}" value="Apts">
+                            <label class="form-check-label text-light small" for="pdrApts_${indexLigneCQ}">Apts</label>
+                        </div>
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input cq-com" type="checkbox" id="pdrCom_${indexLigneCQ}" value="Com">
+                            <label class="form-check-label text-light small" for="pdrCom_${indexLigneCQ}">Com</label>
+                        </div>
+                    </div>
+                </td>
+                <td><input type="number" class="form-control form-control-sm cq-qte text-center" placeholder="0" min="0"></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            container.appendChild(tr);
+        };
+
+        // Ajout dynamique des lignes Section 4 (Adresses)
+        window.ajouterLigneAdresse = () => {
+            const container = document.getElementById('lignesAdresseContainer');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm adr-depart" placeholder="Adresse départ"></td>
+                <td><input type="text" class="form-control form-control-sm adr-fin" placeholder="Adresse fin"></td>
+                <td>
+                    <select class="form-select form-select-sm adr-conforme">
+                        <option value="Oui">Oui</option>
+                        <option value="Non">Non</option>
+                    </select>
+                </td>
+                <td><input type="time" class="form-control form-control-sm adr-heure"></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            container.appendChild(tr);
         };
 
         window.ouvrirModalRecherche = () => new bootstrap.Modal(document.getElementById('modalRecherche')).show();
 
-        async function chargerEmployes() {
+        window.initialiserDonnees = async () => {
+            await chargerStatistiques();
+            await chargerEmployes();
+            await chargerSuperviseurs();
+        };
+
+        window.reinitialiserFiltreStats = () => {
+            document.getElementById('statDateDebut').value = '';
+            document.getElementById('statDateFin').value = '';
+            chargerStatistiques();
+        };
+
+        window.chargerStatistiques = async () => {
+            try {
+                const dateDebut = document.getElementById('statDateDebut').value;
+                const dateFin = document.getElementById('statDateFin').value;
+
+                const querySnapshot = await getDocs(collection(db, "observations_cq"));
+                let totalObservations = 0;
+                let itinerairesSet = new Set();
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let dateObs = data.date;
+
+                    if (dateDebut && dateObs < dateDebut) return;
+                    if (dateFin && dateObs > dateFin) return;
+
+                    totalObservations++;
+                    if (data.itineraire) {
+                        itinerairesSet.add(data.itineraire.trim().toLowerCase());
+                    }
+                });
+
+                document.getElementById('kpi-total-obs').textContent = totalObservations;
+                document.getElementById('kpi-itineraires').textContent = itinerairesSet.size;
+
+            } catch (e) {
+                console.error("Erreur lors du calcul des statistiques :", e);
+                document.getElementById('kpi-total-obs').textContent = "0";
+                document.getElementById('kpi-itineraires').textContent = "0";
+            }
+        };
+
+        window.chargerEmployes = async () => {
             const selectEmp = document.getElementById('nomEmploye');
             try {
                 const querySnapshot = await getDocs(collection(db, "employes"));
@@ -429,7 +538,7 @@
             } catch (e) {
                 console.error("Erreur chargement employés: ", e);
             }
-        }
+        };
 
         window.remplirParNom = (selectElement) => {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -467,6 +576,23 @@
             }
         };
 
+        window.chargerSuperviseurs = async () => {
+            const selectSup = document.getElementById('superviseur');
+            try {
+                const querySnapshot = await getDocs(collection(db, "superviseurs"));
+                selectSup.innerHTML = '<option value="">-- Choisir un superviseur --</option>';
+                querySnapshot.forEach((doc) => {
+                    let sup = doc.data();
+                    let option = document.createElement('option');
+                    option.value = sup.courriel || sup.email || ''; 
+                    option.textContent = `${sup.nom || 'Sans nom'} (${sup.courriel || sup.email || ''})`;
+                    selectSup.appendChild(option);
+                });
+            } catch (e) {
+                console.error("Erreur chargement superviseurs: ", e);
+            }
+        };
+
         window.demarrerDictee = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -476,256 +602,188 @@
             const reconnaissance = new SpeechRecognition();
             reconnaissance.lang = 'fr-FR';
             reconnaissance.onresult = (event) => {
-                document.getElementById('commentaires').value += " " + event.results[0][0].transcript;
+                document.getElementById('description').value += " " + event.results[0][0].transcript;
             };
             reconnaissance.start();
         };
 
         document.getElementById('formObservationCQ').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const idDoc = document.getElementById('editIdDoc').value;
-            const nomEmploye = document.getElementById('nomEmploye').value.trim();
-            const idEmploye = document.getElementById('idEmploye').value.trim();
+            const dateStr = document.getElementById('dateObservation').value;
+            const itineraireStr = document.getElementById('itineraireEmploye').value.trim();
+            const idEmployeSaisi = document.getElementById('idEmploye').value.trim();
+            const nomEmployeSaisi = document.getElementById('nomEmploye').value.trim();
 
-            if (!nomEmploye || !idEmploye) {
-                alert("Veuillez sélectionner un employé observé valide.");
+            if (!idEmployeSaisi || !nomEmployeSaisi) {
+                alert("Veuillez sélectionner un employé par son nom ou saisir un ID valide.");
                 return;
             }
 
-            const lignesDivs = document.querySelectorAll('.ligne-cq');
-            if (lignesDivs.length === 0) {
-                alert("Veuillez ajouter au moins un CQ observé.");
-                return;
-            }
+            let tiersObserveList = [];
+            if (document.getElementById('tiers1_3').checked) tiersObserveList.push('1/3 (Carré orange)');
+            if (document.getElementById('tiers2_3').checked) tiersObserveList.push('2/3 (Carré rose pâle)');
+            if (document.getElementById('tiers3_3').checked) tiersObserveList.push('3/3 (Carré bleu)');
 
-            let cqObserveListe = [];
-            lignesDivs.forEach(div => {
-                let nomCQ = div.querySelector('.cq-nom').value.trim();
-                // N'enregistre que les lignes qui contiennent un nom de CQ rempli (optionnel, ou toutes si vous préférez)
-                if (nomCQ !== '') {
-                    cqObserveListe.push({
-                        nomCQ: nomCQ,
-                        dateDebut: div.querySelector('.cq-debut').value,
-                        dateFin: div.querySelector('.cq-fin').value,
-                        codage: div.querySelector('.cq-codage').value.trim(),
-                        pdr: {
-                            dom: div.querySelector('.pdr-dom').checked,
-                            apts: div.querySelector('.pdr-apts').checked,
-                            com: div.querySelector('.pdr-com').checked
-                        },
-                        quantite: div.querySelector('.cq-qte').value.trim()
+            // Récupération des lignes de CQ (Section 3)
+            let listeCq = [];
+            const rowsCq = document.querySelectorAll('#lignesCqContainer tr');
+            rowsCq.forEach(row => {
+                let nomCq = row.querySelector('.cq-nom').value.trim();
+                if (nomCq) {
+                    let pdrArr = [];
+                    if (row.querySelector('.cq-dom').checked) pdrArr.push('Dom');
+                    if (row.querySelector('.cq-apts').checked) pdrArr.push('Apts');
+                    if (row.querySelector('.cq-com').checked) pdrArr.push('Com');
+
+                    listeCq.push({
+                        nom: nomCq,
+                        dateDebut: row.querySelector('.cq-debut').value,
+                        dateFin: row.querySelector('.cq-fin').value,
+                        pdr: pdrArr,
+                        quantite: row.querySelector('.cq-qte').value || '0'
                     });
                 }
             });
 
-            if (cqObserveListe.length === 0) {
-                alert("Veuillez remplir au moins une ligne de CQ (Nom du CQ).");
-                return;
-            }
+            // Récupération des lignes d'adresses (Section 4)
+            let listeAdresses = [];
+            const rowsAdr = document.querySelectorAll('#lignesAdresseContainer tr');
+            rowsAdr.forEach(row => {
+                let dep = row.querySelector('.adr-depart').value.trim();
+                let fin = row.querySelector('.adr-fin').value.trim();
+                if (dep || fin) {
+                    listeAdresses.push({
+                        depart: dep,
+                        fin: fin,
+                        conforme: row.querySelector('.adr-conforme').value,
+                        heure: row.querySelector('.adr-heure').value
+                    });
+                }
+            });
 
-            const tiersSelectionne = document.querySelector('input[name="tiersObserve"]:checked');
-            const tiers = tiersSelectionne ? tiersSelectionne.value : '';
-
-            const fichiersInput = document.getElementById('pieceJointe');
-            let nomsFichiers = [];
-            for (let i = 0; i < fichiersInput.files.length; i++) {
-                nomsFichiers.push(fichiersInput.files[i].name);
-            }
-
-            const observationData = {
-                nomEmploye: nomEmploye,
-                idEmploye: idEmploye,
+            const nouvelleObservation = {
+                date: dateStr,
+                itineraire: itineraireStr,
+                nom: nomEmployeSaisi,
+                idEmploye: idEmployeSaisi,
                 anciennete: document.getElementById('ancienneteEmploye').value,
-                dateObserve: document.getElementById('dateObserve').value,
-                itineraire: document.getElementById('itineraire').value.trim(),
-                cqObserveListe: cqObserveListe,
-                tiersObserve: tiers,
-                sectionRueDe: document.getElementById('sectionRueDe').value.trim(),
-                sectionRueA: document.getElementById('sectionRueA').value.trim(),
-                dateHeureObservation: document.getElementById('dateHeureObservation').value,
-                commentaires: document.getElementById('commentaires').value.trim(),
-                piecesJointes: nomsFichiers,
-                derniereMiseAJour: new Date().toISOString()
+                tiersObserve: tiersObserveList,
+                critereTri: document.getElementById('critereTri').value,
+                critereSecurite: document.getElementById('critereSecurite').value,
+                description: document.getElementById('description').value,
+                listeCq: listeCq,
+                listeAdresses: listeAdresses,
+                superviseurEmail: document.getElementById('superviseur').value
             };
 
             try {
-                if (idDoc) {
-                    const docRef = doc(db, "CQ", idDoc);
-                    await updateDoc(docRef, observationData);
-                    alert("Observation CQ modifiée avec succès !");
-                } else {
-                    await addDoc(collection(db, "CQ"), observationData);
-                    alert("Observation CQ enregistrée avec succès dans la collection 'CQ' !");
-                }
-                window.retourAccueil();
+                await addDoc(collection(db, "observations_cq"), nouvelleObservation);
+                alert("Observation CQ enregistrée avec succès !");
+                document.getElementById('formObservationCQ').reset();
+                retourAccueil();
             } catch (erreur) {
-                console.error("Erreur lors de l'enregistrement : ", erreur);
-                alert("Erreur lors de l'enregistrement dans Firebase.");
+                console.error("Erreur : ", erreur);
+                alert("Erreur lors de l'enregistrement de l'observation.");
             }
         });
 
-        window.chargerToutesObservations = async () => {
+        window.afficherRapportCQ = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
             const contenu = document.getElementById('contenu-zone');
-            document.getElementById('titre-zone').textContent = "Liste des Observations CQ Récentes";
-            contenu.innerHTML = "<p>Chargement des observations...</p>";
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Rapport Global - Observations Contrôle Qualité (CQ)";
+            contenu.innerHTML = "<p>Génération du rapport en cours...</p>";
 
             try {
-                const querySnapshot = await getDocs(collection(db, "CQ"));
+                const querySnapshot = await getDocs(collection(db, "observations_cq"));
                 let resultats = [];
+
                 querySnapshot.forEach((docSnap) => {
                     resultats.push({
-                        id: docSnap.id,
+                        idDoc: docSnap.id,
                         ...docSnap.data()
                     });
                 });
 
-                resultats.sort((a, b) => new Date(b.dateHeureObservation || 0) - new Date(a.dateHeureObservation || 0));
+                resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 if (resultats.length === 0) {
-                    contenu.innerHTML = "<p class='text-muted fs-5'>Aucune observation CQ enregistrée pour le moment.</p>";
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucune observation CQ enregistrée pour le moment !</p>";
                     return;
                 }
 
-                construireTableauObservations(resultats);
-            } catch (e) {
-                console.error("Erreur chargement CQ :", e);
-                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des observations CQ.</p>";
-            }
-        };
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle small">`;
+                html += `<thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses / Tournées (Section 4)</th><th>Tri / Séq.</th><th>Superviseur</th></tr></thead><tbody>`;
 
-        function construireTableauObservations(resultats) {
-            const contenu = document.getElementById('contenu-zone');
-            let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
-            html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
-            html += `<thead><tr><th>Date observée</th><th>Employé observé</th><th>ID</th><th>Itinéraire</th><th>Détails CQ Observés (Codage, PDR)</th><th>Tiers Observé</th><th>Rue (De - à)</th><th>Actions</th></tr></thead><tbody>`;
-
-            resultats.forEach(item => {
-                let listeCQ = item.cqObserveListe || (item.cqObserve ? [item.cqObserve] : []);
-                let cqHtml = listeCQ.map(cq => {
-                    let pdrObj = cq.pdr || cq.distribution || {};
-                    let pdrTxt = [];
-                    if (pdrObj.dom) pdrTxt.push('Dom');
-                    if (pdrObj.apts) pdrTxt.push('Apts');
-                    if (pdrObj.com) pdrTxt.push('Com');
-                    let codageTxt = cq.codage ? ` - Codage: ${cq.codage}` : '';
-                    return `• <strong>${cq.nomCQ || 'N/A'}</strong> (${cq.dateDebut || '?'} au ${cq.dateFin || '?'})${codageTxt} [PDR: ${pdrTxt.join(', ') || 'Aucun'}] - Qté: ${cq.quantite || '0'}`;
-                }).join('<br>');
-
-                let badgeStyle = "bg-info text-dark";
-                let badgeTiersHtml = item.tiersObserve === "2/3 carré rose" 
-                    ? `<span class="badge" style="background-color: #ffb3c6; color: #000;"><span style="display:inline-block; width:10px; height:10px; background-color:#ffb3c6; border:1px solid #000; margin-right:3px; vertical-align:middle;"></span>${item.tiersObserve}</span>`
-                    : `<span class="badge ${badgeStyle}">${item.tiersObserve || 'N/A'}</span>`;
-
-                let rueDe = item.sectionRueDe || '';
-                let rueA = item.sectionRueA || '';
-                let rueTexte = (rueDe || rueA) ? `${rueDe} à ${rueA}` : (item.sectionRue || 'N/A');
-
-                html += `<tr>
-                    <td>${item.dateObserve || 'N/A'}</td>
-                    <td><strong>${item.nomEmploye || 'N/A'}</strong></td>
-                    <td>${item.idEmploye || 'N/A'}</td>
-                    <td>${item.itineraire || 'N/A'}</td>
-                    <td><small>${cqHtml || 'Aucun CQ'}</small></td>
-                    <td>${badgeTiersHtml}</td>
-                    <td>${rueTexte}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="preparerModification('${item.id}')">Modifier</button>
-                    </td>
-                </tr>`;
-            });
-
-            html += `</tbody></table></div>`;
-            contenu.innerHTML = html;
-        }
-
-        window.preparerModification = async (idDoc) => {
-            try {
-                const docRef = doc(db, "CQ", idDoc);
-                const docSnap = await getDoc(docRef);
-                if (!docSnap.exists()) {
-                    alert("Observation introuvable.");
-                    return;
-                }
-                const data = docSnap.data();
-
-                document.getElementById('editIdDoc').value = idDoc;
-                document.getElementById('titreFormulaire').textContent = "Modifier l'Observation CQ";
-                document.getElementById('btnEnregistrer').textContent = "Mettre à jour l'Observation";
-
-                document.getElementById('nomEmploye').value = data.nomEmploye || '';
-                document.getElementById('idEmploye').value = data.idEmploye || '';
-                document.getElementById('ancienneteEmploye').value = data.anciennete || '';
-                document.getElementById('dateObserve').value = data.dateObserve || '';
-                document.getElementById('itineraire').value = data.itineraire || '';
-
-                document.getElementById('contenuLignesCQ').innerHTML = '';
-                let listeCQ = data.cqObserveListe || (data.cqObserve ? [data.cqObserve] : []);
-                
-                if (listeCQ.length > 0) {
-                    listeCQ.forEach((cq, index) => {
-                        window.ajouterLigneCQ(cq, index === 0);
-                    });
-                } else {
-                    for (let i = 0; i < 8; i++) {
-                        window.ajouterLigneCQ(null, i === 0);
+                resultats.forEach(item => {
+                    let tiersTxt = item.tiersObserve && item.tiersObserve.length > 0 ? item.tiersObserve.join(', ') : 'N/A';
+                    
+                    let cqLignesHtml = 'N/A';
+                    if (item.listeCq && item.listeCq.length > 0) {
+                        cqLignesHtml = item.listeCq.map(c => {
+                            let pdrStr = c.pdr && c.pdr.length > 0 ? c.pdr.join('/') : '-';
+                            return `• <strong>${c.nom}</strong> (${c.dateDebut || '?'} au ${c.dateFin || '?'}) [PDR: ${pdrStr}] Qte: ${c.quantite}`;
+                        }).join('<br>');
                     }
-                }
 
-                if (data.tiersObserve) {
-                    const radios = document.querySelectorAll('.tiers-radio');
-                    radios.forEach(r => {
-                        if (r.value === data.tiersObserve) r.checked = true;
-                    });
-                }
+                    let adrLignesHtml = 'N/A';
+                    if (item.listeAdresses && item.listeAdresses.length > 0) {
+                        adrLignesHtml = item.listeAdresses.map(a => {
+                            let badgeConf = a.conforme === 'Oui' ? 'text-success' : 'text-danger';
+                            return `• ${a.depart || '?'} ➔ ${a.fin || '?'} [<span class="${badgeConf} fw-bold">${a.conforme}</span>] à ${a.heure || '?'}`;
+                        }).join('<br>');
+                    }
 
-                document.getElementById('sectionRueDe').value = data.sectionRueDe || data.sectionRue || '';
-                document.getElementById('sectionRueA').value = data.sectionRueA || '';
-                
-                document.getElementById('dateHeureObservation').value = data.dateHeureObservation || '';
-                document.getElementById('commentaires').value = data.commentaires || '';
+                    html += `<tr>
+                        <td>${item.date}</td>
+                        <td><span class="badge bg-warning text-dark">${item.itineraire || 'N/A'}</span></td>
+                        <td><strong>${item.nom}</strong><br><small>ID: ${item.idEmploye}</small></td>
+                        <td><span class="badge bg-secondary">${tiersTxt}</span></td>
+                        <td>${cqLignesHtml}</td>
+                        <td>${adrLignesHtml}</td>
+                        <td>Tri: ${item.critereTri || 'N/A'}<br>Sec: ${item.critereSecurite || 'N/A'}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                    </tr>`;
+                });
 
-                document.getElementById('vue-accueil').classList.add('d-none');
-                document.getElementById('vue-saisie').classList.remove('d-none');
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
 
             } catch (e) {
-                console.error("Erreur chargement modification :", e);
-                alert("Erreur lors de la récupération des données.");
+                console.error("Erreur lors de la génération du rapport CQ :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
             }
         };
 
         window.executerRecherche = async () => {
             const critere = document.getElementById('critereRecherche').value.trim().toLowerCase();
             if (!critere) {
-                alert("Veuillez entrer un terme de recherche.");
+                alert("Veuillez entrer un nom ou un ID.");
                 return;
             }
 
             bootstrap.Modal.getInstance(document.getElementById('modalRecherche')).hide();
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
             const contenu = document.getElementById('contenu-zone');
-            document.getElementById('titre-zone').textContent = `Résultats de recherche pour : "${critere}"`;
+            
+            zone.classList.remove('d-none');
+            titre.textContent = `Résultats de recherche CQ pour : "${critere}"`;
             contenu.innerHTML = "<p>Recherche en cours...</p>";
 
             try {
-                const querySnapshot = await getDocs(collection(db, "CQ"));
+                const querySnapshot = await getDocs(collection(db, "observations_cq"));
                 let resultats = [];
 
                 querySnapshot.forEach((docSnap) => {
                     let data = docSnap.data();
-                    let nomEmp = (data.nomEmploye || "").toLowerCase();
+                    let nomEmp = (data.nom || "").toLowerCase();
                     let idEmp = (data.idEmploye || "").toLowerCase();
-                    let itineraire = (data.itineraire || "").toLowerCase();
-                    let rueDe = (data.sectionRueDe || data.sectionRue || "").toLowerCase();
-                    let rueA = (data.sectionRueA || "").toLowerCase();
-                    
-                    let matchCQ = false;
-                    let listeCQ = data.cqObserveListe || (data.cqObserve ? [data.cqObserve] : []);
-                    listeCQ.forEach(cq => {
-                        let nomCQ = (cq.nomCQ || "").toLowerCase();
-                        let codageCQ = (cq.codage || "").toLowerCase();
-                        if (nomCQ.includes(critere) || codageCQ.includes(critere)) matchCQ = true;
-                    });
 
-                    if (nomEmp.includes(critere) || idEmp.includes(critere) || itineraire.includes(critere) || rueDe.includes(critere) || rueA.includes(critere) || matchCQ) {
+                    if (nomEmp.includes(critere) || idEmp.includes(critere)) {
                         resultats.push({
                             id: docSnap.id,
                             ...data
@@ -733,16 +791,51 @@
                     }
                 });
 
+                resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
+
                 if (resultats.length === 0) {
-                    contenu.innerHTML = "<p class='text-muted fs-5'>Aucune observation trouvée pour ce critère.</p>";
+                    contenu.innerHTML = "<p class='text-muted fs-5'>Aucune observation trouvée pour cet employé.</p>";
                     return;
                 }
 
-                construireTableauObservations(resultats);
+                let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle small"><thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses (Section 4)</th><th>Superviseur</th></tr></thead><tbody>`;
+                
+                resultats.forEach(data => {
+                    let tiersTxt = data.tiersObserve && data.tiersObserve.length > 0 ? data.tiersObserve.join(', ') : 'N/A';
+                    
+                    let cqLignesHtml = 'N/A';
+                    if (data.listeCq && data.listeCq.length > 0) {
+                        cqLignesHtml = data.listeCq.map(c => {
+                            let pdrStr = c.pdr && c.pdr.length > 0 ? c.pdr.join('/') : '-';
+                            return `• <strong>${c.nom}</strong> (${c.dateDebut || '?'} au ${c.dateFin || '?'}) [PDR: ${pdrStr}] Qte: ${c.quantite}`;
+                        }).join('<br>');
+                    }
+
+                    let adrLignesHtml = 'N/A';
+                    if (data.listeAdresses && data.listeAdresses.length > 0) {
+                        adrLignesHtml = data.listeAdresses.map(a => {
+                            let badgeConf = a.conforme === 'Oui' ? 'text-success' : 'text-danger';
+                            return `• ${a.depart || '?'} ➔ ${a.fin || '?'} [<span class="${badgeConf} fw-bold">${a.conforme}</span>] à ${a.heure || '?'}`;
+                        }).join('<br>');
+                    }
+
+                    html += `<tr>
+                        <td>${data.date}</td>
+                        <td><span class="badge bg-warning text-dark">${data.itineraire || 'N/A'}</span></td>
+                        <td><strong>${data.nom}</strong><br><small>ID: ${data.idEmploye}</small></td>
+                        <td><span class="badge bg-secondary">${tiersTxt}</span></td>
+                        <td>${cqLignesHtml}</td>
+                        <td>${adrLignesHtml}</td>
+                        <td>${data.superviseurEmail || 'N/A'}</td>
+                    </tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
 
             } catch (e) {
                 console.error("Erreur lors de la recherche :", e);
-                contenu.innerHTML = "<p class='text-danger'>Erreur lors de la recherche.</p>";
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
             }
         };
     </script>
