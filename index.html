@@ -96,8 +96,8 @@
     </form>
   </div>
 
-  <!-- APPLICATION PRINCIPALE / MENU (Masquée tant que non connecté) -->
-  <div class="w-full max-w-md bg-luxuryCard p-8 rounded-2xl card-border shadow-2xl relative z-10 card-watermark d-none" id="app-container">
+  <!-- APPLICATION PRINCIPALE / MENU (Masquée par défaut via la classe 'hidden') -->
+  <div class="w-full max-w-md bg-luxuryCard p-8 rounded-2xl card-border shadow-2xl relative z-10 card-watermark hidden" id="app-container">
     
     <!-- Menu Principal -->
     <div class="menu" id="menuPrincipal">
@@ -197,10 +197,10 @@
         if (user) {
             // Utilisateur connecté : Afficher le menu principal et masquer le formulaire
             document.getElementById('vue-connexion').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('d-none');
+            document.getElementById('app-container').classList.remove('hidden');
         } else {
             // Utilisateur déconnecté : Afficher le formulaire et masquer le menu
-            document.getElementById('app-container').classList.add('d-none');
+            document.getElementById('app-container').classList.add('hidden');
             document.getElementById('vue-connexion').classList.remove('hidden');
         }
     });
