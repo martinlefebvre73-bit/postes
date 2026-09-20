@@ -212,25 +212,25 @@
                         <label class="form-label">Date de l'intervention</label>
                         <input type="date" class="form-control" id="dateIntervention" required>
                     </div>
-                    <!-- Sélection de l'employé (Nom & Prénom) -->
+                    <!-- Sélection de l'employé (Nom & Prénom) par liste déroulante -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Employé (Nom, Prénom)</label>
-                        <select class="form-select" id="nomEmploye" required onchange="remplirInfosEmploye(this)">
-                            <option value="">-- Chargement des employés --</option>
+                        <label class="form-label">Employé (Liste déroulante par Nom)</label>
+                        <select class="form-select" id="nomEmploye" onchange="remplirParNom(this)">
+                            <option value="">-- Choisir par nom --</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="row">
-                    <!-- ID (Rempli automatiquement) -->
+                    <!-- Saisie de l'ID de l'employé -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">ID de l'employé</label>
-                        <input type="text" class="form-control" id="idEmploye" readonly required placeholder="Sélectionnez un employé">
+                        <label class="form-label">ID de l'employé (Saisie directe possible)</label>
+                        <input type="text" class="form-control" id="idEmploye" placeholder="Ex: 12345" oninput="remplirParId(this)">
                     </div>
                     <!-- Ancienneté -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Ancienneté</label>
-                        <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté">
+                        <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté automatique">
                     </div>
                 </div>
 
@@ -431,12 +431,17 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Variable globale pour stocker la liste des employés en mémoire et faciliter la recherche par ID
+        let listeEmployesMemoire = [];
+
         // --- GESTION DES VUES ---
         window.afficherPageSaisie = () => {
             document.getElementById('vue-accueil').classList.add('d-none');
             document.getElementById('vue-saisie').classList.remove('d-none');
             document.getElementById('dateIntervention').valueAsDate = new Date();
             document.getElementById('blocSstOptions').classList.add('d-none');
+            document.getElementById('formIntervention').reset();
+            document.getElementById('dateIntervention').valueAsDate = new Date();
         };
 
         window.retourAccueil = () => {
@@ -497,7 +502,6 @@
                     let data = docSnap.data();
                     let dateInterv = data.date;
 
-                    // Application du filtre de période (de...à)
                     if (dateDebut && dateInterv < dateDebut) return;
                     if (dateFin && dateInterv > dateFin) return;
 
@@ -553,14 +557,14 @@
             const selectEmp = document.getElementById('nomEmploye');
             try {
                 const querySnapshot = await getDocs(collection(db, "employes"));
-                selectEmp.innerHTML = '<option value="">-- Choisir un employé --</option>';
+                selectEmp.innerHTML = '<option value="">-- Choisir par nom --</option>';
                 
-                let employes = [];
+                listeEmployesMemoire = [];
                 querySnapshot.forEach((doc) => {
-                    employes.push(doc.data());
+                    listeEmployesMemoire.push(doc.data());
                 });
 
-                employes.sort((a, b) => {
+                listeEmployesMemoire.sort((a, b) => {
                     let nomA = (a.nom || '').toLowerCase();
                     let nomB = (b.nom || '').toLowerCase();
                     if (nomA < nomB) return -1;
@@ -570,7 +574,7 @@
                     return prenomA.localeCompare(prenomB);
                 });
 
-                employes.forEach((emp) => {
+                listeEmployesMemoire.forEach((emp) => {
                     let option = document.createElement('option');
                     let nomComplet = `${emp.nom || ''} ${emp.prenom || ''}`.trim();
                     let employeId = emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '');
@@ -587,10 +591,43 @@
             }
         };
 
-        window.remplirInfosEmploye = (selectElement) => {
+        // Remplissage automatique lors du choix par la liste déroulante (Nom)
+        window.remplirParNom = (selectElement) => {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
-            document.getElementById('idEmploye').value = selectedOption.dataset.id || '';
-            document.getElementById('ancienneteEmploye').value = selectedOption.dataset.anciennete || '';
+            if (selectedOption.value) {
+                document.getElementById('idEmploye').value = selectedOption.dataset.id || '';
+                document.getElementById('ancienneteEmploye').value = selectedOption.dataset.anciennete || '';
+            } else {
+                document.getElementById('idEmploye').value = '';
+                document.getElementById('ancienneteEmploye').value = '';
+            }
+        };
+
+        // Remplissage automatique lors de la saisie manuelle de l'ID
+        window.remplirParId = (inputElement) => {
+            const saisieId = inputElement.value.trim().toLowerCase();
+            const selectEmp = document.getElementById('nomEmploye');
+
+            if (!saisieId) {
+                selectEmp.value = '';
+                document.getElementById('ancienneteEmploye').value = '';
+                return;
+            }
+
+            // Chercher l'employé correspondant dans la mémoire par son ID
+            let trouve = listeEmployesMemoire.find(emp => {
+                let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).toLowerCase();
+                return idEmp === saisieId;
+            });
+
+            if (trouve) {
+                let nomComplet = `${trouve.nom || ''} ${trouve.prenom || ''}`.trim();
+                selectEmp.value = nomComplet;
+                document.getElementById('ancienneteEmploye').value = trouve.anciennete || 'Non spécifiée';
+            } else {
+                selectEmp.value = '';
+                document.getElementById('ancienneteEmploye').value = 'ID non trouvé';
+            }
         };
 
         window.chargerSuperviseurs = async () => {
@@ -631,12 +668,16 @@
             const dateStr = document.getElementById('dateIntervention').value;
             const delaiJours = parseInt(document.getElementById('prochainRdv').value);
             const typeInterv = document.getElementById('typeIntervention').value;
+            const idEmployeSaisi = document.getElementById('idEmploye').value.trim();
+            const nomEmployeSaisi = document.getElementById('nomEmploye').value.trim();
+
+            if (!idEmployeSaisi || !nomEmployeSaisi) {
+                alert("Veuillez sélectionner un employé par son nom ou saisir un ID valide.");
+                return;
+            }
             
             let dateEcheance = new Date(dateStr);
             dateEcheance.setDate(dateEcheance.getDate() + delaiJours);
-
-            const selectEmp = document.getElementById('nomEmploye');
-            const selectedOption = selectEmp.options[selectEmp.selectedIndex];
 
             let graviteSstValue = null;
             let categoriesSst = [];
@@ -650,8 +691,8 @@
 
             const nouvelleIntervention = {
                 date: dateStr,
-                nom: selectedOption.value,
-                idEmploye: document.getElementById('idEmploye').value,
+                nom: nomEmployeSaisi,
+                idEmploye: idEmployeSaisi,
                 anciennete: document.getElementById('ancienneteEmploye').value,
                 typeIntervention: typeInterv,
                 graviteSst: graviteSstValue,
@@ -1350,7 +1391,6 @@
                         }
                     }
 
-                    // Échappement sécurisé des chaînes pour l'appel de la fonction de modification
                     let safeNom = (data.nom || '').replace(/'/g, "\\'");
                     let safeAnciennete = (data.anciennete || '').replace(/'/g, "\\'");
                     let safeDesc = (data.description || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
