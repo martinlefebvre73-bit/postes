@@ -114,6 +114,22 @@
             <!-- TABLEAU DES STATISTIQUES (KPIs) -->
             <div class="card shadow-lg p-4 mb-4">
                 <h4 class="text-light mb-3 text-center">État Global du Suivi</h4>
+                
+                <!-- SÉLECTEUR DE PÉRIODE POUR LES STATISTIQUES -->
+                <div class="row g-2 mb-4 justify-content-center align-items-end bg-dark p-3 rounded border border-secondary">
+                    <div class="col-md-4">
+                        <label class="form-label text-light small fw-bold">Période du :</label>
+                        <input type="date" class="form-control form-control-sm" id="statDateDebut" onchange="chargerStatistiques()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-light small fw-bold">Au :</label>
+                        <input type="date" class="form-control form-control-sm" id="statDateFin" onchange="chargerStatistiques()">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-light btn-sm w-100 mt-2 mt-md-0" onclick="reinitialiserFiltreStats()">Tout afficher</button>
+                    </div>
+                </div>
+
                 <div class="table-responsive mb-3">
                     <table class="table table-bordered text-center align-middle mb-0">
                         <thead class="table-dark">
@@ -453,9 +469,19 @@
             await chargerSuperviseurs();
         };
 
-        // Calcul et affichage des statistiques (KPIs et compteurs par type d'intervention)
+        // Réinitialisation du filtre de période des statistiques
+        window.reinitialiserFiltreStats = () => {
+            document.getElementById('statDateDebut').value = '';
+            document.getElementById('statDateFin').value = '';
+            chargerStatistiques();
+        };
+
+        // Calcul et affichage des statistiques (KPIs et compteurs par type d'intervention) avec filtre de période
         window.chargerStatistiques = async () => {
             try {
+                const dateDebut = document.getElementById('statDateDebut').value;
+                const dateFin = document.getElementById('statDateFin').value;
+
                 const querySnapshot = await getDocs(collection(db, "interventions"));
                 let totalInterventions = 0;
                 let dossiersMap = new Map();
@@ -469,6 +495,12 @@
 
                 querySnapshot.forEach((docSnap) => {
                     let data = docSnap.data();
+                    let dateInterv = data.date;
+
+                    // Application du filtre de période (de...à)
+                    if (dateDebut && dateInterv < dateDebut) return;
+                    if (dateFin && dateInterv > dateFin) return;
+
                     totalInterventions++;
 
                     let type = (data.typeIntervention || '').trim().toLowerCase();
