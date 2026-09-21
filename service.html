@@ -170,7 +170,7 @@
           </div>
         </div>
 
-        <!-- Mécanicien (Date et heure retirées) -->
+        <!-- Mécanicien -->
         <div class="space-y-1 border-x border-gray-300 px-2">
           <div>
             <label class="block text-[10px] font-bold">Mechanic's or supervisor's name / Nom du mécanicien</label>
@@ -198,8 +198,13 @@
             <label class="block text-[10px] font-bold">Supervisor's Name / Nom du surveillant</label>
             <select id="supervisorName" class="w-full border-b border-black font-semibold bg-transparent focus:outline-none py-0.5 cursor-pointer">
               <option value="Martin Lefebvre" selected>Martin Lefebvre</option>
-              <option value="Autre Surveillant 1">Autre Surveillant 1</option>
-              <option value="Autre Surveillant 2">Autre Surveillant 2</option>
+              <option value="Pierre-Stephane Moreau">Pierre-Stephane Moreau</option>
+              <option value="Jonathan Foucreault">Jonathan Foucreault</option>
+              <option value="Edgar Raigosa">Edgar Raigosa</option>
+              <option value="Jean Petit">Jean Petit</option>
+              <option value="Yanick Dussault">Yanick Dussault</option>
+              <option value="Yves Moukoue">Yves Moukoue</option>
+              <option value="Arianne Lavigueur">Arianne Lavigueur</option>
             </select>
           </div>
           <div>
@@ -345,7 +350,7 @@
       }
     });
 
-    // Bouton Expédier (Génération du PDF et ouverture du client mail)
+    // Bouton Expédier
     document.getElementById('btnExpedier').addEventListener('click', async () => {
       const btn = document.getElementById('btnExpedier');
       btn.disabled = true;
@@ -364,10 +369,8 @@
       };
 
       try {
-        // Génération et téléchargement du PDF
         await html2pdf().set(opt).from(element).save();
 
-        // Ouverture de l'application de courriel pré-remplie
         const emailDestinataire = "Garage.Prefontaine@canadapost.postescanada.ca";
         const sujet = encodeURIComponent(`Rapport de défaut de véhicule - Camion #${numCamion}`);
         const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le rapport de défaut concernant le camion #${numCamion}.\n\n(Note: Si le PDF téléchargé ne s'est pas joint automatiquement, veuillez glisser le fichier "${nomFichier}" dans ce courriel).\n\nMerci,\nMartin Lefebvre`);
@@ -386,7 +389,6 @@
   <!-- Script JS utilitaire : Date automatique & Dictée Vocale -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Date du jour automatique uniquement sur les champs prévus (Chauffeur & Surveillant)
       const aujourdhui = new Date();
       const annee = aujourdhui.getFullYear();
       const mois = String(aujourdhui.getMonth() + 1).padStart(2, '0');
