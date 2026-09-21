@@ -6,6 +6,8 @@
   <title>Rapport du chauffeur sur les défauts du véhicule — Postes Canada</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf.js pour la génération du PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     @media print {
       body {
@@ -24,14 +26,14 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 text-black text-xs font-sans">
 
-  <!-- Barre d'outils supérieure (Navigation, Recherche, Impression & Enregistrement Firebase) -->
+  <!-- Barre d'outils supérieure (Navigation, Recherche, Enregistrement, Expédition & Impression) -->
   <div class="no-print mb-4 w-full max-w-4xl flex flex-wrap justify-between items-center gap-2">
     <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-slate-700 text-white rounded font-bold hover:bg-slate-800 transition cursor-pointer">
       ← Retour au menu
     </button>
     
     <div class="flex items-center space-x-2">
-      <!-- Bouton Recherche par Numéro de Camion -->
+      <!-- Bouton Recherche -->
       <button id="btnRecherche" type="button" class="px-4 py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition cursor-pointer flex items-center space-x-1 shadow">
         <span>🔍</span>
         <span>Rechercher</span>
@@ -43,15 +45,21 @@
         <span>Enregistrer dans Firebase</span>
       </button>
 
+      <!-- Bouton Expédier par Courriel -->
+      <button id="btnExpedier" type="button" class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition cursor-pointer flex items-center space-x-1 shadow">
+        <span>📧</span>
+        <span>Expédier</span>
+      </button>
+
       <!-- Bouton Impression / PDF -->
-      <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition cursor-pointer">
+      <button onclick="window.print()" class="px-4 py-2 bg-gray-600 text-white rounded font-bold hover:bg-gray-700 transition cursor-pointer">
         Imprimer / PDF
       </button>
     </div>
   </div>
 
   <!-- Conteneur Formulaire -->
-  <div class="page-container w-full max-w-4xl bg-white border-2 border-black p-4 shadow-lg text-black space-y-3">
+  <div id="formulaireContent" class="page-container w-full max-w-4xl bg-white border-2 border-black p-4 shadow-lg text-black space-y-3">
     
     <!-- En-tête : Logo & Titre -->
     <div class="flex justify-between items-start border-b-2 border-black pb-2">
@@ -162,7 +170,7 @@
           </div>
         </div>
 
-        <!-- Mécanicien -->
+        <!-- Mécanicien (Date et heure retirées) -->
         <div class="space-y-1 border-x border-gray-300 px-2">
           <div>
             <label class="block text-[10px] font-bold">Mechanic's or supervisor's name / Nom du mécanicien</label>
@@ -179,7 +187,7 @@
             </div>
             <div class="w-1/2">
               <label class="block text-[9px]">Date (AA/MM/JJ)</label>
-              <input type="text" id="mechanicDate" class="champ-date-aujourdhui w-full border-b border-black text-center focus:outline-none">
+              <input type="text" id="mechanicDate" class="w-full border-b border-black text-center focus:outline-none" placeholder="AA/MM/JJ">
             </div>
           </div>
         </div>
@@ -239,7 +247,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
       authDomain: "postes-26884.firebaseapp.com",
@@ -250,11 +257,10 @@
       measurementId: "G-83YPF62ET5"
     };
 
-    // Initialisation Firebase & Firestore
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Enregistrement des données dans Firebase
+    // Enregistrement
     document.getElementById('btnEnregistrer').addEventListener('click', async () => {
       const btn = document.getElementById('btnEnregistrer');
       btn.disabled = true;
@@ -292,7 +298,7 @@
       }
     });
 
-    // Recherche et récupération d'un rapport par numéro de camion
+    // Recherche
     document.getElementById('btnRecherche').addEventListener('click', async () => {
       const numRecherche = prompt("Entrez le numéro du camion à rechercher (ex: 7299) :");
       if (!numRecherche || numRecherche.trim() === '') return;
@@ -309,10 +315,8 @@
         if (querySnapshot.empty) {
           alert(`Aucune fiche trouvée pour le camion N° ${numRecherche.trim()}.`);
         } else {
-          // Prendre le document le plus récent
           const docData = querySnapshot.docs[0].data();
 
-          // Remplissage automatique des champs du formulaire
           document.getElementById('numVehicule').value = docData.numVehicule || '';
           document.getElementById('depotChauffeur').value = docData.depotChauffeur || '';
           document.getElementById('odometerReading').value = docData.odometerReading || '';
@@ -340,12 +344,49 @@
         btn.innerHTML = "<span>🔍</span><span>Rechercher</span>";
       }
     });
+
+    // Bouton Expédier (Génération du PDF et ouverture du client mail)
+    document.getElementById('btnExpedier').addEventListener('click', async () => {
+      const btn = document.getElementById('btnExpedier');
+      btn.disabled = true;
+      btn.innerText = "Génération PDF...";
+
+      const element = document.getElementById('formulaireContent');
+      const numCamion = document.getElementById('numVehicule').value || 'Inconnu';
+      const nomFichier = `Rapport_Defaut_Camion_${numCamion}.pdf`;
+
+      const opt = {
+        margin: 5,
+        filename: nomFichier,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      try {
+        // Génération et téléchargement du PDF
+        await html2pdf().set(opt).from(element).save();
+
+        // Ouverture de l'application de courriel pré-remplie
+        const emailDestinataire = "Garage.Prefontaine@canadapost.postescanada.ca";
+        const sujet = encodeURIComponent(`Rapport de défaut de véhicule - Camion #${numCamion}`);
+        const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le rapport de défaut concernant le camion #${numCamion}.\n\n(Note: Si le PDF téléchargé ne s'est pas joint automatiquement, veuillez glisser le fichier "${nomFichier}" dans ce courriel).\n\nMerci,\nMartin Lefebvre`);
+
+        window.location.href = `mailto:${emailDestinataire}?subject=${sujet}&body=${corps}`;
+      } catch (err) {
+        console.error("Erreur lors de l'export PDF :", err);
+        alert("Erreur lors de la génération du fichier PDF.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>📧</span><span>Expédier</span>";
+      }
+    });
   </script>
 
-  <!-- Script JS utilitaire : Date automatique & Reconnaissance Vocale -->
+  <!-- Script JS utilitaire : Date automatique & Dictée Vocale -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Insertion de la date du jour automatique
+      // Date du jour automatique uniquement sur les champs prévus (Chauffeur & Surveillant)
       const aujourdhui = new Date();
       const annee = aujourdhui.getFullYear();
       const mois = String(aujourdhui.getMonth() + 1).padStart(2, '0');
@@ -359,7 +400,7 @@
       });
     });
 
-    // Fonction de dictée vocale (Speech-to-Text)
+    // Dictée vocale
     function activerDictee(idElement, bouton) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
