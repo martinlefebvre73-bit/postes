@@ -142,28 +142,32 @@
         <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Menu Secondaire</h2>
       </div>
 
-      <div class="space-y-4">
-        <!-- 1. Bouton Directoires (Bleu) -->
-        <button onclick="ouvrirDirectoire()" class="w-full py-4 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Directoires</button>
+      <!-- Grille à 2 colonnes pour les boutons -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Bouton Directoires (Bleu) -->
+        <button onclick="ouvrirDirectoire()" class="w-full py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Directoires</button>
         
-        <!-- 2. Bouton Verification Casier (Indigo/Violet) -->
-        <button onclick="location.href='casier 1.html'" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">Verification Casier</button>
+        <!-- Bouton Verification Casier (Indigo/Violet) -->
+        <button onclick="location.href='casier 1.html'" class="w-full py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Verification Casier</button>
         
-        <!-- 3. Bouton Quotidien (Violet/Sky) -->
-        <button onclick="location.href='quotidien.html'" class="w-full py-4 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer">Quotidien</button>
+        <!-- Bouton Quotidien (Sky) -->
+        <button onclick="location.href='quotidien.html'" class="w-full py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Quotidien</button>
 
-        <!-- 4. Bouton Acceuil CQ (Teal/Cyan) -->
-        <button onclick="location.href='controlcq.html'" class="w-full py-4 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer">Acceuil CQ</button>
+        <!-- Bouton Camion-service (Violet - pointe vers service.html) -->
+        <button onclick="location.href='service.html'" class="w-full py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Camion-service</button>
+
+        <!-- Bouton Acceuil CQ (Teal/Cyan) -->
+        <button onclick="location.href='controlcq.html'" class="w-full py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
         
-        <!-- 5. Bouton Observation SST (Ambre/Orange) -->
-        <button onclick="window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank')" class="w-full py-4 px-6 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer">Observation SST</button>
+        <!-- Bouton Observation SST (Ambre/Orange) -->
+        <button onclick="window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank')" class="w-full py-4 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation SST</button>
 
-        <!-- 6. Bouton Observation CQ (Rose/Fuchsia) -->
-        <button onclick="location.href='CQ.html'" class="w-full py-4 px-6 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer">Observation CQ</button>
-
-        <!-- Bouton Retour (Gris foncé) -->
-        <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
+        <!-- Bouton Observation CQ (Rose/Fuchsia) -->
+        <button onclick="location.href='CQ.html'" class="col-span-2 w-full py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
       </div>
+
+      <!-- Bouton Retour (Gris foncé) -->
+      <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
 
   </div>
