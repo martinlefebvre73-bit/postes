@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport du chauffeur sur les défauts du véhicule — Postes Canada</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .page-container {
+        border: 2px solid black !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 text-black text-xs font-sans">
+
+  <!-- Barre d'outils supérieure (Navigation, Recherche, Impression & Enregistrement Firebase) -->
+  <div class="no-print mb-4 w-full max-w-4xl flex flex-wrap justify-between items-center gap-2">
+    <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-slate-700 text-white rounded font-bold hover:bg-slate-800 transition cursor-pointer">
+      ← Retour au menu
+    </button>
+    
+    <div class="flex items-center space-x-2">
+      <!-- Bouton Recherche par Numéro de Camion -->
+      <button id="btnRecherche" type="button" class="px-4 py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition cursor-pointer flex items-center space-x-1 shadow">
+        <span>🔍</span>
+        <span>Rechercher</span>
+      </button>
+
+      <!-- Bouton Enregistrer -->
+      <button id="btnEnregistrer" type="button" class="px-4 py-2 bg-emerald-600 text-white rounded font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center space-x-1 shadow">
+        <span>💾</span>
+        <span>Enregistrer dans Firebase</span>
+      </button>
+
+      <!-- Bouton Impression / PDF -->
+      <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition cursor-pointer">
+        Imprimer / PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Conteneur Formulaire -->
+  <div class="page-container w-full max-w-4xl bg-white border-2 border-black p-4 shadow-lg text-black space-y-3">
+    
+    <!-- En-tête : Logo & Titre -->
+    <div class="flex justify-between items-start border-b-2 border-black pb-2">
+      <div class="flex items-center space-x-2">
+        <div class="font-bold text-lg leading-tight uppercase border-r-2 border-black pr-3">
+          CANADA<br>POST
+        </div>
+        <div class="font-bold text-lg leading-tight uppercase pl-1">
+          POSTES<br>CANADA
+        </div>
+      </div>
+      <div class="text-right">
+        <h1 class="font-bold text-sm tracking-wide">Driver's Vehicle Defect Report</h1>
+        <h2 class="font-bold text-sm tracking-wide">Rapport du chauffeur sur les défauts du véhicule</h2>
+      </div>
+    </div>
+
+    <!-- Ligne 1 : Info Véhicule -->
+    <div class="grid grid-cols-3 gap-2 border border-black p-2 bg-gray-50">
+      <!-- N° du véhicule avec Dictée Vocale -->
+      <div>
+        <label class="block font-bold text-[10px]">Vehicle no. / N° du véhicule</label>
+        <div class="flex items-center space-x-1">
+          <input type="text" id="numVehicule" placeholder="Ex: 7299" class="w-full bg-transparent border-b border-black font-semibold text-sm focus:outline-none">
+          <button type="button" onclick="activerDictee('numVehicule', this)" class="no-print p-1 text-gray-600 hover:text-blue-600 focus:outline-none" title="Dictée vocale">
+            🎙️
+          </button>
+        </div>
+      </div>
+
+      <!-- Local du chauffeur / Dépôt avec Dictée Vocale -->
+      <div>
+        <label class="block font-bold text-[10px]">Driver's location / Local du chauffeur (Dépôt)</label>
+        <div class="flex items-center space-x-1">
+          <input type="text" id="depotChauffeur" placeholder="Ex: Aéroport" class="w-full bg-transparent border-b border-black font-semibold text-sm focus:outline-none">
+          <button type="button" onclick="activerDictee('depotChauffeur', this)" class="no-print p-1 text-gray-600 hover:text-blue-600 focus:outline-none" title="Dictée vocale">
+            🎙️
+          </button>
+        </div>
+      </div>
+
+      <!-- Indication du compteur -->
+      <div>
+        <label class="block font-bold text-[10px]">Odometer reading / Indication du compteur</label>
+        <input type="text" id="odometerReading" placeholder="Ex: 124500" class="w-full bg-transparent border-b border-black font-semibold text-sm focus:outline-none">
+      </div>
+    </div>
+
+    <!-- Section Principale : Exposé du problème / Réparation effectuée -->
+    <div class="grid grid-cols-2 gap-2 border border-black">
+      <!-- Colonne Gauche: Exposé du problème (Description avec Dictée Vocale) -->
+      <div class="p-2 border-r border-black flex flex-col justify-between h-48">
+        <div>
+          <div class="flex justify-between items-center border-b border-black pb-1 mb-2">
+            <label class="font-bold text-xs">
+              Details of vehicle defect(s) / Exposé du problème du véhicule
+            </label>
+            <button type="button" onclick="activerDictee('descriptionDefaut', this)" class="no-print px-2 py-0.5 bg-gray-100 hover:bg-blue-100 border border-gray-400 rounded text-[11px] font-semibold text-gray-700 flex items-center space-x-1 transition cursor-pointer" title="Dictée vocale">
+              <span>🎙️</span>
+              <span>Dicter</span>
+            </button>
+          </div>
+          <textarea id="descriptionDefaut" class="w-full h-32 p-1 resize-none font-medium text-sm focus:outline-none bg-transparent" placeholder="Saisir ou dicter les détails du problème..."></textarea>
+        </div>
+      </div>
+
+      <!-- Colonne Droite: Réparation effectuée -->
+      <div class="p-2 flex flex-col justify-between h-48">
+        <div>
+          <label class="block font-bold text-xs border-b border-black pb-1 mb-2">
+            Repair(s) completed / Réparation effectuée
+          </label>
+          <textarea id="reparationEffectuee" class="w-full h-32 p-1 resize-none font-medium text-sm focus:outline-none bg-transparent" placeholder="Réservé au service de mécanique..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Certifications / Signatures Chauffeur & Mécanicien -->
+    <div class="border border-black p-2 space-y-3">
+      <div class="flex items-center space-x-2 border-b border-gray-300 pb-2">
+        <input type="checkbox" id="certify" class="w-4 h-4 border-black rounded-none cursor-pointer">
+        <label for="certify" class="font-bold text-[11px] cursor-pointer">
+          I certify that all defects have been corrected and communicated. / J'atteste que toutes les anomalies ont été corrigées et signalées.[span_0](start_span)[span_0](end_span)
+        </label>
+      </div>
+
+      <!-- Signatures Grid -->
+      <div class="grid grid-cols-3 gap-4 pt-1">
+        <!-- Chauffeur -->
+        <div class="space-y-1">
+          <div>
+            <label class="block text-[10px] font-bold">Driver's Name / Nom du conducteur</label>
+            <input type="text" id="driverName" class="w-full border-b border-black bg-transparent focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold">Driver's signature / Signature du chauffeur</label>
+            <div class="h-8 border-b border-black"></div>
+          </div>
+          <div class="flex space-x-2">
+            <div class="w-1/2">
+              <label class="block text-[9px]">Time / Heure</label>
+              <input type="text" id="driverTime" placeholder="--:--" class="w-full border-b border-black text-center focus:outline-none">
+            </div>
+            <div class="w-1/2">
+              <label class="block text-[9px]">Date (AA/MM/JJ)</label>
+              <input type="text" id="driverDate" class="champ-date-aujourdhui w-full border-b border-black text-center focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Mécanicien -->
+        <div class="space-y-1 border-x border-gray-300 px-2">
+          <div>
+            <label class="block text-[10px] font-bold">Mechanic's or supervisor's name / Nom du mécanicien</label>
+            <input type="text" id="mechanicName" class="w-full border-b border-black bg-transparent focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold">Mechanic's signature / Signature du mécanicien</label>
+            <div class="h-8 border-b border-black"></div>
+          </div>
+          <div class="flex space-x-2">
+            <div class="w-1/2">
+              <label class="block text-[9px]">Time / Heure</label>
+              <input type="text" id="mechanicTime" placeholder="--:--" class="w-full border-b border-black text-center focus:outline-none">
+            </div>
+            <div class="w-1/2">
+              <label class="block text-[9px]">Date (AA/MM/JJ)</label>
+              <input type="text" id="mechanicDate" class="champ-date-aujourdhui w-full border-b border-black text-center focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Surveillant -->
+        <div class="space-y-1">
+          <div>
+            <label class="block text-[10px] font-bold">Supervisor's Name / Nom du surveillant</label>
+            <select id="supervisorName" class="w-full border-b border-black font-semibold bg-transparent focus:outline-none py-0.5 cursor-pointer">
+              <option value="Martin Lefebvre" selected>Martin Lefebvre</option>
+              <option value="Autre Surveillant 1">Autre Surveillant 1</option>
+              <option value="Autre Surveillant 2">Autre Surveillant 2</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold">Supervisor's signature / Signature du surveillant</label>
+            <div class="h-8 border-b border-black"></div>
+          </div>
+          <div class="flex space-x-2">
+            <div class="w-1/2">
+              <label class="block text-[9px]">Time / Heure</label>
+              <input type="text" id="supervisorTime" placeholder="--:--" class="w-full border-b border-black text-center focus:outline-none">
+            </div>
+            <div class="w-1/2">
+              <label class="block text-[9px]">Date (AA/MM/JJ)</label>
+              <input type="text" id="supervisorDate" class="champ-date-aujourdhui w-full border-b border-black font-semibold text-center focus:outline-none">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avertissement & Pied de page -->
+    <div class="border border-black p-2 flex justify-between items-center bg-gray-50">
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" id="returned" class="w-4 h-4 border-black rounded-none cursor-pointer">
+        <label for="returned" class="font-bold text-[10px] cursor-pointer">
+          Completed DVDR must be returned with vehicle / Le Rapport du chauffeur sur les défauts du véhicule duly rempli doit être retourné avec le véhicule[span_1](start_span)[span_1](end_span)
+        </label>
+      </div>
+      <div class="text-[9px] font-mono border-l border-black pl-2">
+        34-093-200 (17-02)[span_2](start_span)[span_2](end_span)
+      </div>
+    </div>
+
+    <!-- Copies Destinataires -->
+    <div class="flex justify-between text-[10px] font-bold px-4 pt-1 border-t border-gray-300">
+      <span>1. Service Centre / Centre du service</span>[span_3](start_span)[span_3](end_span)
+      <span>2. Driver / Chauffeur</span>[span_4](start_span)[span_4](end_span)
+      <span>3. Operations / Opérations</span>[span_5](start_span)[span_5](end_span)
+    </div>
+
+  </div>
+
+  <!-- SCRIPT FIREBASE JS SDK (MODULE) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+      authDomain: "postes-26884.firebaseapp.com",
+      projectId: "postes-26884",
+      storageBucket: "postes-26884.firebasestorage.app",
+      messagingSenderId: "75974397689",
+      appId: "1:75974397689:web:5fd12942788612c62b1c28",
+      measurementId: "G-83YPF62ET5"
+    };
+
+    // Initialisation Firebase & Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Enregistrement des données dans Firebase
+    document.getElementById('btnEnregistrer').addEventListener('click', async () => {
+      const btn = document.getElementById('btnEnregistrer');
+      btn.disabled = true;
+      btn.innerText = "Enregistrement...";
+
+      try {
+        const donneesCamion = {
+          numVehicule: document.getElementById('numVehicule').value,
+          depotChauffeur: document.getElementById('depotChauffeur').value,
+          odometerReading: document.getElementById('odometerReading').value,
+          descriptionDefaut: document.getElementById('descriptionDefaut').value,
+          reparationEffectuee: document.getElementById('reparationEffectuee').value,
+          certifieCorrection: document.getElementById('certify').checked,
+          driverName: document.getElementById('driverName').value,
+          driverTime: document.getElementById('driverTime').value,
+          driverDate: document.getElementById('driverDate').value,
+          mechanicName: document.getElementById('mechanicName').value,
+          mechanicTime: document.getElementById('mechanicTime').value,
+          mechanicDate: document.getElementById('mechanicDate').value,
+          supervisorName: document.getElementById('supervisorName').value,
+          supervisorTime: document.getElementById('supervisorTime').value,
+          supervisorDate: document.getElementById('supervisorDate').value,
+          formulaireRetourne: document.getElementById('returned').checked,
+          creeLe: serverTimestamp()
+        };
+
+        const docRef = await addDoc(collection(db, "camion"), donneesCamion);
+        alert("Rapport enregistré avec succès dans Firebase ! ID : " + docRef.id);
+      } catch (error) {
+        console.error("Erreur d'enregistrement Firebase :", error);
+        alert("Erreur lors de l'enregistrement : " + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>💾</span><span>Enregistrer dans Firebase</span>";
+      }
+    });
+
+    // Recherche et récupération d'un rapport par numéro de camion
+    document.getElementById('btnRecherche').addEventListener('click', async () => {
+      const numRecherche = prompt("Entrez le numéro du camion à rechercher (ex: 7299) :");
+      if (!numRecherche || numRecherche.trim() === '') return;
+
+      const btn = document.getElementById('btnRecherche');
+      btn.disabled = true;
+      btn.innerText = "Recherche...";
+
+      try {
+        const camionRef = collection(db, "camion");
+        const q = query(camionRef, where("numVehicule", "==", numRecherche.trim()), orderBy("creeLe", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          alert(`Aucune fiche trouvée pour le camion N° ${numRecherche.trim()}.`);
+        } else {
+          // Prendre le document le plus récent
+          const docData = querySnapshot.docs[0].data();
+
+          // Remplissage automatique des champs du formulaire
+          document.getElementById('numVehicule').value = docData.numVehicule || '';
+          document.getElementById('depotChauffeur').value = docData.depotChauffeur || '';
+          document.getElementById('odometerReading').value = docData.odometerReading || '';
+          document.getElementById('descriptionDefaut').value = docData.descriptionDefaut || '';
+          document.getElementById('reparationEffectuee').value = docData.reparationEffectuee || '';
+          document.getElementById('certify').checked = !!docData.certifieCorrection;
+          document.getElementById('driverName').value = docData.driverName || '';
+          document.getElementById('driverTime').value = docData.driverTime || '';
+          document.getElementById('driverDate').value = docData.driverDate || '';
+          document.getElementById('mechanicName').value = docData.mechanicName || '';
+          document.getElementById('mechanicTime').value = docData.mechanicTime || '';
+          document.getElementById('mechanicDate').value = docData.mechanicDate || '';
+          document.getElementById('supervisorName').value = docData.supervisorName || 'Martin Lefebvre';
+          document.getElementById('supervisorTime').value = docData.supervisorTime || '';
+          document.getElementById('supervisorDate').value = docData.supervisorDate || '';
+          document.getElementById('returned').checked = !!docData.formulaireRetourne;
+
+          alert(`Fiche du camion N° ${numRecherche.trim()} chargée avec succès !`);
+        }
+      } catch (error) {
+        console.error("Erreur de recherche Firebase :", error);
+        alert("Erreur lors de la recherche : " + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>🔍</span><span>Rechercher</span>";
+      }
+    });
+  </script>
+
+  <!-- Script JS utilitaire : Date automatique & Reconnaissance Vocale -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Insertion de la date du jour automatique
+      const aujourdhui = new Date();
+      const annee = aujourdhui.getFullYear();
+      const mois = String(aujourdhui.getMonth() + 1).padStart(2, '0');
+      const jour = String(aujourdhui.getDate()).padStart(2, '0');
+      
+      const dateFormatee = `${annee}/${mois}/${jour}`;
+
+      const champsDate = document.querySelectorAll('.champ-date-aujourdhui');
+      champsDate.forEach(input => {
+        input.value = dateFormatee;
+      });
+    });
+
+    // Fonction de dictée vocale (Speech-to-Text)
+    function activerDictee(idElement, bouton) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert("La dictée vocale n'est pas supportée par votre navigateur.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-CA';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      const champCible = document.getElementById(idElement);
+
+      recognition.onstart = () => {
+        bouton.classList.add('animate-pulse', 'text-red-600');
+        champCible.placeholder = "Écoute en cours...";
+      };
+
+      recognition.onresult = (event) => {
+        const texteDicte = event.results[0][0].transcript;
+        if (champCible.value.trim() === '') {
+          champCible.value = texteDicte;
+        } else {
+          champCible.value += ' ' + texteDicte;
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Erreur de dictée vocale :", event.error);
+        alert("Erreur lors de la capture vocale : " + event.error);
+      };
+
+      recognition.onend = () => {
+        bouton.classList.remove('animate-pulse', 'text-red-600');
+        if (champCible.tagName === 'TEXTAREA') {
+          champCible.placeholder = "Saisir ou dicter les détails du problème...";
+        } else {
+          champCible.placeholder = "";
+        }
+      };
+
+      recognition.start();
+    }
+  </script>
+
+</body>
+</html>
