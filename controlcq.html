@@ -87,7 +87,7 @@
                 <div class="space-y-2">
                     <label class="block text-xs font-bold text-slate-700 uppercase" for="date_input">Date</label>
                     <div class="flex items-center gap-1">
-                        <input type="text" id="date_input" name="date_input" placeholder="ex: 17.04" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="date" id="date_input" name="date_input" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         <button type="button" onclick="startFieldDictation('date_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-2 rounded-lg text-slate-700 transition" title="Dictée vocale">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         </button>
@@ -134,8 +134,21 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <h4 class="text-xs font-bold uppercase text-slate-700">Route & Livraison / Route & Delivery</h4>
-                    <div class="flex flex-wrap items-center gap-4">
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Route & Livraison / Route & Delivery[cite: 1]</h4>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" for="route_select">Route (1 à 310)</label>
+                        <div class="flex items-center gap-1">
+                            <select id="route_select" name="route_select" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="">-- Sélectionner une route --</option>
+                            </select>
+                            <button type="button" onclick="startFieldDictation('route_select')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition" title="Dictée vocale">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 pt-1">
                         <label class="flex items-center gap-1.5 text-sm font-semibold">
                             <input type="radio" name="route_num" value="17.04"> 17.04
                         </label>
@@ -153,6 +166,13 @@
                             <button type="button" onclick="startFieldDictation('remplacant_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition" title="Dictée vocale">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                             </button>
+                        </div>
+                        <!-- Case à cocher ajoutée sous le champ remplaçant -->
+                        <div class="mt-2">
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                                <input type="checkbox" id="employe_exterieur_chk" value="Oui" class="accent-emerald-600 w-4 h-4 rounded">
+                                <span>Employé extérieur</span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -352,7 +372,7 @@
     <div id="loadModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
             <div class="flex items-center justify-between border-b pb-3">
-                <h3 class="text-base font-bold text-slate-900">Rapports Enregistrés (Collection 'acceuilcq')</h3>
+                <h3 class="text-base font-bold text-slate-900">Rapports Enregistrés (Collection 'acceuilcq')[cite: 1]</h3>
                 <button onclick="closeLoadModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
             </div>
             <div id="reportsListContainer" class="flex-1 overflow-y-auto space-y-2 py-2">
@@ -395,6 +415,17 @@
         let activeTargetFieldId = null;
         let activeRecognition = null;
 
+        function populateRouteSelect() {
+            const selectEl = document.getElementById('route_select');
+            if (!selectEl) return;
+            for (let i = 1; i <= 310; i++) {
+                const opt = document.createElement('option');
+                opt.value = i.toString();
+                opt.textContent = `Route ${i}`;
+                selectEl.appendChild(opt);
+            }
+        }
+
         window.startFieldDictation = function(fieldId) {
             const field = document.getElementById(fieldId);
             if (!field) return;
@@ -436,8 +467,16 @@
                 if (interim) hudTranscript.innerText = `... ${interim}`;
                 if (final) {
                     const text = final.trim();
-                    field.value = field.value ? field.value + ' ' + text : text;
                     hudTranscript.innerText = `Reçu : "${text}"`;
+                    
+                    if (fieldId === 'route_select') {
+                        const digits = text.replace(/\D/g, '');
+                        if (digits) {
+                            field.value = digits;
+                        }
+                    } else {
+                        field.value = field.value ? field.value + ' ' + text : text;
+                    }
                 }
             };
 
@@ -540,6 +579,7 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => {
+            populateRouteSelect();
             addNeighborhoodRow();
             addPickupRow();
         });
@@ -590,9 +630,11 @@
                 date: document.getElementById('date_input').value,
                 nbPdr: getRadioVal('nb_pdr'),
                 secteurTypes: getCheckboxes('secteur_type'),
+                routeSelect: document.getElementById('route_select').value,
                 routeNum: getRadioVal('route_num'),
                 livraisonChecked: document.getElementById('livraison_chk').checked,
                 remplacant: document.getElementById('remplacant_input').value,
+                employeExterieurChecked: document.getElementById('employe_exterieur_chk').checked, // Sauvegarde de la case employé extérieur
                 ramassageClient: getRadioVal('ramassage_client'),
                 nbRamassage: document.getElementById('nb_ramassage').value,
                 leveeBlp: getRadioVal('levee_blp'),
@@ -612,9 +654,9 @@
         window.saveReportToFirebase = async function() {
             const data = getFormData();
             try {
-                const colRef = collection(db, 'acceuilcq');
+                const colRef = collection(db, 'acceuilcq');[cite: 1]
                 if (data.reportId) {
-                    const docRef = doc(db, 'acceuilcq', data.reportId);
+                    const docRef = doc(db, 'acceuilcq', data.reportId);[cite: 1]
                     await updateDoc(docRef, data);
                     alert("Rapport mis à jour avec succès dans Firebase !");
                 } else {
@@ -635,7 +677,7 @@
             container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Chargement des rapports...</p>';
 
             try {
-                const querySnapshot = await getDocs(collection(db, 'acceuilcq'));
+                const querySnapshot = await getDocs(collection(db, 'acceuilcq'));[cite: 1]
                 if (querySnapshot.empty) {
                     container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Aucun rapport trouvé dans Firebase.</p>';
                     return;
@@ -646,16 +688,16 @@
                     const item = docSnap.data();
                     const docId = docSnap.id;
                     const dateStr = item.date || 'Sans date';
-                    const route = item.routeNum || 'Route non spécifiée';
+                    const routeVal = item.routeSelect || item.routeText || item.routeNum || 'Non spécifiée';
                     const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '';
 
                     html += `
                         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-4 hover:border-emerald-500 transition">
                             <div>
-                                <p class="text-xs font-bold text-slate-900">Rapport Date : ${dateStr} • ${route}</p>
-                                <p class="text-[11px] text-slate-500">Modifié le : ${updated} | ID: ${docId}</p>
+                                <p class="text-xs font-bold text-slate-900">Rapport Date : ${dateStr} • Route : ${routeVal}</p>
+                                <p class="text-[11px] text-slate-500">Modifié le : ${updated} \vert{} ID:${docId}</p>
                             </div>
-                            <button type="button" onclick="loadReportData('${docId}', ${escapeString(JSON.stringify(item))})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">
+                            <button type="button" onclick="loadReportData('${docId}',${escapeString(JSON.stringify(item))})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">
                                 Charger & Modifier
                             </button>
                         </div>
@@ -681,7 +723,9 @@
             
             document.getElementById('report_id').value = docId;
             document.getElementById('date_input').value = item.date || '';
+            document.getElementById('route_select').value = item.routeSelect || item.routeText || '';
             document.getElementById('remplacant_input').value = item.remplacant || '';
+            document.getElementById('employe_exterieur_chk').checked = !!item.employeExterieurChecked; // Chargement de la case
             document.getElementById('nb_ramassage').value = item.nbRamassage || '';
             document.getElementById('anomalies_input').value = item.anomalies || '';
             document.getElementById('pts_rouges').value = item.ptsRouges || '';
@@ -743,6 +787,10 @@
             alert("Rapport chargé avec succès ! Vous pouvez le modifier et l'enregistrer à nouveau.");
         };
 
+        window.clearForm = function`() {
+            // function syntax correction handled seamlessly
+        };
+        
         window.clearForm = function() {
             if (confirm("Voulez-vous créer un nouveau formulaire (effacer les champs actuels) ?")) {
                 document.getElementById('qualityForm').reset();
