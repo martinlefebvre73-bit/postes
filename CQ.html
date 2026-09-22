@@ -315,6 +315,29 @@
                     </div>
                 </div>
 
+                <!-- SECTION 5 : AJOUT DOCUMENTS (Photos et autres documents) -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-warning m-0">Section 5 : Ajout documents (Photos et autres)</h5>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneDocument()">+ Ajouter un fichier</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small mb-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Description / Titre du document</th>
+                                    <th>Fichier (Photo, PDF, etc.)</th>
+                                    <th style="width: 70px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lignesDocumentContainer">
+                                <!-- Lignes injectées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="row">
                     <!-- Superviseur responsable -->
                     <div class="col-md-12 mb-3">
@@ -393,10 +416,12 @@
             
             document.getElementById('lignesCqContainer').innerHTML = "";
             document.getElementById('lignesAdresseContainer').innerHTML = "";
+            document.getElementById('lignesDocumentContainer').innerHTML = "";
             indexLigneCQ = 0;
             
             ajouterLigneCQ(); // Une ligne par défaut Section 3
             ajouterLigneAdresse(); // Une ligne par défaut Section 4
+            ajouterLigneDocument(); // Une ligne par défaut Section 5
         };
 
         window.retourAccueil = () => {
@@ -451,6 +476,18 @@
                     </select>
                 </td>
                 <td><input type="time" class="form-control form-control-sm adr-heure"></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            container.appendChild(tr);
+        };
+
+        // Ajout dynamique des lignes Section 5 (Documents et Photos)
+        window.ajouterLigneDocument = () => {
+            const container = document.getElementById('lignesDocumentContainer');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm doc-titre" placeholder="Ex: Photo anomalie tri, Rapport..."></td>
+                <td><input type="file" class="form-control form-control-sm doc-fichier" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"></td>
                 <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
             `;
             container.appendChild(tr);
@@ -607,6 +644,20 @@
             reconnaissance.start();
         };
 
+        // Fonction utilitaire pour convertir les fichiers sélectionnés en Base64 (pour sauvegarde simple dans Firestore sans configuration Cloud Storage)
+        const convertirFichierEnBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve({
+                    nomFichier: file.name,
+                    typeMime: file.type,
+                    donnees: reader.result
+                });
+                reader.onerror = error => reject(error);
+            });
+        };
+
         document.getElementById('formObservationCQ').addEventListener('submit', async (e) => {
             e.preventDefault();
             const dateStr = document.getElementById('dateObservation').value;
@@ -661,6 +712,30 @@
                 }
             });
 
+            // Récupération des documents/photos (Section 5)
+            let listeDocuments = [];
+            const rowsDoc = document.querySelectorAll('#lignesDocumentContainer tr');
+            for (let row of rowsDoc) {
+                let titreDoc = row.querySelector('.doc-titre').value.trim();
+                let inputFile = row.querySelector('.doc-fichier');
+                if (inputFile.files && inputFile.files[0]) {
+                    let fichierObj = await convertirFichierEnBase64(inputFile.files[0]);
+                    listeDocuments.push({
+                        titre: titreDoc || fichierObj.nomFichier,
+                        nomFichier: fichierObj.nomFichier,
+                        typeMime: fichierObj.typeMime,
+                        donnees: fichierObj.donnees
+                    });
+                } else if (titreDoc) {
+                    listeDocuments.push({
+                        titre: titreDoc,
+                        nomFichier: 'Aucun fichier joint',
+                        typeMime: '',
+                        donnees: ''
+                    });
+                }
+            }
+
             const nouvelleObservation = {
                 date: dateStr,
                 itineraire: itineraireStr,
@@ -673,6 +748,7 @@
                 description: document.getElementById('description').value,
                 listeCq: listeCq,
                 listeAdresses: listeAdresses,
+                listeDocuments: listeDocuments,
                 superviseurEmail: document.getElementById('superviseur').value
             };
 
@@ -716,7 +792,7 @@
 
                 let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button></div>`;
                 html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle small">`;
-                html += `<thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses / Tournées (Section 4)</th><th>Tri / Séq.</th><th>Superviseur</th></tr></thead><tbody>`;
+                html += `<thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses / Tournées</th><th>Documents / Photos</th><th>Tri / Séq.</th><th>Superviseur</th></tr></thead><tbody>`;
 
                 resultats.forEach(item => {
                     let tiersTxt = item.tiersObserve && item.tiersObserve.length > 0 ? item.tiersObserve.join(', ') : 'N/A';
@@ -737,6 +813,17 @@
                         }).join('<br>');
                     }
 
+                    let docLignesHtml = 'Aucun';
+                    if (item.listeDocuments && item.listeDocuments.length > 0) {
+                        docLignesHtml = item.listeDocuments.map(d => {
+                            if (d.donnees) {
+                                return `• <a href="${d.donnees}" target="_blank" download="${d.nomFichier}">${d.titre}</a>`;
+                            } else {
+                                return `• ${d.titre}`;
+                            }
+                        }).join('<br>');
+                    }
+
                     html += `<tr>
                         <td>${item.date}</td>
                         <td><span class="badge bg-warning text-dark">${item.itineraire || 'N/A'}</span></td>
@@ -744,6 +831,7 @@
                         <td><span class="badge bg-secondary">${tiersTxt}</span></td>
                         <td>${cqLignesHtml}</td>
                         <td>${adrLignesHtml}</td>
+                        <td>${docLignesHtml}</td>
                         <td>Tri: ${item.critereTri || 'N/A'}<br>Sec: ${item.critereSecurite || 'N/A'}</td>
                         <td>${item.superviseurEmail || 'N/A'}</td>
                     </tr>`;
@@ -798,7 +886,7 @@
                     return;
                 }
 
-                let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle small"><thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses (Section 4)</th><th>Superviseur</th></tr></thead><tbody>`;
+                let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle small"><thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses</th><th>Documents</th><th>Superviseur</th></tr></thead><tbody>`;
                 
                 resultats.forEach(data => {
                     let tiersTxt = data.tiersObserve && data.tiersObserve.length > 0 ? data.tiersObserve.join(', ') : 'N/A';
@@ -819,6 +907,17 @@
                         }).join('<br>');
                     }
 
+                    let docLignesHtml = 'Aucun';
+                    if (data.listeDocuments && data.listeDocuments.length > 0) {
+                        docLignesHtml = data.listeDocuments.map(d => {
+                            if (d.donnees) {
+                                return `• <a href="${d.donnees}" target="_blank" download="${d.nomFichier}">${d.titre}</a>`;
+                            } else {
+                                return `• ${d.titre}`;
+                            }
+                        }).join('<br>');
+                    }
+
                     html += `<tr>
                         <td>${data.date}</td>
                         <td><span class="badge bg-warning text-dark">${data.itineraire || 'N/A'}</span></td>
@@ -826,6 +925,7 @@
                         <td><span class="badge bg-secondary">${tiersTxt}</span></td>
                         <td>${cqLignesHtml}</td>
                         <td>${adrLignesHtml}</td>
+                        <td>${docLignesHtml}</td>
                         <td>${data.superviseurEmail || 'N/A'}</td>
                     </tr>`;
                 });
