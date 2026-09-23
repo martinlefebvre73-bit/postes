@@ -61,7 +61,7 @@ tr:nth-child(even) td{background:#fafcff}
 </head>
 <body>
 
-<button class="btn-back" onclick="location.href='index (1).html'">⬅️ Retour au menu</button>
+<button class="btn-back" onclick="location.href='index.html'">⬅️ Retour au menu</button>
 
 <div class="supervisor-container">
     <h2>CHEF D'ÉQUIPE / SUPERVISEUR : <span id="displayChef">Martin</span></h2>
@@ -183,7 +183,6 @@ const defaultEmployees = [
     {name: "hebert", route: "290"}, {name: "leduc", route: "310"}
 ];
 
-// Gestion de la persistance locale des employés par superviseur
 function getStoredEmployees(supervisor) {
     const saved = localStorage.getItem('employees_' + supervisor);
     if (saved) {
@@ -221,7 +220,7 @@ function updateTableColumns(supervisor) {
 }
 
 function changeSupervisor(val) {
-    saveSupervisorEmployees(); // Sauvegarde l'état actuel avant de changer
+    saveSupervisorEmployees();
     const customInput = document.getElementById("customSupervisor");
     const displayChef = document.getElementById("displayChef");
     let activeChef = val;
@@ -245,7 +244,6 @@ function updateCustomSupervisor(val) {
     updateTableColumns(currentName);
 }
 
-// Sauvegarde automatique des modifications des noms/routes en temps réel
 document.addEventListener("input", (e) => {
     if (e.target.classList.contains("table-input")) {
         saveSupervisorEmployees();
@@ -313,7 +311,6 @@ window.addEventListener("load",()=>{
     }
 });
 
-// Enregistrement dans une collection Firebase au nom du superviseur avec les lignes personnalisées
 async function saveToFirebase() {
     if (!window.db || !window.addDoc || !window.collection) {
         alert("Firebase n'est pas encore initialisé. Veuillez réessayer dans un instant.");
@@ -366,7 +363,6 @@ async function saveToFirebase() {
     }
 }
 
-// Panneaux et chargement Firebase
 async function toggleFirebasePanel() {
     const panel = document.getElementById("firebasePanel");
     document.getElementById("printPanel").style.display = "none";
@@ -499,7 +495,6 @@ function loadSelectedFirebaseDoc() {
     alert("✅ Rapport chargé avec succès !");
 }
 
-// Impression globale de tous les superviseurs pour une date donnée
 async function printAllSupervisorsByDate() {
     const targetDate = document.getElementById("printDate").value;
     if (!targetDate) {
