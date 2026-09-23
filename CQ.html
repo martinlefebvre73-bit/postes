@@ -1,105 +1,969 @@
-window.executerRecherche = async () => {
-    const critereNom = document.getElementById('rechercheNom').value.trim().toLowerCase();
-    const critereId = document.getElementById('rechercheId').value.trim().toLowerCase();
-    const critereDate = document.getElementById('rechercheDate').value;
-    const critereItineraire = document.getElementById('rechercheItineraire').value.trim().toLowerCase();
-
-    // Vérifier si au moins un champ est rempli
-    if (!critereNom && !critereId && !critereDate && !critereItineraire) {
-        alert("Veuillez remplir au moins un critère de recherche.");
-        return;
-    }
-
-    bootstrap.Modal.getInstance(document.getElementById('modalRecherche')).hide();
-    const zone = document.getElementById('zone-affichage');
-    const titre = document.getElementById('titre-zone');
-    const contenu = document.getElementById('contenu-zone');
-    
-    zone.classList.remove('d-none');
-    titre.textContent = `Résultats de la recherche multicritère`;
-    contenu.innerHTML = "<p>Recherche en cours...</p>";
-
-    try {
-        const querySnapshot = await getDocs(collection(db, "observations_cq"));
-        let resultats = [];
-
-        querySnapshot.forEach((docSnap) => {
-            let data = docSnap.data();
-            let nomEmp = (data.nom || "").toLowerCase();
-            let idEmp = (data.idEmploye || "").toLowerCase();
-            let dateObs = data.date || "";
-            let itineraireObs = (data.itineraire || "").toLowerCase();
-
-            // Application des filtres (si un champ est renseigné, il doit correspondre)
-            let correspondNom = !critereNom || nomEmp.includes(critereNom);
-            let correspondId = !critereId || idEmp.includes(critereId);
-            let correspondDate = !critereDate || dateObs === critereDate;
-            let correspondItineraire = !critereItineraire || itineraireObs.includes(critereItineraire);
-
-            if (correspondNom && correspondId && correspondDate && correspondItineraire) {
-                resultats.push({
-                    id: docSnap.id,
-                    ...data
-                });
-            }
-        });
-
-        resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        if (resultats.length === 0) {
-            contenu.innerHTML = "<p class='text-muted fs-5'>Aucune observation ne correspond aux critères saisis.</p>";
-            return;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuille Observation CQ - Suivi</title>
+    <!-- Bootstrap CSS pour l'interface -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0d1b2a; /* Fond bleu foncé professionnel */
+            color: #e0e1dd;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card, .modal-content {
+            background-color: #1b263b;
+            color: #e0e1dd;
+            border: 1px solid #415a77;
+        }
+        .form-control, .form-select {
+            background-color: #0d1b2a;
+            color: #e0e1dd;
+            border: 1px solid #415a77;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #1b263b;
+            color: #ffffff;
+            border-color: #778da9;
+            box-shadow: 0 0 0 0.25rem rgba(119, 141, 169, 0.25);
+        }
+        .table {
+            color: #e0e1dd;
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #e0e1dd;
+        }
+        .table-bordered {
+            border-color: #415a77;
+        }
+        .table-bordered td, .table-bordered th {
+            border-color: #415a77;
+        }
+        .btn-menu-egal {
+            flex: 1;
+            min-width: 160px;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
         }
 
-        let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle small"><thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses</th><th>Documents</th><th>Superviseur</th></tr></thead><tbody>`;
-        
-        resultats.forEach(data => {
-            let tiersTxt = data.tiersObserve && data.tiersObserve.length > 0 ? data.tiersObserve.join(', ') : 'N/A';
+        /* --- CONFIGURATION DE L'IMPRESSION EN MODE PAYSAGE --- */
+        @media print {
+            @page {
+                size: landscape;
+                margin: 1cm;
+            }
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            #vue-accueil, .btn, form, h1, #select-type-container, .btn-danger, .btn-primary {
+                display: none !important;
+            }
+            #zone-affichage {
+                display: block !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #zone-affichage h3 {
+                color: #000000 !important;
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+            .table {
+                color: #000000 !important;
+                border-color: #000000 !important;
+                width: 100% !important;
+                font-size: 0.9rem;
+            }
+            .table-striped > tbody > tr:nth-of-type(odd) {
+                background-color: rgba(0, 0, 0, 0.05) !important;
+                color: #000000 !important;
+            }
+            .table-bordered td, .table-bordered th {
+                border-color: #000000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <button class="btn btn-outline-light btn-sm" onclick="location.href='index.html'">← Retour au menu principal</button>
+            <h1 class="text-center text-white fw-bold m-0">Feuille d'Observation CQ</h1>
+            <div></div>
+        </div>
+
+        <!-- PAGE D'ACCUEIL / TABLEAU DE BORD OBSERVATION CQ -->
+        <div id="vue-accueil">
             
-            let cqLignesHtml = 'N/A';
-            if (data.listeCq && data.listeCq.length > 0) {
-                cqLignesHtml = data.listeCq.map(c => {
-                    let pdrStr = c.pdr && c.pdr.length > 0 ? c.pdr.join('/') : '-';
-                    return `• <strong>${c.nom}</strong> (${c.dateDebut || '?'} au ${c.dateFin || '?'}) [PDR: ${pdrStr}] Qte: ${c.quantite}`;
-                }).join('<br>');
-            }
+            <div class="card shadow-lg p-4 mb-4">
+                <h4 class="text-light mb-3 text-center">Aperçu Global - Observations CQ</h4>
+                
+                <div class="row g-2 mb-4 justify-content-center align-items-end bg-dark p-3 rounded border border-secondary">
+                    <div class="col-md-4">
+                        <label class="form-label text-light small fw-bold">Période du :</label>
+                        <input type="date" class="form-control form-control-sm" id="statDateDebut" onchange="chargerStatistiques()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-light small fw-bold">Au :</label>
+                        <input type="date" class="form-control form-control-sm" id="statDateFin" onchange="chargerStatistiques()">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-light btn-sm w-100 mt-2 mt-md-0" onclick="reinitialiserFiltreStats()">Tout afficher</button>
+                    </div>
+                </div>
 
-            let adrLignesHtml = 'N/A';
-            if (data.listeAdresses && data.listeAdresses.length > 0) {
-                adrLignesHtml = data.listeAdresses.map(a => {
-                    let badgeConf = a.conforme === 'Oui' ? 'text-success' : 'text-danger';
-                    return `• ${a.depart || '?'} ➔ ${a.fin || '?'} [<span class="${badgeConf} fw-bold">${a.conforme}</span>] à ${a.heure || '?'}`;
-                }).join('<br>');
-            }
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered text-center align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="py-3 fs-5">Observations Totales</th>
+                                <th class="py-3 fs-5">Itinéraires Évalués</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="py-4 fs-3 fw-bold text-info" id="kpi-total-obs">Chargement...</td>
+                                <td class="py-4 fs-3 fw-bold text-success" id="kpi-itineraires">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-            let docLignesHtml = 'Aucun';
-            if (data.listeDocuments && data.listeDocuments.length > 0) {
-                docLignesHtml = data.listeDocuments.map(d => {
-                    if (d.donnees) {
-                        return `• <a href="${d.donnees}" target="_blank" download="${d.nomFichier}">${d.titre}</a>`;
-                    } else {
-                        return `• ${d.titre}`;
-                    }
-                }).join('<br>');
-            }
+            <!-- BOUTONS DE NAVIGATION -->
+            <div class="card shadow-lg p-4 text-center">
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Nouvelle Observation CQ</button>
+                    <button class="btn btn-success btn-menu-egal" onclick="afficherRapportCQ()">Rapport des Observations</button>
+                    <button class="btn btn-info btn-menu-egal text-dark fw-bold" onclick="ouvrirModalRecherche()">Recherche Multicritère</button>
+                </div>
+            </div>
+        </div>
 
-            html += `<tr>
-                <td>${data.date}</td>
-                <td><span class="badge bg-warning text-dark">${data.itineraire || 'N/A'}</span></td>
-                <td><strong>${data.nom}</strong><br><small>ID: ${data.idEmploye}</small></td>
-                <td><span class="badge bg-secondary">${tiersTxt}</span></td>
-                <td>${cqLignesHtml}</td>
-                <td>${adrLignesHtml}</td>
-                <td>${docLignesHtml}</td>
-                <td>${data.superviseurEmail || 'N/A'}</td>
-            </tr>`;
+        <!-- ZONE D'AFFICHAGE DYNAMIQUE (Rapports imprimables) -->
+        <div id="zone-affichage" class="card shadow-sm p-4 mt-4 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 id="titre-zone" class="m-0"></h3>
+                <button class="btn btn-outline-light btn-sm" onclick="retourAccueil()">Fermer / Retour</button>
+            </div>
+            <div id="contenu-zone"></div>
+        </div>
+
+        <!-- VUE PAGE COMPLÈTE : SAISIE OBSERVATION CQ -->
+        <div id="vue-saisie" class="card shadow-lg p-5 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-light">Saisie - Observation Contrôle Qualité (CQ)</h2>
+                <button class="btn btn-outline-light" onclick="retourAccueil()">← Retour au menu</button>
+            </div>
+            
+            <form id="formObservationCQ">
+                
+                <!-- SECTION 1 : IDENTIFICATION -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <h5 class="text-warning mb-3">Section 1 : Identification</h5>
+                    <div class="row">
+                        <!-- Date -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date de l'observation</label>
+                            <input type="date" class="form-control" id="dateObservation" required>
+                        </div>
+                        <!-- Itinéraire -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Itinéraire</label>
+                            <input type="text" class="form-control" id="itineraireEmploye" placeholder="Ex: Itinéraire 42, Tournée Sud..." required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Sélection de l'employé (Nom & Prénom) par liste déroulante -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Employé (Liste déroulante par Nom)</label>
+                            <select class="form-select" id="nomEmploye" onchange="remplirParNom(this)">
+                                <option value="">-- Choisir par nom --</option>
+                            </select>
+                        </div>
+                        <!-- Saisie de l'ID de l'employé -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ID de l'employé</label>
+                            <input type="text" class="form-control" id="idEmploye" placeholder="Ex: 12345" oninput="remplirParId(this)">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Ancienneté -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Ancienneté</label>
+                            <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté automatique">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2 : DETAILS OBSERVATION -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <h5 class="text-warning mb-3">Section 2 : Détails observation</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-block mb-2">Tiers observé :</label>
+                        <div class="d-flex gap-4 flex-wrap">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tiers1_3" value="1/3 (Carré orange)">
+                                <label class="form-check-label text-light d-flex align-items-center gap-2" for="tiers1_3">
+                                    <span style="display:inline-block; width:15px; height:15px; background-color: orange; border:1px solid #fff;"></span> 1/3 (Carré orange)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tiers2_3" value="2/3 (Carré rose pâle)">
+                                <label class="form-check-label text-light d-flex align-items-center gap-2" for="tiers2_3">
+                                    <span style="display:inline-block; width:15px; height:15px; background-color: #ffb3ba; border:1px solid #fff;"></span> 2/3 (Carré rose pâle)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tiers3_3" value="3/3 (Carré bleu)">
+                                <label class="form-check-label text-light d-flex align-items-center gap-2" for="tiers3_3">
+                                    <span style="display:inline-block; width:15px; height:15px; background-color: #0dcaf0; border:1px solid #fff;"></span> 3/3 (Carré bleu)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Respect des procédures de tri / manipulation</label>
+                            <select class="form-select" id="critereTri">
+                                <option value="Conforme">Conforme</option>
+                                <option value="À améliorer">À améliorer</option>
+                                <option value="Non applicable">Non applicable</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sécurité et posture de travail</label>
+                            <select class="form-select" id="critereSecurite">
+                                <option value="Conforme">Conforme</option>
+                                <option value="À améliorer">À améliorer</option>
+                                <option value="Non applicable">Non applicable</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Description avec Dictée Vocale -->
+                    <div class="mb-3">
+                        <label class="form-label">Commentaires / Observations détaillées (Dictée vocale possible)</label>
+                        <div class="input-group">
+                            <textarea class="form-control" id="description" rows="4" placeholder="Cliquez sur le micro pour dicter vos observations..."></textarea>
+                            <button type="button" class="btn btn-outline-light" onclick="demarrerDictee()">🎤 Dicter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3 : CQ OBSERVÉ (Dynamique en lignes) -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-warning m-0">Section 3 : CQ observé</h5>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneCQ()">+ Ajouter un CQ</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small mb-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Nom du CQ</th>
+                                    <th>Date début</th>
+                                    <th>Date fin</th>
+                                    <th>PDR (Dom - Apts - Com)</th>
+                                    <th style="width: 90px;">Quantité</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lignesCqContainer">
+                                <!-- Lignes injectées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION 4 : SUIVI DES ADRESSES (Dynamique en lignes) -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-warning m-0">Section 4 : Suivi des adresses / tournées</h5>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneAdresse()">+ Ajouter une adresse</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small mb-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Adresse départ</th>
+                                    <th>Adresse fin</th>
+                                    <th style="width: 140px;">Conforme</th>
+                                    <th style="width: 130px;">Heure observé</th>
+                                    <th style="width: 70px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lignesAdresseContainer">
+                                <!-- Lignes injectées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION 5 : AJOUT DOCUMENTS (Photos et autres documents) -->
+                <div class="p-3 mb-4 border border-secondary rounded bg-dark">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-warning m-0">Section 5 : Ajout documents (Photos et autres)</h5>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ajouterLigneDocument()">+ Ajouter un fichier</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small mb-0">
+                            <thead class="table-secondary text-dark">
+                                <tr>
+                                    <th>Description / Titre du document</th>
+                                    <th>Fichier (Photo, PDF, etc.)</th>
+                                    <th style="width: 70px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lignesDocumentContainer">
+                                <!-- Lignes injectées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Superviseur responsable -->
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Superviseur évaluateur</label>
+                        <select class="form-select" id="superviseur" required>
+                            <option value="">-- Chargement des superviseurs --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mt-4">
+                    <button type="submit" class="btn btn-success btn-lg flex-grow-1">Enregistrer l'Observation CQ</button>
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="retourAccueil()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL : RECHERCHE MULTICRITÈRE -->
+    <div class="modal fade" id="modalRecherche" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">Recherche multicritère des observations</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom de l'employé</label>
+                        <input type="text" class="form-control" id="rechercheNom" placeholder="Ex: Jean Dupont">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ID de l'employé</label>
+                        <input type="text" class="form-control" id="rechercheId" placeholder="Ex: 12345">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date de l'observation</label>
+                        <input type="date" class="form-control" id="rechercheDate">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Itinéraire</label>
+                        <input type="text" class="form-control" id="rechercheItineraire" placeholder="Ex: Itinéraire 42">
+                    </div>
+                    <button type="button" class="btn btn-info w-100 text-dark fw-bold" onclick="executerRecherche()">Rechercher</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let listeEmployesMemoire = [];
+        let indexLigneCQ = 0;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                initialiserDonnees();
+            } else {
+                alert("Veuillez vous connecter pour accéder au suivi des observations CQ.");
+                window.location.href = "index.html";
+            }
         });
-        
-        html += `</tbody></table></div>`;
-        contenu.innerHTML = html;
 
-    } catch (e) {
-        console.error("Erreur lors de la recherche :", e);
-        contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
-    }
-};
+        window.afficherPageSaisie = () => {
+            document.getElementById('vue-accueil').classList.add('d-none');
+            document.getElementById('vue-saisie').classList.remove('d-none');
+            document.getElementById('dateObservation').valueAsDate = new Date();
+            document.getElementById('formObservationCQ').reset();
+            document.getElementById('dateObservation').valueAsDate = new Date();
+            
+            document.getElementById('lignesCqContainer').innerHTML = "";
+            document.getElementById('lignesAdresseContainer').innerHTML = "";
+            document.getElementById('lignesDocumentContainer').innerHTML = "";
+            indexLigneCQ = 0;
+            
+            ajouterLigneCQ(); // Une ligne par défaut Section 3
+            ajouterLigneAdresse(); // Une ligne par défaut Section 4
+            ajouterLigneDocument(); // Une ligne par défaut Section 5
+        };
+
+        window.retourAccueil = () => {
+            document.getElementById('vue-saisie').classList.add('d-none');
+            document.getElementById('zone-affichage').classList.add('d-none');
+            document.getElementById('vue-accueil').classList.remove('d-none');
+            chargerStatistiques(); 
+        };
+
+        // Ajout dynamique des lignes Section 3
+        window.ajouterLigneCQ = () => {
+            indexLigneCQ++;
+            const container = document.getElementById('lignesCqContainer');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm cq-nom" placeholder="Nom du CQ"></td>
+                <td><input type="date" class="form-control form-control-sm cq-debut"></td>
+                <td><input type="date" class="form-control form-control-sm cq-fin"></td>
+                <td>
+                    <div class="d-flex justify-content-center align-items-center gap-3">
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input cq-dom" type="checkbox" id="pdrDom_${indexLigneCQ}" value="Dom">
+                            <label class="form-check-label text-light small" for="pdrDom_${indexLigneCQ}">Dom</label>
+                        </div>
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input cq-apts" type="checkbox" id="pdrApts_${indexLigneCQ}" value="Apts">
+                            <label class="form-check-label text-light small" for="pdrApts_${indexLigneCQ}">Apts</label>
+                        </div>
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input cq-com" type="checkbox" id="pdrCom_${indexLigneCQ}" value="Com">
+                            <label class="form-check-label text-light small" for="pdrCom_${indexLigneCQ}">Com</label>
+                        </div>
+                    </div>
+                </td>
+                <td><input type="number" class="form-control form-control-sm cq-qte text-center" placeholder="0" min="0"></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            container.appendChild(tr);
+        };
+
+        // Ajout dynamique des lignes Section 4 (Adresses)
+        window.ajouterLigneAdresse = () => {
+            const container = document.getElementById('lignesAdresseContainer');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm adr-depart" placeholder="Adresse départ"></td>
+                <td><input type="text" class="form-control form-control-sm adr-fin" placeholder="Adresse fin"></td>
+                <td>
+                    <select class="form-select form-select-sm adr-conforme">
+                        <option value="Oui">Oui</option>
+                        <option value="Non">Non</option>
+                    </select>
+                </td>
+                <td><input type="time" class="form-control form-control-sm adr-heure"></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            container.appendChild(tr);
+        };
+
+        // Ajout dynamique des lignes Section 5 (Documents et Photos)
+        window.ajouterLigneDocument = () => {
+            const container = document.getElementById('lignesDocumentContainer');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm doc-titre" placeholder="Ex: Photo anomalie tri, Rapport..."></td>
+                <td><input type="file" class="form-control form-control-sm doc-fichier" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            container.appendChild(tr);
+        };
+
+        window.ouvrirModalRecherche = () => {
+            // Réinitialiser les champs de la modale à l'ouverture
+            document.getElementById('rechercheNom').value = '';
+            document.getElementById('rechercheId').value = '';
+            document.getElementById('rechercheDate').value = '';
+            document.getElementById('rechercheItineraire').value = '';
+            new bootstrap.Modal(document.getElementById('modalRecherche')).show();
+        };
+
+        window.initialiserDonnees = async () => {
+            await chargerStatistiques();
+            await chargerEmployes();
+            await chargerSuperviseurs();
+        };
+
+        window.reinitialiserFiltreStats = () => {
+            document.getElementById('statDateDebut').value = '';
+            document.getElementById('statDateFin').value = '';
+            chargerStatistiques();
+        };
+
+        window.chargerStatistiques = async () => {
+            try {
+                const dateDebut = document.getElementById('statDateDebut').value;
+                const dateFin = document.getElementById('statDateFin').value;
+
+                const querySnapshot = await getDocs(collection(db, "observations_cq"));
+                let totalObservations = 0;
+                let itinerairesSet = new Set();
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let dateObs = data.date;
+
+                    if (dateDebut && dateObs < dateDebut) return;
+                    if (dateFin && dateObs > dateFin) return;
+
+                    totalObservations++;
+                    if (data.itineraire) {
+                        itinerairesSet.add(data.itineraire.trim().toLowerCase());
+                    }
+                });
+
+                document.getElementById('kpi-total-obs').textContent = totalObservations;
+                document.getElementById('kpi-itineraires').textContent = itinerairesSet.size;
+
+            } catch (e) {
+                console.error("Erreur lors du calcul des statistiques :", e);
+                document.getElementById('kpi-total-obs').textContent = "0";
+                document.getElementById('kpi-itineraires').textContent = "0";
+            }
+        };
+
+        window.chargerEmployes = async () => {
+            const selectEmp = document.getElementById('nomEmploye');
+            try {
+                const querySnapshot = await getDocs(collection(db, "employes"));
+                selectEmp.innerHTML = '<option value="">-- Choisir par nom --</option>';
+                
+                listeEmployesMemoire = [];
+                querySnapshot.forEach((doc) => {
+                    listeEmployesMemoire.push(doc.data());
+                });
+
+                listeEmployesMemoire.sort((a, b) => {
+                    let nomA = (a.nom || '').toLowerCase();
+                    let nomB = (b.nom || '').toLowerCase();
+                    if (nomA < nomB) return -1;
+                    if (nomA > nomB) return 1;
+                    let prenomA = (a.prenom || '').toLowerCase();
+                    let prenomB = (b.prenom || '').toLowerCase();
+                    return prenomA.localeCompare(prenomB);
+                });
+
+                listeEmployesMemoire.forEach((emp) => {
+                    let option = document.createElement('option');
+                    let nomComplet = `${emp.nom || ''} ${emp.prenom || ''}`.trim();
+                    let employeId = emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '');
+                    
+                    option.value = nomComplet; 
+                    option.dataset.id = employeId; 
+                    option.dataset.anciennete = emp.anciennete || 'Non spécifiée';
+                    
+                    option.textContent = `${emp.nom || ''}, ${emp.prenom || ''} (ID: ${employeId})`;
+                    selectEmp.appendChild(option);
+                });
+            } catch (e) {
+                console.error("Erreur chargement employés: ", e);
+            }
+        };
+
+        window.remplirParNom = (selectElement) => {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (selectedOption.value) {
+                document.getElementById('idEmploye').value = selectedOption.dataset.id || '';
+                document.getElementById('ancienneteEmploye').value = selectedOption.dataset.anciennete || '';
+            } else {
+                document.getElementById('idEmploye').value = '';
+                document.getElementById('ancienneteEmploye').value = '';
+            }
+        };
+
+        window.remplirParId = (inputElement) => {
+            const saisieId = inputElement.value.trim().toLowerCase();
+            const selectEmp = document.getElementById('nomEmploye');
+
+            if (!saisieId) {
+                selectEmp.value = '';
+                document.getElementById('ancienneteEmploye').value = '';
+                return;
+            }
+
+            let trouve = listeEmployesMemoire.find(emp => {
+                let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).toLowerCase();
+                return idEmp === saisieId;
+            });
+
+            if (trouve) {
+                let nomComplet = `${trouve.nom || ''} ${trouve.prenom || ''}`.trim();
+                selectEmp.value = nomComplet;
+                document.getElementById('ancienneteEmploye').value = trouve.anciennete || 'Non spécifiée';
+            } else {
+                selectEmp.value = '';
+                document.getElementById('ancienneteEmploye').value = 'ID non trouvé';
+            }
+        };
+
+        window.chargerSuperviseurs = async () => {
+            const selectSup = document.getElementById('superviseur');
+            try {
+                const querySnapshot = await getDocs(collection(db, "superviseurs"));
+                selectSup.innerHTML = '<option value="">-- Choisir un superviseur --</option>';
+                querySnapshot.forEach((doc) => {
+                    let sup = doc.data();
+                    let option = document.createElement('option');
+                    option.value = sup.courriel || sup.email || ''; 
+                    option.textContent = `${sup.nom || 'Sans nom'} (${sup.courriel || sup.email || ''})`;
+                    selectSup.appendChild(option);
+                });
+            } catch (e) {
+                console.error("Erreur chargement superviseurs: ", e);
+            }
+        };
+
+        window.demarrerDictee = () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("La dictée vocale n'est pas supportée par votre navigateur.");
+                return;
+            }
+            const reconnaissance = new SpeechRecognition();
+            reconnaissance.lang = 'fr-FR';
+            reconnaissance.onresult = (event) => {
+                document.getElementById('description').value += " " + event.results[0][0].transcript;
+            };
+            reconnaissance.start();
+        };
+
+        const convertirFichierEnBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve({
+                    nomFichier: file.name,
+                    typeMime: file.type,
+                    donnees: reader.result
+                });
+                reader.onerror = error => reject(error);
+            });
+        };
+
+        document.getElementById('formObservationCQ').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const dateStr = document.getElementById('dateObservation').value;
+            const itineraireStr = document.getElementById('itineraireEmploye').value.trim();
+            const idEmployeSaisi = document.getElementById('idEmploye').value.trim();
+            const nomEmployeSaisi = document.getElementById('nomEmploye').value.trim();
+
+            if (!idEmployeSaisi || !nomEmployeSaisi) {
+                alert("Veuillez sélectionner un employé par son nom ou saisir un ID valide.");
+                return;
+            }
+
+            let tiersObserveList = [];
+            if (document.getElementById('tiers1_3').checked) tiersObserveList.push('1/3 (Carré orange)');
+            if (document.getElementById('tiers2_3').checked) tiersObserveList.push('2/3 (Carré rose pâle)');
+            if (document.getElementById('tiers3_3').checked) tiersObserveList.push('3/3 (Carré bleu)');
+
+            let listeCq = [];
+            const rowsCq = document.querySelectorAll('#lignesCqContainer tr');
+            rowsCq.forEach(row => {
+                let nomCq = row.querySelector('.cq-nom').value.trim();
+                if (nomCq) {
+                    let pdrArr = [];
+                    if (row.querySelector('.cq-dom').checked) pdrArr.push('Dom');
+                    if (row.querySelector('.cq-apts').checked) pdrArr.push('Apts');
+                    if (row.querySelector('.cq-com').checked) pdrArr.push('Com');
+
+                    listeCq.push({
+                        nom: nomCq,
+                        dateDebut: row.querySelector('.cq-debut').value,
+                        dateFin: row.querySelector('.cq-fin').value,
+                        pdr: pdrArr,
+                        quantite: row.querySelector('.cq-qte').value || '0'
+                    });
+                }
+            });
+
+            let listeAdresses = [];
+            const rowsAdr = document.querySelectorAll('#lignesAdresseContainer tr');
+            rowsAdr.forEach(row => {
+                let dep = row.querySelector('.adr-depart').value.trim();
+                let fin = row.querySelector('.adr-fin').value.trim();
+                if (dep || fin) {
+                    listeAdresses.push({
+                        depart: dep,
+                        fin: fin,
+                        conforme: row.querySelector('.adr-conforme').value,
+                        heure: row.querySelector('.adr-heure').value
+                    });
+                }
+            });
+
+            let listeDocuments = [];
+            const rowsDoc = document.querySelectorAll('#lignesDocumentContainer tr');
+            for (let row of rowsDoc) {
+                let titreDoc = row.querySelector('.doc-titre').value.trim();
+                let inputFile = row.querySelector('.doc-fichier');
+                if (inputFile.files && inputFile.files[0]) {
+                    let fichierObj = await convertirFichierEnBase64(inputFile.files[0]);
+                    listeDocuments.push({
+                        titre: titreDoc || fichierObj.nomFichier,
+                        nomFichier: fichierObj.nomFichier,
+                        typeMime: fichierObj.typeMime,
+                        donnees: fichierObj.donnees
+                    });
+                } else if (titreDoc) {
+                    listeDocuments.push({
+                        titre: titreDoc,
+                        nomFichier: 'Aucun fichier joint',
+                        typeMime: '',
+                        donnees: ''
+                    });
+                }
+            }
+
+            const nouvelleObservation = {
+                date: dateStr,
+                itineraire: itineraireStr,
+                nom: nomEmployeSaisi,
+                idEmploye: idEmployeSaisi,
+                anciennete: document.getElementById('ancienneteEmploye').value,
+                tiersObserve: tiersObserveList,
+                critereTri: document.getElementById('critereTri').value,
+                critereSecurite: document.getElementById('critereSecurite').value,
+                description: document.getElementById('description').value,
+                listeCq: listeCq,
+                listeAdresses: listeAdresses,
+                listeDocuments: listeDocuments,
+                superviseurEmail: document.getElementById('superviseur').value
+            };
+
+            try {
+                await addDoc(collection(db, "observations_cq"), nouvelleObservation);
+                alert("Observation CQ enregistrée avec succès !");
+                document.getElementById('formObservationCQ').reset();
+                retourAccueil();
+            } catch (erreur) {
+                console.error("Erreur : ", erreur);
+                alert("Erreur lors de l'enregistrement de l'observation.");
+            }
+        });
+
+        window.afficherRapportCQ = async () => {
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = "Rapport Global - Observations Contrôle Qualité (CQ)";
+            contenu.innerHTML = "<p>Génération du rapport en cours...</p>";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "observations_cq"));
+                let resultats = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    resultats.push({
+                        idDoc: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucune observation CQ enregistrée pour le moment !</p>";
+                    return;
+                }
+
+                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button></div>`;
+                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle small">`;
+                html += `<thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses / Tournées</th><th>Documents / Photos</th><th>Tri / Séq.</th><th>Superviseur</th></tr></thead><tbody>`;
+
+                resultats.forEach(item => {
+                    let tiersTxt = item.tiersObserve && item.tiersObserve.length > 0 ? item.tiersObserve.join(', ') : 'N/A';
+                    
+                    let cqLignesHtml = 'N/A';
+                    if (item.listeCq && item.listeCq.length > 0) {
+                        cqLignesHtml = item.listeCq.map(c => {
+                            let pdrStr = c.pdr && c.pdr.length > 0 ? c.pdr.join('/') : '-';
+                            return `• <strong>${c.nom}</strong> (${c.dateDebut || '?'} au ${c.dateFin || '?'}) [PDR: ${pdrStr}] Qte: ${c.quantite}`;
+                        }).join('<br>');
+                    }
+
+                    let adrLignesHtml = 'N/A';
+                    if (item.listeAdresses && item.listeAdresses.length > 0) {
+                        adrLignesHtml = item.listeAdresses.map(a => {
+                            let badgeConf = a.conforme === 'Oui' ? 'text-success' : 'text-danger';
+                            return `• ${a.depart || '?'} ➔ ${a.fin || '?'} [<span class="${badgeConf} fw-bold">${a.conforme}</span>] à ${a.heure || '?'}`;
+                        }).join('<br>');
+                    }
+
+                    let docLignesHtml = 'Aucun';
+                    if (item.listeDocuments && item.listeDocuments.length > 0) {
+                        docLignesHtml = item.listeDocuments.map(d => {
+                            if (d.donnees) {
+                                return `• <a href="${d.donnees}" target="_blank" download="${d.nomFichier}">${d.titre}</a>`;
+                            } else {
+                                return `• ${d.titre}`;
+                            }
+                        }).join('<br>');
+                    }
+
+                    html += `<tr>
+                        <td>${item.date}</td>
+                        <td><span class="badge bg-warning text-dark">${item.itineraire || 'N/A'}</span></td>
+                        <td><strong>${item.nom}</strong><br><small>ID: ${item.idEmploye}</small></td>
+                        <td><span class="badge bg-secondary">${tiersTxt}</span></td>
+                        <td>${cqLignesHtml}</td>
+                        <td>${adrLignesHtml}</td>
+                        <td>${docLignesHtml}</td>
+                        <td>Tri: ${item.critereTri || 'N/A'}<br>Sec: ${item.critereSecurite || 'N/A'}</td>
+                        <td>${item.superviseurEmail || 'N/A'}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la génération du rapport CQ :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+
+        window.executerRecherche = async () => {
+            const critereNom = document.getElementById('rechercheNom').value.trim().toLowerCase();
+            const critereId = document.getElementById('rechercheId').value.trim().toLowerCase();
+            const critereDate = document.getElementById('rechercheDate').value;
+            const critereItineraire = document.getElementById('rechercheItineraire').value.trim().toLowerCase();
+
+            if (!critereNom && !critereId && !critereDate && !critereItineraire) {
+                alert("Veuillez remplir au moins un critère de recherche.");
+                return;
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('modalRecherche')).hide();
+            const zone = document.getElementById('zone-affichage');
+            const titre = document.getElementById('titre-zone');
+            const contenu = document.getElementById('contenu-zone');
+            
+            zone.classList.remove('d-none');
+            titre.textContent = `Résultats de la recherche multicritère`;
+            contenu.innerHTML = "<p>Recherche en cours...</p>";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "observations_cq"));
+                let resultats = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let nomEmp = (data.nom || "").toLowerCase();
+                    let idEmp = (data.idEmploye || "").toLowerCase();
+                    let dateObs = data.date || "";
+                    let itineraireObs = (data.itineraire || "").toLowerCase();
+
+                    let correspondNom = !critereNom || nomEmp.includes(critereNom);
+                    let correspondId = !critereId || idEmp.includes(critereId);
+                    let correspondDate = !critereDate || dateObs === critereDate;
+                    let correspondItineraire = !critereItineraire || itineraireObs.includes(critereItineraire);
+
+                    if (correspondNom && correspondId && correspondDate && correspondItineraire) {
+                        resultats.push({
+                            id: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                resultats.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (resultats.length === 0) {
+                    contenu.innerHTML = "<p class='text-muted fs-5'>Aucune observation ne correspond aux critères saisis.</p>";
+                    return;
+                }
+
+                let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle small"><thead><tr><th>Date</th><th>Itinéraire</th><th>Employé (ID)</th><th>Tiers</th><th>CQ Observés</th><th>Adresses</th><th>Documents</th><th>Superviseur</th></tr></thead><tbody>`;
+                
+                resultats.forEach(data => {
+                    let tiersTxt = data.tiersObserve && data.tiersObserve.length > 0 ? data.tiersObserve.join(', ') : 'N/A';
+                    
+                    let cqLignesHtml = 'N/A';
+                    if (data.listeCq && data.listeCq.length > 0) {
+                        cqLignesHtml = data.listeCq.map(c => {
+                            let pdrStr = c.pdr && c.pdr.length > 0 ? c.pdr.join('/') : '-';
+                            return `• <strong>${c.nom}</strong> (${c.dateDebut || '?'} au ${c.dateFin || '?'}) [PDR: ${pdrStr}] Qte: ${c.quantite}`;
+                        }).join('<br>');
+                    }
+
+                    let adrLignesHtml = 'N/A';
+                    if (data.listeAdresses && data.listeAdresses.length > 0) {
+                        adrLignesHtml = data.listeAdresses.map(a => {
+                            let badgeConf = a.conforme === 'Oui' ? 'text-success' : 'text-danger';
+                            return `• ${a.depart || '?'} ➔ ${a.fin || '?'} [<span class="${badgeConf} fw-bold">${a.conforme}</span>] à ${a.heure || '?'}`;
+                        }).join('<br>');
+                    }
+
+                    let docLignesHtml = 'Aucun';
+                    if (data.listeDocuments && data.listeDocuments.length > 0) {
+                        docLignesHtml = data.listeDocuments.map(d => {
+                            if (d.donnees) {
+                                return `• <a href="${d.donnees}" target="_blank" download="${d.nomFichier}">${d.titre}</a>`;
+                            } else {
+                                return `• ${d.titre}`;
+                            }
+                        }).join('<br>');
+                    }
+
+                    html += `<tr>
+                        <td>${data.date}</td>
+                        <td><span class="badge bg-warning text-dark">${data.itineraire || 'N/A'}</span></td>
+                        <td><strong>${data.nom}</strong><br><small>ID: ${data.idEmploye}</small></td>
+                        <td><span class="badge bg-secondary">${tiersTxt}</span></td>
+                        <td>${cqLignesHtml}</td>
+                        <td>${adrLignesHtml}</td>
+                        <td>${docLignesHtml}</td>
+                        <td>${data.superviseurEmail || 'N/A'}</td>
+                    </tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+                contenu.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors de la recherche :", e);
+                contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données.</p>";
+            }
+        };
+    </script>
+</body>
+</html>
