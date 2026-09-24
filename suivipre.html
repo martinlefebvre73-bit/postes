@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suivi de Restructuration - Postes Canada</title>
-    <!-- Tailwind CSS pour un design professionnel -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS pour lire les fichiers Excel directement dans le navigateur -->
+    <!-- SheetJS pour lire Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, updateDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Vos identifiants Firebase officiels
         const firebaseConfig = {
             apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
             authDomain: "postes-26884.firebaseapp.com",
@@ -35,24 +34,29 @@
         window.getDocs = getDocs;
         window.onSnapshot = onSnapshot;
 
-        // Charger les données au démarrage
         document.addEventListener("DOMContentLoaded", () => {
             initApp();
         });
     </script>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+<body class="bg-slate-50 min-h-screen text-slate-800 pb-12">
 
     <!-- En-tête -->
     <header class="bg-red-700 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                <h1 class="text-xl font-bold">Tableau de Suivi - Restructuration Dépôt Aéroport</h1>
+                <div>
+                    <h1 class="text-xl font-bold">Suivi de Restructuration - Dépôt Aéroport</h1>
+                    <p id="saveStatus" class="text-xs text-red-200">🟢 Connecté à Firebase</p>
+                </div>
             </div>
-            <div class="mt-4 md:mt-0 flex space-x-2">
-                <button onclick="openImportModal()" class="bg-white text-red-700 px-4 py-2 rounded-lg font-semibold shadow hover:bg-red-50 transition">
-                    📂 Importer les fichiers Excel
+            <div class="flex space-x-3">
+                <button onclick="openReportModal()" class="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg font-semibold shadow transition flex items-center gap-2">
+                    📊 Générer un Rapport
+                </button>
+                <button onclick="openImportModal()" class="bg-white text-red-700 px-4 py-2 rounded-lg font-semibold shadow hover:bg-red-50 transition flex items-center gap-2">
+                    📂 Importer Fichiers Excel
                 </button>
             </div>
         </div>
@@ -61,7 +65,7 @@
     <!-- Contenu Principal -->
     <main class="max-w-7xl mx-auto px-4 py-6">
         
-        <!-- Barre de recherche et filtres -->
+        <!-- Barre de recherche -->
         <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="w-full md:w-1/3">
                 <input type="text" id="searchInput" placeholder="Rechercher par route ou description..." onkeyup="filterTable()" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
@@ -89,7 +93,7 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-slate-200 text-sm">
-                    <!-- Inséré dynamiquement -->
+                    <!-- Généré dynamiquement -->
                 </tbody>
             </table>
         </div>
@@ -99,11 +103,11 @@
     <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl">
             <h3 class="text-lg font-bold mb-4">Importer et synchroniser les fichiers Excel</h3>
-            <p class="text-sm text-slate-600 mb-4">Sélectionnez vos 3 fichiers pour alimenter ou mettre à jour la collection <b>restructuration</b> dans Firestore :</p>
+            <p class="text-sm text-slate-600 mb-4">Sélectionnez vos 3 fichiers pour alimenter ou mettre à jour la collection <b>restructuration</b> :</p>
             
             <div class="space-y-3 mb-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500">1. Fichier Casier</label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">1. Fichier Casier (Obligatoire)</label>
                     <input type="file" id="fileCasier" class="w-full text-sm border p-2 rounded">
                 </div>
                 <div>
@@ -116,9 +120,55 @@
                 </div>
             </div>
 
+            <!-- Console de log d'importation -->
+            <div id="importLog" class="text-xs bg-slate-900 text-green-400 p-2 rounded mb-4 h-24 overflow-y-auto hidden font-mono"></div>
+
             <div class="flex justify-end space-x-3">
-                <button onclick="closeImportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Annuler</button>
+                <button onclick="closeImportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Fermer</button>
                 <button onclick="processAndUploadExcel()" id="uploadBtn" class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-semibold">Lancer l'importation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Génération de Rapports -->
+    <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Générateur de Rapport de Restructuration</h3>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Sélection des Routes</label>
+                    <input type="text" id="reportRoutes" placeholder="Ex: 2, 5, 10-25 ou laisser vide pour TOUTES" class="w-full text-sm border p-2 rounded focus:ring-2 focus:ring-red-500 focus:outline-none">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold uppercase text-slate-600">Sélection des Activités / Étapes</label>
+                        <button onclick="toggleAllActivities(true)" class="text-xs text-red-600 hover:underline">Tout cocher</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 border p-3 rounded bg-slate-50 text-xs">
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="maj_vacant_facteur" checked> <span>MAJ Vacant (Facteur)</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="maj_vacant_ami" checked> <span>MAJ Vacant (AMI)</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="maj_plan_casier" checked> <span>MAJ Plan Casier</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="installation_plan" checked> <span>Installation Plan</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="changement_horaire_blp" checked> <span>Changement Horaire BLP</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="chrono_sub" checked> <span>Chrono SUB</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="chrono_pickup" checked> <span>Chrono Pick-up</span></label>
+                        <label class="flex items-center space-x-2"><input type="checkbox" name="reportActivity" value="validation_418" checked> <span>Validation 418</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeReportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Fermer</button>
+                <button onclick="generateReport()" class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-semibold">Générer et Afficher</button>
+            </div>
+
+            <div id="reportResultContainer" class="mt-6 border-t pt-4 hidden">
+                <h4 class="font-bold text-slate-700 mb-2">Résultat du Rapport</h4>
+                <div id="reportOutput" class="bg-slate-50 border p-4 rounded text-xs space-y-3 max-h-60 overflow-y-auto"></div>
             </div>
         </div>
     </div>
@@ -127,15 +177,36 @@
     <script>
         let allRoutesData = [];
 
-        function openImportModal() {
-            document.getElementById('importModal').classList.remove('hidden');
+        const activityLabels = {
+            "maj_vacant_facteur": "MAJ Vacant (Facteur)",
+            "maj_vacant_ami": "MAJ Vacant (AMI)",
+            "maj_plan_casier": "MAJ Plan Casier",
+            "installation_plan": "Installation Plan",
+            "changement_horaire_blp": "Changement Horaire BLP",
+            "chrono_sub": "Chrono SUB",
+            "chrono_pickup": "Chrono Pick-up",
+            "validation_418": "Validation 418"
+        };
+
+        function openImportModal() { document.getElementById('importModal').classList.remove('hidden'); }
+        function closeImportModal() { document.getElementById('importModal').classList.add('hidden'); }
+        function openReportModal() { 
+            document.getElementById('reportResultContainer').classList.add('hidden');
+            document.getElementById('reportModal').classList.remove('hidden'); 
+        }
+        function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
+
+        function toggleAllActivities(selectState) {
+            document.querySelectorAll('input[name="reportActivity"]').forEach(cb => cb.checked = selectState);
         }
 
-        function closeImportModal() {
-            document.getElementById('importModal').classList.add('hidden');
+        function logToConsole(text, isError = false) {
+            const logBox = document.getElementById('importLog');
+            logBox.classList.remove('hidden');
+            logBox.innerHTML += `<div class="${isError ? 'text-red-400 font-bold' : ''}">> ${text}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Écoute en temps réel de Firestore
         function initApp() {
             if (!window.db) {
                 setTimeout(initApp, 500);
@@ -149,20 +220,21 @@
                     allRoutesData.push(docSnap.data());
                 });
 
-                // Tri par numéro de route numérique
                 allRoutesData.sort((a, b) => (parseInt(a.route) || 0) - (parseInt(b.route) || 0));
                 renderTable(allRoutesData);
+            }, (error) => {
+                console.error("Erreur d'écoute Firestore :", error);
+                document.getElementById('saveStatus').innerText = "❌ Erreur de permissions Firestore";
             });
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-
             document.getElementById('statsCounter').innerText = `${data.length} route(s) enregistrée(s)`;
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Aucune route trouvée. Veuillez cliquer sur "Importer les fichiers Excel" pour initialiser la base.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Aucune route trouvée dans Firebase. Veuillez cliquer sur "Importer Fichiers Excel".</td></tr>`;
                 return;
             }
 
@@ -171,18 +243,12 @@
                 tr.className = 'hover:bg-slate-50 transition';
 
                 let detailsHtml = `<div class="font-bold text-red-700">Route ${item.route}</div>`;
-                if (item.ramassage && item.ramassage.length > 0) {
-                    detailsHtml += `<div class="text-xs text-slate-500">Ramassages: ${item.ramassage.length}</div>`;
-                }
-                if (item.blp_aero && item.blp_aero.length > 0) {
-                    detailsHtml += `<div class="text-xs text-slate-500">BLP Aero: ${item.blp_aero.length}</div>`;
-                }
+                if (item.ramassage && item.ramassage.length > 0) detailsHtml += `<div class="text-xs text-slate-500">Ramassages: ${item.ramassage.length}</div>`;
+                if (item.blp_aero && item.blp_aero.length > 0) detailsHtml += `<div class="text-xs text-slate-500">BLP Aero: ${item.blp_aero.length}</div>`;
 
                 tr.innerHTML = `
                     <td class="p-3 font-semibold">${detailsHtml}</td>
-                    <td class="p-3 text-xs text-slate-600 max-w-xs truncate">
-                        ${summarizeDetails(item)}
-                    </td>
+                    <td class="p-3 text-xs text-slate-600 max-w-xs truncate">${summarizeDetails(item)}</td>
                     ${renderDropdown(item.route, 'maj_vacant_facteur', item.etapes?.maj_vacant_facteur)}
                     ${renderDropdown(item.route, 'maj_vacant_ami', item.etapes?.maj_vacant_ami)}
                     ${renderDropdown(item.route, 'maj_plan_casier', item.etapes?.maj_plan_casier)}
@@ -211,7 +277,7 @@
 
             return `
                 <td class="p-2 text-center">
-                    <select onchange="updateStep('${routeId}', '${fieldName}', this.value)" class="text-xs p-1.5 rounded border border-slate-300 ${bgStyle} focus:outline-none">
+                    <select onchange="updateStep('${routeId}', '${fieldName}', this.value)" class="text-xs p-1.5 rounded border border-slate-300 ${bgStyle} focus:outline-none transition">
                         <option value="pas débuté" ${val === 'pas débuté' ? 'selected' : ''}>Pas débuté</option>
                         <option value="en cours" ${val === 'en cours' ? 'selected' : ''}>En cours</option>
                         <option value="fait" ${val === 'fait' ? 'selected' : ''}>Fait</option>
@@ -220,16 +286,17 @@
             `;
         }
 
-        // Mise à jour instantanée dans Firestore lors d'un changement dans la liste déroulante
         async function updateStep(routeId, fieldName, newValue) {
+            const statusIndicator = document.getElementById('saveStatus');
+            statusIndicator.innerText = "💾 Enregistrement...";
             try {
                 const docRef = window.doc(window.db, 'restructuration', String(routeId));
-                await window.updateDoc(docRef, {
-                    [`etapes.${fieldName}`]: newValue
-                });
+                await window.updateDoc(docRef, { [`etapes.${fieldName}`]: newValue });
+                statusIndicator.innerText = "🟢 Sauvegardé automatiquement";
+                setTimeout(() => { statusIndicator.innerText = "🟢 Connecté à Firebase"; }, 2000);
             } catch (error) {
-                console.error("Erreur lors de la mise à jour :", error);
-                alert("Erreur de mise à jour de la base de données.");
+                console.error("Erreur de sauvegarde :", error);
+                statusIndicator.innerText = "❌ Erreur de sauvegarde !";
             }
         }
 
@@ -242,7 +309,74 @@
             renderTable(filtered);
         }
 
-        // Traitement automatique des fichiers Excel et envoi dans Firestore
+        function generateReport() {
+            const routeInput = document.getElementById('reportRoutes').value.trim();
+            const selectedActivities = Array.from(document.querySelectorAll('input[name="reportActivity"]:checked')).map(cb => cb.value);
+
+            if (selectedActivities.length === 0) {
+                alert("Veuillez sélectionner au moins une activité.");
+                return;
+            }
+
+            let targetRoutes = new Set();
+            if (routeInput === "") {
+                allRoutesData.forEach(item => targetRoutes.add(String(item.route)));
+            } else {
+                routeInput.split(',').forEach(part => {
+                    part = part.trim();
+                    if (part.includes('-')) {
+                        let [start, end] = part.split('-').map(n => parseInt(n.trim()));
+                        for (let i = start; i <= end; i++) targetRoutes.add(String(i));
+                    } else if (part !== "") {
+                        targetRoutes.add(part);
+                    }
+                });
+            }
+
+            const filteredData = allRoutesData.filter(item => targetRoutes.has(String(item.route)));
+
+            if (filteredData.length === 0) {
+                alert("Aucune route ne correspond à votre sélection.");
+                return;
+            }
+
+            let totalStepsChecked = filteredData.length * selectedActivities.length;
+            let completedCount = 0, inProgressCount = 0, notStartedCount = 0;
+            let reportHtml = `<div class="font-bold text-slate-800 mb-2">Rapport pour ${filteredData.length} route(s) et ${selectedActivities.length} activité(s) :</div>`;
+            
+            filteredData.forEach(item => {
+                let etapes = item.etapes || {};
+                reportHtml += `<div class="border-b pb-2 mb-2"><b>Route ${item.route}</b>: `;
+                selectedActivities.forEach(act => {
+                    let st = etapes[act] || 'pas débuté';
+                    if (st === 'fait') completedCount++;
+                    else if (st === 'en cours') inProgressCount++;
+                    else notStartedCount++;
+
+                    let badgeColor = 'text-slate-600';
+                    if (st === 'fait') badgeColor = 'text-green-700 font-bold';
+                    if (st === 'en cours') badgeColor = 'text-amber-700 font-bold';
+
+                    reportHtml += `<br>&nbsp;&nbsp;• ${activityLabels[act]}: <span class="${badgeColor}">${st}</span>`;
+                });
+                reportHtml += `</div>`;
+            });
+
+            let completionRate = Math.round((completedCount / totalStepsChecked) * 100) || 0;
+            let summaryHtml = `
+                <div class="bg-white p-3 rounded border mb-3 flex justify-around text-center font-semibold">
+                    <div>Progression<br><span class="text-lg text-red-700">${completionRate}%</span></div>
+                    <div>Fait<br><span class="text-lg text-green-700">${completedCount}</span></div>
+                    <div>En cours<br><span class="text-lg text-amber-600">${inProgressCount}</span></div>
+                    <div>Pas débuté<br><span class="text-lg text-slate-500">${notStartedCount}</span></div>
+                </div>
+            `;
+
+            document.getElementById('reportOutput').innerHTML = summaryHtml + reportHtml;
+            document.getElementById('reportResultContainer').classList.remove('hidden');
+        }
+
+        // --- IMPORTATION EXCEL AMÉLIORÉE & FLEXIBLE ---
         async function processAndUploadExcel() {
             const fileCasier = document.getElementById('fileCasier').files[0];
             const fileRam = document.getElementById('fileRamassage').files[0];
@@ -253,34 +387,55 @@
                 return;
             }
 
-            document.getElementById('uploadBtn').innerText = "Traitement en cours...";
+            const logBox = document.getElementById('importLog');
+            logBox.innerHTML = '';
+            document.getElementById('uploadBtn').innerText = "Traitement...";
 
             try {
+                logToConsole("Lecture du fichier Casier...");
                 const casierData = await readExcelFile(fileCasier);
-                const sheetCasier = casierData[Object.keys(casierData)[0]];
+                const sheetName = Object.keys(casierData)[0];
+                const sheetCasier = casierData[sheetName];
 
                 let routesSet = new Set();
-                sheetCasier.forEach(row => {
-                    let r = row['Route'] || row['Route Num'] || Object.values(row)[0];
-                    if (r !== undefined && r !== null && r !== '') {
-                        let cleanR = String(r).trim().replace('.0', '');
-                        if (!isNaN(cleanR)) routesSet.add(cleanR);
+                sheetCasier.forEach((row, index) => {
+                    // Recherche intelligente de la colonne Route (insensible à la casse)
+                    let routeVal = undefined;
+                    for (let key in row) {
+                        let lowerKey = key.toLowerCase();
+                        if (lowerKey.includes('route')) {
+                            routeVal = row[key];
+                            break;
+                        }
+                    }
+                    if (routeVal === undefined) {
+                        // Prend la première colonne si le nom ne correspond pas explicitement
+                        routeVal = Object.values(row)[0];
+                    }
+
+                    if (routeVal !== undefined && routeVal !== null && routeVal !== '') {
+                        let cleanR = String(routeVal).trim().replace('.0', '');
+                        if (!isNaN(cleanR) && cleanR !== '') routesSet.add(cleanR);
                     }
                 });
 
+                logToConsole(`${routesSet.size} routes uniques trouvées dans le fichier Casier.`);
+
                 let ramMap = {};
                 if (fileRam) {
+                    logToConsole("Lecture du fichier Ramassage...");
                     const ramData = await readExcelFile(fileRam);
                     const sheetRam = ramData[Object.keys(ramData)[0]];
                     sheetRam.forEach(row => {
-                        let r = String(row['Route'] || '').trim().replace('.0', '');
+                        let r = findValueInRow(row, ['route']);
                         if (r) {
-                            if (!ramMap[r]) ramMap[r] = [];
-                            ramMap[r].push({
-                                Description: row['Description'] || '',
-                                Code: row['Code'] || '',
-                                dem_cpuslb_duration: row['dem_cpuslb_duration'] || '',
-                                "PU Time/Hr Ramassage": row['PU Time/Hr Ramassage'] || ''
+                            let cleanR = String(r).trim().replace('.0', '');
+                            if (!ramMap[cleanR]) ramMap[cleanR] = [];
+                            ramMap[cleanR].push({
+                                Description: findValueInRow(row, ['description', 'desc']) || '',
+                                Code: findValueInRow(row, ['code', 'postal']) || '',
+                                dem_cpuslb_duration: findValueInRow(row, ['duration', 'durée']) || '',
+                                "PU Time/Hr Ramassage": findValueInRow(row, ['time', 'heure', 'ramassage']) || ''
                             });
                         }
                     });
@@ -288,26 +443,31 @@
 
                 let blpMap = {};
                 if (fileBlp) {
+                    logToConsole("Lecture du fichier BLP Aero...");
                     const blpData = await readExcelFile(fileBlp);
                     const sheetBlp = blpData[Object.keys(blpData)[0]];
                     sheetBlp.forEach(row => {
-                        let r = String(row['Route'] || '').trim().replace('.0', '');
-                        if (r && r !== 'undefined') {
-                            if (!blpMap[r]) blpMap[r] = [];
-                            blpMap[r].push({
-                                Description: row['Description'] || '',
-                                Code: row['Code'] || '',
-                                "Earliest/Plus Tôt": row['Earliest/Plus Tôt'] || ''
-                            });
+                        let r = findValueInRow(row, ['route']);
+                        if (r) {
+                            let cleanR = String(r).trim().replace('.0', '');
+                            if (cleanR && cleanR !== 'undefined') {
+                                if (!blpMap[cleanR]) blpMap[cleanR] = [];
+                                blpMap[cleanR].push({
+                                    Description: findValueInRow(row, ['description', 'desc']) || '',
+                                    Code: findValueInRow(row, ['code']) || '',
+                                    "Earliest/Plus Tôt": findValueInRow(row, ['earliest', 'tôt', 'heure']) || ''
+                                });
+                            }
                         }
                     });
                 }
 
-                const batchPromises = [];
+                logToConsole("Envoi des données vers Firestore (collection 'restructuration')...");
+                let count = 0;
                 for (let r of routesSet) {
-                    const docRef = window.doc(window.db, 'restructuration', r);
+                    const docRef = window.doc(window.db, 'restructuration', String(r));
                     const docData = {
-                        route: r,
+                        route: String(r),
                         ramassage: ramMap[r] || [],
                         blp_aero: blpMap[r] || [],
                         etapes: {
@@ -321,22 +481,34 @@
                             validation_418: "pas débuté"
                         }
                     };
-                    batchPromises.push(window.setDoc(docRef, docData, { merge: true }));
+                    // merge: true évite d'écraser les étapes si les données existent déjà
+                    await window.setDoc(docRef, docData, { merge: true });
+                    count++;
                 }
 
-                await Promise.all(batchPromises);
-                alert("Importation réussie avec succès !");
+                logToConsole(`Succès ! ${count} routes créées ou mises à jour dans Firebase.`, false);
+                alert(`Importation réussie ! ${count} routes synchronisées.`);
                 closeImportModal();
             } catch (err) {
                 console.error(err);
-                alert("Erreur lors de l'importation des fichiers.");
+                logToConsole("ERREUR : " + err.message, true);
+                alert("Erreur lors de l'importation. Consultez la console de log pour plus de détails.");
             } finally {
                 document.getElementById('uploadBtn').innerText = "Lancer l'importation";
             }
         }
 
+        function findValueInRow(row, keywords) {
+            for (let key in row) {
+                let lowerKey = key.toLowerCase();
+                for (let kw of keywords) {
+                    if (lowerKey.includes(kw)) return row[key];
+                }
+            }
+            return undefined;
+        }
+
         function readExcelFile(file) {
-            return new RegExp().test() // Helper placeholder
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -348,9 +520,7 @@
                             result[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
                         });
                         resolve(result);
-                    } catch (ex) {
-                        reject(ex);
-                    }
+                    } catch (ex) { reject(ex); }
                 };
                 reader.onerror = (error) => reject(error);
                 reader.readAsArrayBuffer(file);
