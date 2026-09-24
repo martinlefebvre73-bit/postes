@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suivi de Restructuration - Postes Canada</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS pour un design professionnel -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Bibliothèque SheetJS pour lire les fichiers Excel directement dans le navigateur -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- SheetJS pour lire les fichiers Excel directement dans le navigateur -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Vos identifiants Firebase officiels
         const firebaseConfig = {
             apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
             authDomain: "postes-26884.firebaseapp.com",
@@ -26,249 +27,335 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let itineraires = [];
+        window.db = db;
+        window.collection = collection;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
+        window.getDocs = getDocs;
+        window.onSnapshot = onSnapshot;
 
-        window.chargerFichiersEtInitialiser = async function() {
-            const casierFile = document.getElementById('casierFile').files[0];
-            const blpFile = document.getElementById('blpFile').files[0];
-            const ramFile = document.getElementById('ramFile').files[0];
+        // Charger les données au démarrage
+        document.addEventListener("DOMContentLoaded", () => {
+            initApp();
+        });
+    </script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
 
-            if (!casierFile) {
-                alert("Veuillez au moins sélectionner le fichier Casier !");
-                return;
-            }
+    <!-- En-tête -->
+    <header class="bg-red-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                <h1 class="text-xl font-bold">Tableau de Suivi - Restructuration Dépôt Aéroport</h1>
+            </div>
+            <div class="mt-4 md:mt-0 flex space-x-2">
+                <button onclick="openImportModal()" class="bg-white text-red-700 px-4 py-2 rounded-lg font-semibold shadow hover:bg-red-50 transition">
+                    📂 Importer les fichiers Excel
+                </button>
+            </div>
+        </div>
+    </header>
 
-            document.getElementById('loading-text').innerText = "Traitement des fichiers en cours...";
+    <!-- Contenu Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        
+        <!-- Barre de recherche et filtres -->
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="w-full md:w-1/3">
+                <input type="text" id="searchInput" placeholder="Rechercher par route ou description..." onkeyup="filterTable()" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+            </div>
+            <div id="statsCounter" class="text-sm font-medium text-slate-600">
+                Chargement des routes...
+            </div>
+        </div>
 
-            // Lecture du fichier Casier
-            const casierData = await readExcel(casierFile);
-            const sheetCasier = casierData[Object.keys(casierData)[0]];
+        <!-- Tableau de suivi -->
+        <div class="bg-white rounded-xl shadow overflow-x-auto">
+            <table class="w-full text-left border-collapse" id="restructTable">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider border-b">
+                        <th class="p-3">Route</th>
+                        <th class="p-3">Ramassage / BLP Aero</th>
+                        <th class="p-3 text-center">MAJ Vacant (Facteur)</th>
+                        <th class="p-3 text-center">MAJ Vacant (AMI)</th>
+                        <th class="p-3 text-center">MAJ Plan Casier</th>
+                        <th class="p-3 text-center">Installation Plan</th>
+                        <th class="p-3 text-center">Changement Horaire BLP</th>
+                        <th class="p-3 text-center">Chrono SUB</th>
+                        <th class="p-3 text-center">Chrono Pick-up</th>
+                        <th class="p-3 text-center">Validation 418</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-slate-200 text-sm">
+                    <!-- Inséré dynamiquement -->
+                </tbody>
+            </table>
+        </div>
+    </main>
 
-            // Lecture optionnelle BLP et Ramassage
-            let blpRows = blpFile ? await readExcel(blpFile) : {};
-            let ramRows = ramFile ? await readExcel(ramFile) : {};
+    <!-- Modal d'Importation Excel -->
+    <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl">
+            <h3 class="text-lg font-bold mb-4">Importer et synchroniser les fichiers Excel</h3>
+            <p class="text-sm text-slate-600 mb-4">Sélectionnez vos 3 fichiers pour alimenter ou mettre à jour la collection <b>restructuration</b> dans Firestore :</p>
+            
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">1. Fichier Casier</label>
+                    <input type="file" id="fileCasier" class="w-full text-sm border p-2 rounded">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">2. Fichier Ramassage</label>
+                    <input type="file" id="fileRamassage" class="w-full text-sm border p-2 rounded">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">3. Fichier BLP Aero</label>
+                    <input type="file" id="fileBlp" class="w-full text-sm border p-2 rounded">
+                </div>
+            </div>
 
-            let sheetBlp = blpRows[Object.keys(blpRows)[0]] || [];
-            let sheetRam = ramRows[Object.keys(ramRows)[0]] || [];
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeImportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Annuler</button>
+                <button onclick="processAndUploadExcel()" id="uploadBtn" class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-semibold">Lancer l'importation</button>
+            </div>
+        </div>
+    </div>
 
-            for (let row of sheetCasier) {
-                let rNum = row['Route'] || row['Route Num'] || Object.values(row)[0];
-                if (!rNum) continue;
-                let rStr = rNum.toString().trim();
+    <!-- Logique JavaScript -->
+    <script>
+        let allRoutesData = [];
 
-                let docId = `route_${rStr}`;
-                let defaultData = {
-                    id: docId,
-                    routeNum: rStr,
-                    type: "Itinéraire Standard",
-                    detailsBlp: "Standard",
-                    detailsRamassage: "Standard",
-                    taches: { t1: "non_debute", t2: "non_debute", t3: "non_debute", t4: "non_debute" }
-                };
-
-                // Enregistrement direct dans Firestore
-                await setDoc(doc(db, "restructuration", docId), defaultData);
-            }
-
-            alert("Importation réussie dans Firebase !");
-            location.reload();
-        };
-
-        function readExcel(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    let result = {};
-                    workbook.SheetNames.forEach(name => {
-                        result[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name]);
-                    });
-                    resolve(result);
-                };
-                reader.readAsArrayBuffer(file);
-            });
+        function openImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
         }
 
-        async function initApp() {
-            const colRef = collection(db, "restructuration");
-            const querySnapshot = await getDocs(colRef);
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+        }
 
-            if (querySnapshot.empty) {
-                document.getElementById('import-section').style.display = 'block';
+        // Écoute en temps réel de Firestore
+        function initApp() {
+            if (!window.db) {
+                setTimeout(initApp, 500);
                 return;
             }
 
-            itineraires = [];
-            querySnapshot.forEach((docSnap) => {
-                itineraires.push(docSnap.data());
-            });
-
-            itineraires.sort((a, b) => a.routeNum.localeCompare(b.routeNum, undefined, {numeric: true}));
-            renderTable(itineraires);
-            updateKPIs();
-            document.getElementById('app-section').style.display = 'block';
-
-            onSnapshot(colRef, (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "modified") {
-                        const updated = change.doc.data();
-                        const idx = itineraires.findIndex(r => r.id === updated.id);
-                        if (idx !== -1) {
-                            itineraires[idx] = updated;
-                            renderTable(itineraires);
-                            updateKPIs();
-                        }
-                    }
+            const q = window.collection(window.db, 'restructuration');
+            window.onSnapshot(q, (snapshot) => {
+                allRoutesData = [];
+                snapshot.forEach((docSnap) => {
+                    allRoutesData.push(docSnap.data());
                 });
-            });
-        }
 
-        window.updateTaskStatus = async function(routeId, taskId, status) {
-            const route = itineraires.find(r => r.id === routeId);
-            if (route) {
-                route.taches[taskId] = status;
-                await setDoc(doc(db, "restructuration", routeId), route);
-                updateKPIs();
-            }
-        };
-
-        function calculateProgress(taches) {
-            let keys = ['t1', 't2', 't3', 't4'];
-            let score = 0;
-            keys.forEach(k => {
-                if (taches[k] === 'fait') score += 1;
-                else if (taches[k] === 'en_cours') score += 0.5;
+                // Tri par numéro de route numérique
+                allRoutesData.sort((a, b) => (parseInt(a.route) || 0) - (parseInt(b.route) || 0));
+                renderTable(allRoutesData);
             });
-            return Math.round((score / keys.length) * 100);
         }
 
         function renderTable(data) {
-            const tbody = document.getElementById("table-body");
-            tbody.innerHTML = "";
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
 
-            data.forEach(route => {
-                let prog = calculateProgress(route.taches);
-                let tr = document.createElement("tr");
-                tr.className = "hover:bg-slate-50 border-b transition-colors text-sm";
+            document.getElementById('statsCounter').innerText = `${data.length} route(s) enregistrée(s)`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Aucune route trouvée. Veuillez cliquer sur "Importer les fichiers Excel" pour initialiser la base.</td></tr>`;
+                return;
+            }
+
+            data.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+
+                let detailsHtml = `<div class="font-bold text-red-700">Route ${item.route}</div>`;
+                if (item.ramassage && item.ramassage.length > 0) {
+                    detailsHtml += `<div class="text-xs text-slate-500">Ramassages: ${item.ramassage.length}</div>`;
+                }
+                if (item.blp_aero && item.blp_aero.length > 0) {
+                    detailsHtml += `<div class="text-xs text-slate-500">BLP Aero: ${item.blp_aero.length}</div>`;
+                }
+
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-slate-700">Route ${route.routeNum}</td>
-                    <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${route.type}</span></td>
-                    <td class="px-4 py-3">${renderSelect(route.id, 't1', route.taches.t1)}</td>
-                    <td class="px-4 py-3">${renderSelect(route.id, 't2', route.taches.t2)}</td>
-                    <td class="px-4 py-3">${renderSelect(route.id, 't3', route.taches.t3)}</td>
-                    <td class="px-4 py-3">${renderSelect(route.id, 't4', route.taches.t4)}</td>
-                    <td class="px-4 py-3 font-bold text-slate-800">
-                        <div class="flex items-center gap-2">
-                            <div class="w-full bg-slate-200 rounded-full h-2 max-w-[80px]">
-                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${prog}%"></div>
-                            </div>
-                            <span>${prog}%</span>
-                        </div>
+                    <td class="p-3 font-semibold">${detailsHtml}</td>
+                    <td class="p-3 text-xs text-slate-600 max-w-xs truncate">
+                        ${summarizeDetails(item)}
                     </td>
+                    ${renderDropdown(item.route, 'maj_vacant_facteur', item.etapes?.maj_vacant_facteur)}
+                    ${renderDropdown(item.route, 'maj_vacant_ami', item.etapes?.maj_vacant_ami)}
+                    ${renderDropdown(item.route, 'maj_plan_casier', item.etapes?.maj_plan_casier)}
+                    ${renderDropdown(item.route, 'installation_plan', item.etapes?.installation_plan)}
+                    ${renderDropdown(item.route, 'changement_horaire_blp', item.etapes?.changement_horaire_blp)}
+                    ${renderDropdown(item.route, 'chrono_sub', item.etapes?.chrono_sub)}
+                    ${renderDropdown(item.route, 'chrono_pickup', item.etapes?.chrono_pickup)}
+                    ${renderDropdown(item.route, 'validation_418', item.etapes?.validation_418)}
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderSelect(routeId, taskId, currentVal) {
-            let bgClass = "bg-slate-100 text-slate-700";
-            if (currentVal === 'en_cours') bgClass = "bg-amber-100 text-amber-800 font-medium";
-            if (currentVal === 'fait') bgClass = "bg-emerald-100 text-emerald-800 font-medium";
+        function summarizeDetails(item) {
+            let texts = [];
+            if (item.ramassage) item.ramassage.forEach(r => texts.push(`[Ramassage] ${r.Description || ''}`));
+            if (item.blp_aero) item.blp_aero.forEach(b => texts.push(`[BLP] ${b.Description || ''}`));
+            return texts.join(' | ') || 'Aucun détail spécifique';
+        }
+
+        function renderDropdown(routeId, fieldName, currentValue) {
+            const val = currentValue || 'pas débuté';
+            let bgStyle = 'bg-slate-100 text-slate-700';
+            if (val === 'fait') bgStyle = 'bg-green-100 text-green-800 font-semibold';
+            if (val === 'en cours') bgStyle = 'bg-amber-100 text-amber-800 font-semibold';
 
             return `
-                <select onchange="updateTaskStatus('${routeId}', '${taskId}', this.value)" 
-                    class="text-xs p-1 rounded border border-slate-300 focus:ring-2 focus:ring-blue-500 ${bgClass}">
-                    <option value="non_debute" ${currentVal === 'non_debute' ? 'selected' : ''}>Non débuté</option>
-                    <option value="en_cours" ${currentVal === 'en_cours' ? 'selected' : ''}>En cours</option>
-                    <option value="fait" ${currentVal === 'fait' ? 'selected' : ''}>Fait</option>
-                </select>
+                <td class="p-2 text-center">
+                    <select onchange="updateStep('${routeId}', '${fieldName}', this.value)" class="text-xs p-1.5 rounded border border-slate-300 ${bgStyle} focus:outline-none">
+                        <option value="pas débuté" ${val === 'pas débuté' ? 'selected' : ''}>Pas débuté</option>
+                        <option value="en cours" ${val === 'en cours' ? 'selected' : ''}>En cours</option>
+                        <option value="fait" ${val === 'fait' ? 'selected' : ''}>Fait</option>
+                    </select>
+                </td>
             `;
         }
 
-        function updateKPIs() {
-            document.getElementById("total-routes").innerText = itineraires.length;
-            let completed = itineraires.filter(r => calculateProgress(r.taches) === 100).length;
-            document.getElementById("completed-routes").innerText = completed;
-
-            let totalProg = itineraires.reduce((acc, r) => acc + calculateProgress(r.taches), 0);
-            let avgProg = itineraires.length > 0 ? Math.round(totalProg / itineraires.length) : 0;
-            document.getElementById("global-progress").innerText = avgProg + "%";
+        // Mise à jour instantanée dans Firestore lors d'un changement dans la liste déroulante
+        async function updateStep(routeId, fieldName, newValue) {
+            try {
+                const docRef = window.doc(window.db, 'restructuration', String(routeId));
+                await window.updateDoc(docRef, {
+                    [`etapes.${fieldName}`]: newValue
+                });
+            } catch (error) {
+                console.error("Erreur lors de la mise à jour :", error);
+                alert("Erreur de mise à jour de la base de données.");
+            }
         }
 
-        window.onload = initApp;
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allRoutesData.filter(item => 
+                String(item.route).toLowerCase().includes(query) ||
+                summarizeDetails(item).toLowerCase().includes(query)
+            );
+            renderTable(filtered);
+        }
+
+        // Traitement automatique des fichiers Excel et envoi dans Firestore
+        async function processAndUploadExcel() {
+            const fileCasier = document.getElementById('fileCasier').files[0];
+            const fileRam = document.getElementById('fileRamassage').files[0];
+            const fileBlp = document.getElementById('fileBlp').files[0];
+
+            if (!fileCasier) {
+                alert("Le fichier Casier est obligatoire.");
+                return;
+            }
+
+            document.getElementById('uploadBtn').innerText = "Traitement en cours...";
+
+            try {
+                const casierData = await readExcelFile(fileCasier);
+                const sheetCasier = casierData[Object.keys(casierData)[0]];
+
+                let routesSet = new Set();
+                sheetCasier.forEach(row => {
+                    let r = row['Route'] || row['Route Num'] || Object.values(row)[0];
+                    if (r !== undefined && r !== null && r !== '') {
+                        let cleanR = String(r).trim().replace('.0', '');
+                        if (!isNaN(cleanR)) routesSet.add(cleanR);
+                    }
+                });
+
+                let ramMap = {};
+                if (fileRam) {
+                    const ramData = await readExcelFile(fileRam);
+                    const sheetRam = ramData[Object.keys(ramData)[0]];
+                    sheetRam.forEach(row => {
+                        let r = String(row['Route'] || '').trim().replace('.0', '');
+                        if (r) {
+                            if (!ramMap[r]) ramMap[r] = [];
+                            ramMap[r].push({
+                                Description: row['Description'] || '',
+                                Code: row['Code'] || '',
+                                dem_cpuslb_duration: row['dem_cpuslb_duration'] || '',
+                                "PU Time/Hr Ramassage": row['PU Time/Hr Ramassage'] || ''
+                            });
+                        }
+                    });
+                }
+
+                let blpMap = {};
+                if (fileBlp) {
+                    const blpData = await readExcelFile(fileBlp);
+                    const sheetBlp = blpData[Object.keys(blpData)[0]];
+                    sheetBlp.forEach(row => {
+                        let r = String(row['Route'] || '').trim().replace('.0', '');
+                        if (r && r !== 'undefined') {
+                            if (!blpMap[r]) blpMap[r] = [];
+                            blpMap[r].push({
+                                Description: row['Description'] || '',
+                                Code: row['Code'] || '',
+                                "Earliest/Plus Tôt": row['Earliest/Plus Tôt'] || ''
+                            });
+                        }
+                    });
+                }
+
+                const batchPromises = [];
+                for (let r of routesSet) {
+                    const docRef = window.doc(window.db, 'restructuration', r);
+                    const docData = {
+                        route: r,
+                        ramassage: ramMap[r] || [],
+                        blp_aero: blpMap[r] || [],
+                        etapes: {
+                            maj_vacant_facteur: "pas débuté",
+                            maj_vacant_ami: "pas débuté",
+                            maj_plan_casier: "pas débuté",
+                            installation_plan: "pas débuté",
+                            changement_horaire_blp: "pas débuté",
+                            chrono_sub: "pas débuté",
+                            chrono_pickup: "pas débuté",
+                            validation_418: "pas débuté"
+                        }
+                    };
+                    batchPromises.push(window.setDoc(docRef, docData, { merge: true }));
+                }
+
+                await Promise.all(batchPromises);
+                alert("Importation réussie avec succès !");
+                closeImportModal();
+            } catch (err) {
+                console.error(err);
+                alert("Erreur lors de l'importation des fichiers.");
+            } finally {
+                document.getElementById('uploadBtn').innerText = "Lancer l'importation";
+            }
+        }
+
+        function readExcelFile(file) {
+            return new RegExp().test() // Helper placeholder
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        let result = {};
+                        workbook.SheetNames.forEach(sheetName => {
+                            result[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                        });
+                        resolve(result);
+                    } catch (ex) {
+                        reject(ex);
+                    }
+                };
+                reader.onerror = (error) => reject(error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
     </script>
-</head>
-<body class="bg-slate-100 min-h-screen text-slate-800 p-6">
-
-    <!-- Section d'importation (affichée uniquement si la base Firebase est vide) -->
-    <div id="import-section" style="display:none;" class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-md space-y-6 mt-10">
-        <h2 class="text-xl font-bold text-slate-900">Initialisation de la base de données</h2>
-        <p class="text-sm text-slate-500">La base Firebase est vide. Veuillez sélectionner vos fichiers Excel pour charger automatiquement les itinéraires.</p>
-        
-        <div class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Fichier Casier (Obligatoire)</label>
-                <input type="file" id="casierFile" accept=".xlsx" class="w-full text-sm border p-2 rounded-lg">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Fichier BLP Aero 1 (Optionnel)</label>
-                <input type="file" id="blpFile" accept=".xlsx" class="w-full text-sm border p-2 rounded-lg">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Fichier Ramassage (Optionnel)</label>
-                <input type="file" id="ramFile" accept=".xlsx" class="w-full text-sm border p-2 rounded-lg">
-            </div>
-        </div>
-
-        <button onclick="chargerFichiersEtInitialiser()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-2.5 rounded-lg transition-colors">
-            Importer et créer la base de données
-        </button>
-        <p id="loading-text" class="text-center text-xs text-blue-600 font-medium"></p>
-    </div>
-
-    <!-- Section principale de suivi (affichée lorsque la base contient les données) -->
-    <div id="app-section" style="display:none;" class="max-w-7xl mx-auto space-y-6">
-        <header class="bg-white p-6 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900">Suivi de Restructuration - Dépôt Aéroport</h1>
-                <p class="text-sm text-slate-500">Synchronisation en direct avec Firebase</p>
-            </div>
-            <div class="flex gap-4">
-                <div class="bg-blue-50 border border-blue-100 px-4 py-2 rounded-lg text-center">
-                    <span class="block text-xs text-blue-600 font-semibold">Total Itinéraires</span>
-                    <span id="total-routes" class="text-xl font-bold text-blue-900">0</span>
-                </div>
-                <div class="bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-lg text-center">
-                    <span class="block text-xs text-emerald-600 font-semibold">Complétés (100%)</span>
-                    <span id="completed-routes" class="text-xl font-bold text-emerald-900">0</span>
-                </div>
-                <div class="bg-purple-50 border border-purple-100 px-4 py-2 rounded-lg text-center">
-                    <span class="block text-xs text-purple-600 font-semibold">Progression Globale</span>
-                    <span id="global-progress" class="text-xl font-bold text-purple-900">0%</span>
-                </div>
-            </div>
-        </header>
-
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 border-b text-slate-600 font-semibold text-xs">
-                            <th class="px-4 py-3">Route</th>
-                            <th class="px-4 py-3">Type</th>
-                            <th class="px-4 py-3">Analyse Volumes</th>
-                            <th class="px-4 py-3">Optimisation Parcours</th>
-                            <th class="px-4 py-3">Validation Terrain</th>
-                            <th class="px-4 py-3">Mise à jour Systèmes</th>
-                            <th class="px-4 py-3">Progression</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>
