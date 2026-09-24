@@ -38,11 +38,34 @@
             initApp();
         });
     </script>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #reportResultContainer, #reportResultContainer * {
+                visibility: visible;
+            }
+            #reportResultContainer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 pb-12">
 
     <!-- En-tête -->
-    <header class="bg-red-700 text-white shadow-md">
+    <header class="bg-red-700 text-white shadow-md no-print">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
@@ -63,7 +86,7 @@
     </header>
 
     <!-- Contenu Principal -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <main class="max-w-7xl mx-auto px-4 py-6 no-print">
         
         <!-- Barre de recherche -->
         <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -120,7 +143,6 @@
                 </div>
             </div>
 
-            <!-- Console de log d'importation -->
             <div id="importLog" class="text-xs bg-slate-900 text-green-400 p-2 rounded mb-4 h-28 overflow-y-auto hidden font-mono"></div>
 
             <div class="flex justify-end space-x-3">
@@ -133,12 +155,12 @@
     <!-- Modal de Génération de Rapports -->
     <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4 no-print">
                 <h3 class="text-lg font-bold text-slate-800">Générateur de Rapport de Restructuration</h3>
                 <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
             </div>
 
-            <div class="space-y-4 mb-6">
+            <div class="space-y-4 mb-6 no-print">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Sélection des Routes</label>
                     <input type="text" id="reportRoutes" placeholder="Ex: 2, 5, 10-25 ou laisser vide pour TOUTES" class="w-full text-sm border p-2 rounded focus:ring-2 focus:ring-red-500 focus:outline-none">
@@ -161,13 +183,22 @@
                 </div>
             </div>
 
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeReportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Fermer</button>
-                <button onclick="generateReport()" class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-semibold">Générer et Afficher</button>
+            <div class="flex justify-between items-center no-print">
+                <button onclick="printReport()" id="printBtn" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 font-semibold hidden flex items-center gap-2">
+                    🖨️ Imprimer le rapport
+                </button>
+                <div class="flex space-x-3 ml-auto">
+                    <button onclick="closeReportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Fermer</button>
+                    <button onclick="generateReport()" class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-semibold">Générer et Afficher</button>
+                </div>
             </div>
 
+            <!-- Zone de Résultat du Rapport -->
             <div id="reportResultContainer" class="mt-6 border-t pt-4 hidden">
-                <h4 class="font-bold text-slate-700 mb-2">Résultat du Rapport</h4>
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold text-slate-700">Rapport de Restructuration - Dépôt Aéroport</h4>
+                    <span class="text-xs text-slate-500" id="reportDate"></span>
+                </div>
                 <div id="reportOutput" class="bg-slate-50 border p-4 rounded text-xs space-y-3 max-h-60 overflow-y-auto"></div>
             </div>
         </div>
@@ -192,6 +223,7 @@
         function closeImportModal() { document.getElementById('importModal').classList.add('hidden'); }
         function openReportModal() { 
             document.getElementById('reportResultContainer').classList.add('hidden');
+            document.getElementById('printBtn').classList.add('hidden');
             document.getElementById('reportModal').classList.remove('hidden'); 
         }
         function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
@@ -246,6 +278,10 @@
                 if (item.ramassage && item.ramassage.length > 0) detailsHtml += `<div class="text-xs text-slate-500">Ramassages: ${item.ramassage.length}</div>`;
                 if (item.blp_aero && item.blp_aero.length > 0) detailsHtml += `<div class="text-xs text-slate-500">BLP Aero: ${item.blp_aero.length}</div>`;
 
+                // Vérifications de présence
+                const hasPickup = item.ramassage && item.ramassage.length > 0;
+                const hasBlp = item.blp_aero && item.blp_aero.length > 0;
+
                 tr.innerHTML = `
                     <td class="p-3 font-semibold">${detailsHtml}</td>
                     <td class="p-3 text-xs text-slate-600 max-w-xs truncate">${summarizeDetails(item)}</td>
@@ -253,9 +289,9 @@
                     ${renderDropdown(item.route, 'maj_vacant_ami', item.etapes?.maj_vacant_ami)}
                     ${renderDropdown(item.route, 'maj_plan_casier', item.etapes?.maj_plan_casier)}
                     ${renderDropdown(item.route, 'installation_plan', item.etapes?.installation_plan)}
-                    ${renderDropdown(item.route, 'changement_horaire_blp', item.etapes?.changement_horaire_blp)}
+                    ${renderBlpDropdown(item.route, item.etapes?.changement_horaire_blp, hasBlp)}
                     ${renderDropdown(item.route, 'chrono_sub', item.etapes?.chrono_sub)}
-                    ${renderDropdown(item.route, 'chrono_pickup', item.etapes?.chrono_pickup)}
+                    ${renderPickupDropdown(item.route, item.etapes?.chrono_pickup, hasPickup)}
                     ${renderDropdown(item.route, 'validation_418', item.etapes?.validation_418)}
                 `;
                 tbody.appendChild(tr);
@@ -284,6 +320,30 @@
                     </select>
                 </td>
             `;
+        }
+
+        // Désactivation Chrono Pick-up si pas de ramassage
+        function renderPickupDropdown(routeId, currentValue, hasPickup) {
+            if (!hasPickup) {
+                return `
+                    <td class="p-2 text-center">
+                        <span class="text-xs bg-slate-200 text-slate-400 px-2 py-1 rounded font-medium italic" title="Aucun pick-up pour cette route">N/A</span>
+                    </td>
+                `;
+            }
+            return renderDropdown(routeId, 'chrono_pickup', currentValue);
+        }
+
+        // Désactivation Changement Horaire BLP si pas de BLP
+        function renderBlpDropdown(routeId, currentValue, hasBlp) {
+            if (!hasBlp) {
+                return `
+                    <td class="p-2 text-center">
+                        <span class="text-xs bg-slate-200 text-slate-400 px-2 py-1 rounded font-medium italic" title="Aucun BLP pour cette route">N/A</span>
+                    </td>
+                `;
+            }
+            return renderDropdown(routeId, 'changement_horaire_blp', currentValue);
         }
 
         async function updateStep(routeId, fieldName, newValue) {
@@ -340,14 +400,31 @@
                 return;
             }
 
-            let totalStepsChecked = filteredData.length * selectedActivities.length;
+            document.getElementById('reportDate').innerText = "Généré le : " + new Date().toLocaleDateString('fr-FR');
+
+            let totalStepsChecked = 0;
             let completedCount = 0, inProgressCount = 0, notStartedCount = 0;
-            let reportHtml = `<div class="font-bold text-slate-800 mb-2">Rapport pour ${filteredData.length} route(s) et ${selectedActivities.length} activité(s) :</div>`;
+            let reportHtml = `<div class="font-bold text-slate-800 mb-2">Détail pour ${filteredData.length} route(s) et ${selectedActivities.length} activité(s) demandée(s) :</div>`;
             
             filteredData.forEach(item => {
                 let etapes = item.etapes || {};
+                const hasPickup = item.ramassage && item.ramassage.length > 0;
+                const hasBlp = item.blp_aero && item.blp_aero.length > 0;
+
                 reportHtml += `<div class="border-b pb-2 mb-2"><b>Route ${item.route}</b>: `;
                 selectedActivities.forEach(act => {
+                    // Ignorer chrono_pickup si pas de pick-up
+                    if (act === 'chrono_pickup' && !hasPickup) {
+                        reportHtml += `<br>&nbsp;&nbsp;• ${activityLabels[act]}: <span class="text-slate-400 italic">N/A (Pas de pick-up)</span>`;
+                        return;
+                    }
+                    // Ignorer changement_horaire_blp si pas de BLP
+                    if (act === 'changement_horaire_blp' && !hasBlp) {
+                        reportHtml += `<br>&nbsp;&nbsp;• ${activityLabels[act]}: <span class="text-slate-400 italic">N/A (Pas de BLP)</span>`;
+                        return;
+                    }
+
+                    totalStepsChecked++;
                     let st = etapes[act] || 'pas débuté';
                     if (st === 'fait') completedCount++;
                     else if (st === 'en cours') inProgressCount++;
@@ -362,7 +439,7 @@
                 reportHtml += `</div>`;
             });
 
-            let completionRate = Math.round((completedCount / totalStepsChecked) * 100) || 0;
+            let completionRate = totalStepsChecked > 0 ? Math.round((completedCount / totalStepsChecked) * 100) : 0;
             let summaryHtml = `
                 <div class="bg-white p-3 rounded border mb-3 flex justify-around text-center font-semibold">
                     <div>Progression<br><span class="text-lg text-red-700">${completionRate}%</span></div>
@@ -374,9 +451,14 @@
 
             document.getElementById('reportOutput').innerHTML = summaryHtml + reportHtml;
             document.getElementById('reportResultContainer').classList.remove('hidden');
+            document.getElementById('printBtn').classList.remove('hidden');
         }
 
-        // --- IMPORTATION EXCEL CORRIGÉE & ULTRA-ROBUSTE ---
+        function printReport() {
+            window.print();
+        }
+
+        // --- IMPORTATION EXCEL ---
         async function processAndUploadExcel() {
             const fileCasier = document.getElementById('fileCasier').files[0];
             const fileRam = document.getElementById('fileRamassage').files[0];
@@ -397,7 +479,6 @@
                 
                 let routesSet = new Set();
 
-                // Parcourir toutes les feuilles du fichier Casier
                 for (let sheetName in casierData) {
                     let rows = casierData[sheetName];
                     logToConsole(`Analyse feuille: ${sheetName} (${rows.length} lignes)`);
