@@ -121,7 +121,7 @@
             </div>
 
             <!-- Console de log d'importation -->
-            <div id="importLog" class="text-xs bg-slate-900 text-green-400 p-2 rounded mb-4 h-24 overflow-y-auto hidden font-mono"></div>
+            <div id="importLog" class="text-xs bg-slate-900 text-green-400 p-2 rounded mb-4 h-28 overflow-y-auto hidden font-mono"></div>
 
             <div class="flex justify-end space-x-3">
                 <button onclick="closeImportModal()" class="px-4 py-2 border rounded-lg text-slate-600 hover:bg-slate-100">Fermer</button>
@@ -376,7 +376,7 @@
             document.getElementById('reportResultContainer').classList.remove('hidden');
         }
 
-        // --- IMPORTATION EXCEL AMÉLIORÉE & FLEXIBLE ---
+        // --- IMPORTATION EXCEL CORRIGÉE & ULTRA-ROBUSTE ---
         async function processAndUploadExcel() {
             const fileCasier = document.getElementById('fileCasier').files[0];
             const fileRam = document.getElementById('fileRamassage').files[0];
@@ -394,32 +394,39 @@
             try {
                 logToConsole("Lecture du fichier Casier...");
                 const casierData = await readExcelFile(fileCasier);
-                const sheetName = Object.keys(casierData)[0];
-                const sheetCasier = casierData[sheetName];
-
+                
                 let routesSet = new Set();
-                sheetCasier.forEach((row, index) => {
-                    // Recherche intelligente de la colonne Route (insensible à la casse)
-                    let routeVal = undefined;
-                    for (let key in row) {
-                        let lowerKey = key.toLowerCase();
-                        if (lowerKey.includes('route')) {
-                            routeVal = row[key];
-                            break;
+
+                // Parcourir toutes les feuilles du fichier Casier
+                for (let sheetName in casierData) {
+                    let rows = casierData[sheetName];
+                    logToConsole(`Analyse feuille: ${sheetName} (${rows.length} lignes)`);
+                    
+                    rows.forEach((row) => {
+                        for (let key in row) {
+                            let val = row[key];
+                            let lowerKey = key.toLowerCase();
+                            if (lowerKey.includes('route') && val !== undefined && val !== null && val !== '') {
+                                let cleanR = String(val).trim().replace('.0', '');
+                                if (!isNaN(cleanR) && cleanR !== '') routesSet.add(cleanR);
+                            }
                         }
-                    }
-                    if (routeVal === undefined) {
-                        // Prend la première colonne si le nom ne correspond pas explicitement
-                        routeVal = Object.values(row)[0];
-                    }
+                        
+                        let firstVal = Object.values(row)[0];
+                        if (firstVal !== undefined && firstVal !== null && firstVal !== '') {
+                            let cleanR = String(firstVal).trim().replace('.0', '');
+                            if (!isNaN(cleanR) && Number(cleanR) > 0 && Number(cleanR) < 1000) {
+                                routesSet.add(cleanR);
+                            }
+                        }
+                    });
+                }
 
-                    if (routeVal !== undefined && routeVal !== null && routeVal !== '') {
-                        let cleanR = String(routeVal).trim().replace('.0', '');
-                        if (!isNaN(cleanR) && cleanR !== '') routesSet.add(cleanR);
-                    }
-                });
+                logToConsole(`Succès : ${routesSet.size} routes uniques détectées.`);
 
-                logToConsole(`${routesSet.size} routes uniques trouvées dans le fichier Casier.`);
+                if (routesSet.size === 0) {
+                    throw new Error("Aucune route n'a pu être extraite du fichier Casier.");
+                }
 
                 let ramMap = {};
                 if (fileRam) {
@@ -462,7 +469,7 @@
                     });
                 }
 
-                logToConsole("Envoi des données vers Firestore (collection 'restructuration')...");
+                logToConsole("Envoi vers Firestore (collection 'restructuration')...");
                 let count = 0;
                 for (let r of routesSet) {
                     const docRef = window.doc(window.db, 'restructuration', String(r));
@@ -481,18 +488,17 @@
                             validation_418: "pas débuté"
                         }
                     };
-                    // merge: true évite d'écraser les étapes si les données existent déjà
                     await window.setDoc(docRef, docData, { merge: true });
                     count++;
                 }
 
-                logToConsole(`Succès ! ${count} routes créées ou mises à jour dans Firebase.`, false);
+                logToConsole(`Terminé ! ${count} routes créées dans Firebase.`, false);
                 alert(`Importation réussie ! ${count} routes synchronisées.`);
                 closeImportModal();
             } catch (err) {
                 console.error(err);
                 logToConsole("ERREUR : " + err.message, true);
-                alert("Erreur lors de l'importation. Consultez la console de log pour plus de détails.");
+                alert("Erreur : " + err.message);
             } finally {
                 document.getElementById('uploadBtn').innerText = "Lancer l'importation";
             }
