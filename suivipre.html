@@ -104,7 +104,7 @@
                 <thead>
                     <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider border-b">
                         <th class="p-3">Route</th>
-                        <th class="p-3">Ramassage / BLP Aero</th>
+                        <th class="p-3">Ramassages & BLP Aero (Détails par ligne)</th>
                         <th class="p-3 text-center">MAJ Vacant (Facteur)</th>
                         <th class="p-3 text-center">MAJ Vacant (AMI)</th>
                         <th class="p-3 text-center">MAJ Plan Casier</th>
@@ -274,17 +274,16 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
 
-                let detailsHtml = `<div class="font-bold text-red-700">Route ${item.route}</div>`;
-                if (item.ramassage && item.ramassage.length > 0) detailsHtml += `<div class="text-xs text-slate-500">Ramassages: ${item.ramassage.length}</div>`;
-                if (item.blp_aero && item.blp_aero.length > 0) detailsHtml += `<div class="text-xs text-slate-500">BLP Aero: ${item.blp_aero.length}</div>`;
+                let detailsHtml = `<div class="font-bold text-red-700 text-base">Route ${item.route}</div>`;
 
-                // Vérifications de présence
                 const hasPickup = item.ramassage && item.ramassage.length > 0;
                 const hasBlp = item.blp_aero && item.blp_aero.length > 0;
 
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold">${detailsHtml}</td>
-                    <td class="p-3 text-xs text-slate-600 max-w-xs truncate">${summarizeDetails(item)}</td>
+                    <td class="p-3 font-semibold align-top">${detailsHtml}</td>
+                    <td class="p-3 text-xs text-slate-700 align-top max-w-sm">
+                        ${formatDetailedLines(item)}
+                    </td>
                     ${renderDropdown(item.route, 'maj_vacant_facteur', item.etapes?.maj_vacant_facteur)}
                     ${renderDropdown(item.route, 'maj_vacant_ami', item.etapes?.maj_vacant_ami)}
                     ${renderDropdown(item.route, 'maj_plan_casier', item.etapes?.maj_plan_casier)}
@@ -298,11 +297,38 @@
             });
         }
 
-        function summarizeDetails(item) {
-            let texts = [];
-            if (item.ramassage) item.ramassage.forEach(r => texts.push(`[Ramassage] ${r.Description || ''}`));
-            if (item.blp_aero) item.blp_aero.forEach(b => texts.push(`[BLP] ${b.Description || ''}`));
-            return texts.join(' | ') || 'Aucun détail spécifique';
+        // Formatage des éléments Ramassages et BLP par ligne
+        function formatDetailedLines(item) {
+            let html = '';
+
+            if (item.ramassage && item.ramassage.length > 0) {
+                html += `<div class="mb-2"><span class="font-bold text-red-600 uppercase text-[10px] tracking-wider block mb-1">📦 Ramassages (${item.ramassage.length}) :</span>`;
+                item.ramassage.forEach(r => {
+                    let desc = r.Description || 'Sans description';
+                    let code = r.Code ? `(${r.Code})` : '';
+                    let time = r["PU Time/Hr Ramassage"] ? `• Heure: ${r["PU Time/Hr Ramassage"]}` : '';
+                    let dur = r.dem_cpuslb_duration ? `• Durée: ${r.dem_cpuslb_duration}h` : '';
+                    html += `<div class="bg-red-50 p-1.5 rounded mb-1 border border-red-100"><b>${desc}</b> ${code}<br><span class="text-[11px] text-slate-500">${time} ${dur}</span></div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (item.blp_aero && item.blp_aero.length > 0) {
+                html += `<div><span class="font-bold text-blue-600 uppercase text-[10px] tracking-wider block mb-1">✈️ BLP Aero (${item.blp_aero.length}) :</span>`;
+                item.blp_aero.forEach(b => {
+                    let desc = b.Description || 'Sans description';
+                    let code = b.Code ? `(${b.Code})` : '';
+                    let earliest = b["Earliest/Plus Tôt"] ? `• Plus tôt: ${b["Earliest/Plus Tôt"]}` : '';
+                    html += `<div class="bg-blue-50 p-1.5 rounded mb-1 border border-blue-100"><b>${desc}</b> ${code}<br><span class="text-[11px] text-slate-500">${earliest}</span></div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (!item.ramassage?.length && !item.blp_aero?.length) {
+                html = `<span class="italic text-slate-400">Aucun ramassage ni BLP associé</span>`;
+            }
+
+            return html;
         }
 
         function renderDropdown(routeId, fieldName, currentValue) {
@@ -312,7 +338,7 @@
             if (val === 'en cours') bgStyle = 'bg-amber-100 text-amber-800 font-semibold';
 
             return `
-                <td class="p-2 text-center">
+                <td class="p-2 text-center align-middle">
                     <select onchange="updateStep('${routeId}', '${fieldName}', this.value)" class="text-xs p-1.5 rounded border border-slate-300 ${bgStyle} focus:outline-none transition">
                         <option value="pas débuté" ${val === 'pas débuté' ? 'selected' : ''}>Pas débuté</option>
                         <option value="en cours" ${val === 'en cours' ? 'selected' : ''}>En cours</option>
@@ -322,11 +348,10 @@
             `;
         }
 
-        // Désactivation Chrono Pick-up si pas de ramassage
         function renderPickupDropdown(routeId, currentValue, hasPickup) {
             if (!hasPickup) {
                 return `
-                    <td class="p-2 text-center">
+                    <td class="p-2 text-center align-middle">
                         <span class="text-xs bg-slate-200 text-slate-400 px-2 py-1 rounded font-medium italic" title="Aucun pick-up pour cette route">N/A</span>
                     </td>
                 `;
@@ -334,11 +359,10 @@
             return renderDropdown(routeId, 'chrono_pickup', currentValue);
         }
 
-        // Désactivation Changement Horaire BLP si pas de BLP
         function renderBlpDropdown(routeId, currentValue, hasBlp) {
             if (!hasBlp) {
                 return `
-                    <td class="p-2 text-center">
+                    <td class="p-2 text-center align-middle">
                         <span class="text-xs bg-slate-200 text-slate-400 px-2 py-1 rounded font-medium italic" title="Aucun BLP pour cette route">N/A</span>
                     </td>
                 `;
@@ -362,10 +386,11 @@
 
         function filterTable() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allRoutesData.filter(item => 
-                String(item.route).toLowerCase().includes(query) ||
-                summarizeDetails(item).toLowerCase().includes(query)
-            );
+            const filtered = allRoutesData.filter(item => {
+                let routeMatch = String(item.route).toLowerCase().includes(query);
+                let textMatch = JSON.stringify(item).toLowerCase().includes(query);
+                return routeMatch || textMatch;
+            });
             renderTable(filtered);
         }
 
@@ -413,12 +438,10 @@
 
                 reportHtml += `<div class="border-b pb-2 mb-2"><b>Route ${item.route}</b>: `;
                 selectedActivities.forEach(act => {
-                    // Ignorer chrono_pickup si pas de pick-up
                     if (act === 'chrono_pickup' && !hasPickup) {
                         reportHtml += `<br>&nbsp;&nbsp;• ${activityLabels[act]}: <span class="text-slate-400 italic">N/A (Pas de pick-up)</span>`;
                         return;
                     }
-                    // Ignorer changement_horaire_blp si pas de BLP
                     if (act === 'changement_horaire_blp' && !hasBlp) {
                         reportHtml += `<br>&nbsp;&nbsp;• ${activityLabels[act]}: <span class="text-slate-400 italic">N/A (Pas de BLP)</span>`;
                         return;
