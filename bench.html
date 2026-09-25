@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuille de Saisie avec Benchmark 8h - Postes Canada / CAMS</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .form-section {
+            padding: 25px 30px;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 130px 140px 140px 110px 110px 90px 90px 90px 130px;
+            gap: 12px;
+            align-items: end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #4b5563;
+        }
+        .form-control {
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 38px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1e40af;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            margin-right: 4px;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .table-section {
+            padding: 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #4b5563;
+            font-weight: 600;
+        }
+        .actions-bar {
+            padding: 20px 30px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+        }
+        .total-badge {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            padding: 20px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 30px auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 1300px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #000;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        /* Module color classes */
+        .mod-yanick { background-color: #e0f2fe !important; color: #0369a1; }
+        .mod-martin { background-color: #1e3a8a !important; color: #ffffff !important; }
+        .mod-jonathan { background-color: #f3f4f6 !important; color: #374151; }
+        .mod-jean { background-color: #fef3c7 !important; color: #92400e; }
+        .mod-yves { background-color: #d1fae5 !important; color: #065f46; }
+        .mod-dany { background-color: #fef08a !important; color: #854d0e; }
+        
+        .status-msg {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #059669;
+            font-weight: 500;
+        }
+    </style>
+
+    <!-- Firebase SDKs & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let employees = [];
+        let editingIndex = null;
+        let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
+
+        // Helper to compute benchmark and equivalent 8h
+        function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
+            const match = routeStr.match(/\d+/);
+            const num = match ? parseInt(match[0], 10) : 0;
+            const exceptions = { 90: 5.97, 94: 4.17, 96: 4.28, 302: 3.65, 306: 3.68, 310: 5.55 };
+            const benchmark = exceptions[num] !== undefined ? exceptions[num] : 8.0;
+            const equiv8h = (heure1508 + heureBz) * (benchmark / 8.0);
+            const benchmarkPaye = (heure1508 * 1.5) + heureBz;
+            return { benchmark, equiv8h, benchmarkPaye };
+        }
+
+        function saveAndRender() {
+            entries = entries.map(e => {
+                const calc = calculateBenchmark(e.route, e.heure1508, e.heureBz, e.heure1704);
+                return { ...e, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye };
+            });
+            localStorage.setItem('cams_entries', JSON.stringify(entries));
+            renderTable();
+        }
+
+        const supervisorRoutes = {
+            "Dany": [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 209, 213, 215, 217, 219, 223, 225],
+            "Yves": [2, 4, 6, 8, 10, 16, 18, 20, 22, 26, 28, 30, 32, 34, 64],
+            "Martin": [12, 14, 216, 218, 224, 228, 230, 232, 236, 238, 240, 244, 246, 248, 250, 252, 254, 256, 258, 260, 262, 264, 272, 282, 290, 310],
+            "Jonathan": [24, 201, 202, 203, 204, 205, 206, 207, 208, 210, 211, 212, 214, 220, 221, 222, 226, 227, 234, 242, 266, 268, 270, 274, 278, 286],
+            "Jean": [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 88, 90],
+            "Yanick": [94, 96, 302, 306]
+        };
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('dateInput').valueAsDate = new Date();
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "employes"));
+                const nomSelect = document.getElementById('nomSelect');
+                nomSelect.innerHTML = '<option value="" disabled selected>Employé...</option>';
+                
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const empName = data.nom || data.name || docSnap.id;
+                    const empId = data.id || data.employeeId || 'N/A';
+                    employees.push({ name: empName, id: empId });
+                });
+
+                employees.forEach(emp => {
+                    const opt = document.createElement('option');
+                    opt.value = emp.name;
+                    opt.textContent = emp.name;
+                    nomSelect.appendChild(opt);
+                });
+                
+                document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${employees.length} employés chargés).`;
+            } catch (error) {
+                console.error("Erreur chargement Firebase:", error);
+                document.getElementById('firebaseStatus').textContent = "Erreur de connexion Firebase.";
+                document.getElementById('firebaseStatus').style.color = "#dc2626";
+            }
+
+            saveAndRender();
+        });
+
+        window.updateModuleRoutes = function(selectedRoute = null) {
+            const mod = document.getElementById('moduleSelect').value;
+            const routeSelect = document.getElementById('routeSelect');
+            routeSelect.innerHTML = '<option value="" disabled selected>Route...</option>';
+            routeSelect.className = "form-control";
+
+            if (mod && supervisorRoutes[mod]) {
+                routeSelect.classList.add(`mod-${mod.toLowerCase()}`);
+                supervisorRoutes[mod].forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = `Route ${r}`;
+                    opt.textContent = `Route ${r}`;
+                    routeSelect.appendChild(opt);
+                });
+                if (selectedRoute) {
+                    routeSelect.value = selectedRoute;
+                }
+            }
+        }
+
+        window.updateEmployeeId = function() {
+            const nom = document.getElementById('nomSelect').value;
+            const emp = employees.find(e => e.name === nom);
+            if (emp) {
+                document.getElementById('idInput').value = emp.id;
+            }
+        }
+
+        function getModuleClass(moduleName) {
+            switch(moduleName.toLowerCase()) {
+                case 'yanick': return 'mod-yanick';
+                case 'martin': return 'mod-martin';
+                case 'jonathan': return 'mod-jonathan';
+                case 'jean': return 'mod-jean';
+                case 'yves': return 'mod-yves';
+                case 'dany': return 'mod-dany';
+                default: return '';
+            }
+        }
+
+        window.addEntry = function(event) {
+            event.preventDefault();
+            const date = document.getElementById('dateInput').value;
+            const module = document.getElementById('moduleSelect').value;
+            const route = document.getElementById('routeSelect').value;
+            const nom = document.getElementById('nomSelect').value;
+            const id = document.getElementById('idInput').value;
+            const heure1704 = parseFloat(document.getElementById('heure1704Input').value) || 0;
+            const heure1508 = parseFloat(document.getElementById('heure1508Input').value) || 0;
+            const heureBz = parseFloat(document.getElementById('heureBzInput').value) || 0;
+            const totalHeures = heure1704 + heure1508 + heureBz;
+
+            const calc = calculateBenchmark(route, heure1508, heureBz, heure1704);
+
+            if (editingIndex !== null) {
+                entries[editingIndex] = { date, module, route, nom, id, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye };
+                editingIndex = null;
+                document.getElementById('submitBtn').textContent = "Ajouter";
+                document.getElementById('submitBtn').style.background = "var(--primary)";
+            } else {
+                entries.push({ date, module, route, nom, id, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye });
+            }
+
+            saveAndRender();
+            document.getElementById('entryForm').reset();
+            document.getElementById('dateInput').valueAsDate = new Date();
+            document.getElementById('routeSelect').innerHTML = '<option value="" disabled selected>Module d'abord...</option>';
+            document.getElementById('routeSelect').className = "form-control";
+        }
+
+        window.editEntry = function(index) {
+            const item = entries[index];
+            editingIndex = index;
+
+            document.getElementById('dateInput').value = item.date || '';
+            document.getElementById('moduleSelect').value = item.module;
+            updateModuleRoutes(item.route);
+            document.getElementById('nomSelect').value = item.nom;
+            document.getElementById('idInput').value = item.id;
+            document.getElementById('heure1704Input').value = item.heure1704;
+            document.getElementById('heure1508Input').value = item.heure1508;
+            document.getElementById('heureBzInput').value = item.heureBz;
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = "Mettre à jour";
+            submitBtn.style.background = "#f59e0b";
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.deleteEntry = function(index) {
+            if (editingIndex === index) {
+                document.getElementById('entryForm').reset();
+                document.getElementById('dateInput').valueAsDate = new Date();
+                document.getElementById('routeSelect').innerHTML = '<option value="" disabled selected>Module d'abord...</option>';
+                document.getElementById('routeSelect').className = "form-control";
+                document.getElementById('submitBtn').textContent = "Ajouter";
+                document.getElementById('submitBtn').style.background = "var(--primary)";
+                editingIndex = null;
+            }
+            entries.splice(index, 1);
+            saveAndRender();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('entriesTableBody');
+            tbody.innerHTML = '';
+
+            if (entries.length === 0) {
+                tbody.innerHTML = `<tr id="emptyRow"><td colspan="13" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td></tr>`;
+                document.getElementById('totalGlobalHeures').textContent = '0.00';
+                document.getElementById('totalGlobalEquiv').textContent = '0.00';
+                return;
+            }
+
+            let totalGlobal = 0;
+            let totalEquiv = 0;
+            entries.forEach((item, index) => {
+                totalGlobal += item.totalHeures;
+                totalEquiv += (item.equiv8h || 0);
+                const tr = document.createElement('tr');
+                const modClass = getModuleClass(item.module);
+                tr.innerHTML = `
+                    <td>${item.date || 'N/A'}</td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.module}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.route}</span></td>
+                    <td>${item.nom}</td>
+                    <td>${item.id}</td>
+                    <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
+                    <td style="text-align: right; font-weight: 600;">${item.totalHeures.toFixed(2)} h</td>
+                    <td style="text-align: right; color: #0369a1; font-weight: 500;">${(item.benchmark || 8.0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #059669; font-weight: 600;">${(item.equiv8h || 0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #d97706; font-weight: 600;">${(item.benchmarkPaye || 0).toFixed(2)} h</td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-warning" onclick="editEntry(${index})">Modifier</button>
+                        <button class="btn btn-danger" onclick="deleteEntry(${index})">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('totalGlobalHeures').textContent = totalGlobal.toFixed(2);
+            document.getElementById('totalGlobalEquiv').textContent = totalEquiv.toFixed(2);
+        }
+
+        // --- RAPPORT MODAL LOGIC ---
+        window.openReportModal = function() {
+            document.getElementById('reportModal').style.display = 'block';
+            runReport();
+        }
+
+        window.closeReportModal = function() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        window.runReport = function() {
+            const fModule = document.getElementById('filterModule').value.toLowerCase();
+            const fRoute = document.getElementById('filterRoute').value.toLowerCase().trim();
+            const fNom = document.getElementById('filterNom').value.toLowerCase().trim();
+            const fId = document.getElementById('filterId').value.toLowerCase().trim();
+            const fDate = document.getElementById('filterDate').value;
+
+            const filtered = entries.filter(item => {
+                const matchModule = !fModule || item.module.toLowerCase() === fModule;
+                const matchRoute = !fRoute || item.route.toLowerCase().includes(fRoute);
+                const matchNom = !fNom || item.nom.toLowerCase().includes(fNom);
+                const matchId = !fId || item.id.toLowerCase().includes(fId);
+                const matchDate = !fDate || item.date === fDate;
+                return matchModule && matchRoute && matchNom && matchId && matchDate;
+            });
+
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: #9ca3af;">Aucun résultat ne correspond aux critères du rapport.</td></tr>`;
+                document.getElementById('reportTotalHeures').textContent = '0.00';
+                document.getElementById('reportTotalEquiv').textContent = '0.00';
+                return;
+            }
+
+            let reportTotal = 0;
+            let reportEquiv = 0;
+            filtered.forEach(item => {
+                reportTotal += item.totalHeures;
+                reportEquiv += (item.equiv8h || 0);
+                const tr = document.createElement('tr');
+                const modClass = getModuleClass(item.module);
+                tr.innerHTML = `
+                    <td>${item.date || 'N/A'}</td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.module}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.route}</span></td>
+                    <td>${item.nom}</td>
+                    <td>${item.id}</td>
+                    <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
+                    <td style="text-align: right; font-weight: 600;">${item.totalHeures.toFixed(2)} h</td>
+                    <td style="text-align: right; color: #0369a1;">${(item.benchmark || 8.0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #059669; font-weight: 600;">${(item.equiv8h || 0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #d97706; font-weight: 600;">${(item.benchmarkPaye || 0).toFixed(2)} h</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('reportTotalHeures').textContent = reportTotal.toFixed(2);
+            document.getElementById('reportTotalEquiv').textContent = reportEquiv.toFixed(2);
+        }
+
+        window.exportReportCSV = function() {
+            const fModule = document.getElementById('filterModule').value.toLowerCase();
+            const fRoute = document.getElementById('filterRoute').value.toLowerCase().trim();
+            const fNom = document.getElementById('filterNom').value.toLowerCase().trim();
+            const fId = document.getElementById('filterId').value.toLowerCase().trim();
+            const fDate = document.getElementById('filterDate').value;
+
+            const filtered = entries.filter(item => {
+                const matchModule = !fModule || item.module.toLowerCase() === fModule;
+                const matchRoute = !fRoute || item.route.toLowerCase().includes(fRoute);
+                const matchNom = !fNom || item.nom.toLowerCase().includes(fNom);
+                const matchId = !fId || item.id.toLowerCase().includes(fId);
+                const matchDate = !fDate || item.date === fDate;
+                return matchModule && matchRoute && matchNom && matchId && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                alert("Aucune donnée à exporter pour ce rapport.");
+                return;
+            }
+
+            let csv = "Date,Module,Route,Nom,ID,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
+            filtered.forEach(e => {
+                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'rapport_benchmark_cams.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- À SURVEILLER LOGIC ---
+        window.openSurveillerModal = function() {
+            document.getElementById('surveillerModal').style.display = 'block';
+            computeSurveillerData();
+        }
+
+        window.closeSurveillerModal = function() {
+            document.getElementById('surveillerModal').style.display = 'none';
+        }
+
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+            return { year: d.getUTCFullYear(), week: weekNo };
+        }
+
+        function computeSurveillerData() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const currentWeekNum = getWeekNumber(now);
+
+            const modules = ["Yanick", "Martin", "Jonathan", "Jean", "Yves", "Dany"];
+            
+            let dayHtml = '';
+            let weekHtml = '';
+
+            modules.forEach(mod => {
+                const modEntries = entries.filter(e => e.module.toLowerCase() === mod.toLowerCase());
+
+                // 1. DAY
+                const dayMap = {};
+                modEntries.filter(e => e.date === todayStr).forEach(e => {
+                    dayMap[e.nom] = (dayMap[e.nom] || 0) + (e.heure1508 || 0);
+                });
+
+                const topDay = Object.entries(dayMap)
+                    .map(([nom, hrs]) => ({ nom, hrs }))
+                    .sort((a, b) => b.hrs - a.hrs)
+                    .slice(0, 2);
+
+                dayHtml += `<div style="margin-bottom: 15px; background: white; padding: 12px; border-radius: 6px; border-left: 4px solid var(--primary);">
+                    <strong>Module ${mod} :</strong><br>`;
+                if (topDay.length === 0) {
+                    dayHtml += `<span style="color: #94a3af; font-size: 0.85rem;">Aucune heure 15.08 aujourd'hui.</span>`;
+                } else {
+                    topDay.forEach((emp, idx) => {
+                        dayHtml += `<div style="font-size: 0.9rem; margin-top: 3px;">${idx+1}. <strong>${emp.nom}</strong> : <span style="color: #059669; font-weight: 600;">${emp.hrs.toFixed(2)} h</span></div>`;
+                    });
+                }
+                dayHtml += `</div>`;
+
+                // 2. WEEK
+                const weekMap = {};
+                modEntries.forEach(e => {
+                    if (e.date) {
+                        const d = new Date(e.date);
+                        const wk = getWeekNumber(d);
+                        if (wk.year === currentWeekNum.year && wk.week === currentWeekNum.week) {
+                            weekMap[e.nom] = (weekMap[e.nom] || 0) + (e.heure1508 || 0);
+                        }
+                    }
+                });
+
+                const topWeek = Object.entries(weekMap)
+                    .map(([nom, hrs]) => ({ nom, hrs }))
+                    .sort((a, b) => b.hrs - a.hrs)
+                    .slice(0, 2);
+
+                weekHtml += `<div style="margin-bottom: 15px; background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #10b981;">
+                    <strong>Module ${mod} :</strong><br>`;
+                if (topWeek.length === 0) {
+                    weekHtml += `<span style="color: #94a3af; font-size: 0.85rem;">Aucune heure 15.08 cette semaine.</span>`;
+                } else {
+                    topWeek.forEach((emp, idx) => {
+                        weekHtml += `<div style="font-size: 0.9rem; margin-top: 3px;">${idx+1}. <strong>${emp.nom}</strong> : <span style="color: #059669; font-weight: 600;">${emp.hrs.toFixed(2)} h</span></div>`;
+                    });
+                }
+                weekHtml += `</div>`;
+            });
+
+            document.getElementById('surveillerDayContent').innerHTML = dayHtml;
+            document.getElementById('surveillerWeekContent').innerHTML = weekHtml;
+        }
+
+        window.exportData = function() {
+            if (entries.length === 0) {
+                alert("Aucune donnée à exporter.");
+                return;
+            }
+            let csv = "Date,Module,Route,Nom,ID,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
+            entries.forEach(e => {
+                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'feuille_de_saisie_benchmark.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Feuille de Saisie - Postes Canada / CAMS (Benchmark 8h)</h1>
+            <p>Calcul automatique de l'équivalent benchmark 8h avec exceptions de routes</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-warning" onclick="openSurveillerModal()" style="font-size: 1rem; font-weight: bold; background: #f59e0b;">🚨 À surveiller</button>
+            <button class="btn btn-success" onclick="openReportModal()" style="font-size: 1rem; font-weight: bold; background: #0284c7;">📊 Générer un Rapport</button>
+        </div>
+    </header>
+
+    <div class="form-section">
+        <div id="firebaseStatus" class="status-msg" style="margin-bottom: 12px;">Connexion à Firebase en cours...</div>
+        <form id="entryForm" onsubmit="addEntry(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="dateInput">Date</label>
+                    <input type="date" id="dateInput" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="moduleSelect">Module</label>
+                    <select id="moduleSelect" class="form-control" required onchange="updateModuleRoutes()">
+                        <option value="" disabled selected>Module...</option>
+                        <option value="Yanick">Yanick</option>
+                        <option value="Martin">Martin</option>
+                        <option value="Jonathan">Jonathan</option>
+                        <option value="Jean">Jean</option>
+                        <option value="Yves">Yves</option>
+                        <option value="Dany">Dany</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="routeSelect">Route</label>
+                    <select id="routeSelect" class="form-control" required>
+                        <option value="" disabled selected>Module d'abord...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="nomSelect">Employé</label>
+                    <select id="nomSelect" class="form-control" required onchange="updateEmployeeId()">
+                        <option value="" disabled selected>Employé...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="idInput">ID</label>
+                    <input type="text" id="idInput" class="form-control" readonly placeholder="Auto">
+                </div>
+                <div class="form-group">
+                    <label for="heure1704Input">17.04</label>
+                    <input type="number" step="0.01" min="0" id="heure1704Input" class="form-control" placeholder="0.00" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="heure1508Input">15.08</label>
+                    <input type="number" step="0.01" min="0" id="heure1508Input" class="form-control" placeholder="0.00" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="heureBzInput">BZ</label>
+                    <input type="number" step="0.01" min="0" id="heureBzInput" class="form-control" placeholder="0.00" value="0">
+                </div>
+                <div>
+                    <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%;">Ajouter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Module</th>
+                    <th>Route</th>
+                    <th>Nom de l'Employé</th>
+                    <th>ID</th>
+                    <th>Heure 17.04</th>
+                    <th>Heure 15.08</th>
+                    <th>Heure BZ</th>
+                    <th>Total Heures</th>
+                    <th>Benchmark Route</th>
+                    <th>Équivalent 8h</th>
+                    <th>Benchmark Payé</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTableBody">
+                <tr id="emptyRow">
+                    <td colspan="13" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="actions-bar" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span class="total-badge" style="margin-right: 20px;">Total Heures : <span id="totalGlobalHeures">0.00</span> h</span>
+            <span class="total-badge" style="color: #059669;">Total Équivalent 8h : <span id="totalGlobalEquiv">0.00</span> h</span>
+        </div>
+        <button class="btn btn-primary" onclick="exportData()" style="background: #10b981;">Exporter tout en CSV</button>
+    </div>
+</div>
+
+<!-- RAPPORT MODAL -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeReportModal()">&times;</span>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">📊 Rapport avec Équivalent Benchmark 8h</h2>
+        
+        <div class="filter-grid">
+            <div class="form-group">
+                <label for="filterModule">Module</label>
+                <select id="filterModule" class="form-control" onchange="runReport()">
+                    <option value="">Tous les modules</option>
+                    <option value="Yanick">Yanick</option>
+                    <option value="Martin">Martin</option>
+                    <option value="Jonathan">Jonathan</option>
+                    <option value="Jean">Jean</option>
+                    <option value="Yves">Yves</option>
+                    <option value="Dany">Dany</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filterRoute">Route (ou groupe ex: 2, 4)</label>
+                <input type="text" id="filterRoute" class="form-control" placeholder="Ex: Route 2..." oninput="runReport()">
+            </div>
+            <div class="form-group">
+                <label for="filterNom">Nom Employé</label>
+                <input type="text" id="filterNom" class="form-control" placeholder="Rechercher nom..." oninput="runReport()">
+            </div>
+            <div class="form-group">
+                <label for="filterId">ID Employé</label>
+                <input type="text" id="filterId" class="form-control" placeholder="Rechercher ID..." oninput="runReport()">
+            </div>
+            <div class="form-group">
+                <label for="filterDate">Date</label>
+                <input type="date" id="filterDate" class="form-control" onchange="runReport()">
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="runReport()" style="width: 100%;">Filtrer</button>
+            </div>
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Module</th>
+                        <th>Route</th>
+                        <th>Nom</th>
+                        <th>ID</th>
+                        <th>Heure 17.04</th>
+                        <th>Heure 15.08</th>
+                        <th>Heure BZ</th>
+                        <th>Total Heures</th>
+                        <th>Benchmark Route</th>
+                        <th>Équivalent 8h</th>
+                        <th>Benchmark Payé</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                    <tr><td colspan="12" style="text-align: center; color: #9ca3af;">Sélectionnez vos critères.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="total-badge" style="margin-right: 20px;">Total Heures Rapport : <span id="reportTotalHeures">0.00</span> h</span>
+                <span class="total-badge" style="color: #059669;">Total Équivalent 8h Rapport : <span id="reportTotalEquiv">0.00</span> h</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-success" onclick="exportReportCSV()">Exporter le Rapport en CSV</button>
+                <button class="btn btn-danger" onclick="closeReportModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- À SURVEILLER MODAL -->
+<div id="surveillerModal" class="modal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <span class="close-modal" onclick="closeSurveillerModal()">&times;</span>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">🚨 Employés à Surveiller (Top 2 par Module en Heures 15.08)</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">📅 Pour le Jour (Aujourd'hui)</h3>
+                <div id="surveillerDayContent" style="max-height: 350px; overflow-y: auto;">
+                    <p style="color: #64748b;">Chargement...</p>
+                </div>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">📆 Pour la Semaine en Cours</h3>
+                <div id="surveillerWeekContent" style="max-height: 350px; overflow-y: auto;">
+                    <p style="color: #64748b;">Chargement...</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button class="btn btn-danger" onclick="closeSurveillerModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
