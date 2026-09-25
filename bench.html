@@ -1,145 +1,397 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Postes Canada — Benchmark & 15.08</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts : Cinzel & Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  
-  <style>
-      body {
-          background-color: #0d1b2a;
-          color: #e0e0e0;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-      }
-      .card-border {
-          border: 1px solid #415a77;
-      }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuille d'Entrée de Données - Postes Canada</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            table { font-size: 9px !important; }
+            #syntheseModal { background: white !important; color: black !important; position: absolute; top: 0; left: 0; width: 100%; height: auto; }
+        }
+    </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-6">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
-  <div class="w-full max-w-3xl bg-[#1b263b] p-8 rounded-2xl card-border shadow-2xl my-6">
-    <div class="text-center mb-6">
-      <h1 class="font-serif text-2xl font-bold text-white">Gestion des Routes & Benchmark</h1>
-      <span class="text-xs uppercase tracking-widest text-indigo-400 font-semibold" id="modeIndicator">Mode Standard</span>
-    </div>
-
-    <!-- Section des données de base (15.08 et BZ Route Régulière) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div class="bg-[#0d1b2a] p-4 rounded-xl card-border">
-        <label class="block text-xs uppercase tracking-wider text-indigo-300 mb-2">Valeur 15.08</label>
-        <input type="number" id="valeur1508" class="w-full px-4 py-2 rounded-lg bg-[#1b263b] text-white card-border focus:outline-none focus:border-indigo-500 text-sm" placeholder="Entrez la valeur 15.08" value="0">
-      </div>
-      <div class="bg-[#0d1b2a] p-4 rounded-xl card-border">
-        <label class="block text-xs uppercase tracking-wider text-indigo-300 mb-2">BZ Route Régulière</label>
-        <input type="number" id="valeurBZ" class="w-full px-4 py-2 rounded-lg bg-[#1b263b] text-white card-border focus:outline-none focus:border-indigo-500 text-sm" placeholder="Entrez la valeur BZ régulière" value="0">
-      </div>
-    </div>
-
-    <!-- MODULE ACHEMINEUR (Visible uniquement en mode 'booker') -->
-    <div id="moduleAchemineur" class="mb-6 p-5 bg-[#0d1b2a] rounded-xl card-border" style="display: none;">
-      <h3 class="font-serif text-lg font-bold text-white mb-4 text-indigo-400">Module Achemineur (Ach1 à Ach11)</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        <!-- Génération dynamique ou statique des routes Ach1 à Ach11 -->
-        <script>
-          for (let i = 1; i <= 11; i++) {
-            document.write(`
-              <div class="flex flex-col">
-                <label class="text-[11px] text-gray-300 uppercase mb-1">Ach${i}</label>
-                <input type="number" class="achemineur-input px-3 py-2 rounded-lg bg-[#1b263b] text-white card-border text-sm focus:outline-none focus:border-indigo-500" data-route="Ach${i}" value="0">
-              </div>
-            `);
-          }
-        </script>
-      </div>
-    </div>
-
-    <!-- BOUTON SYNTHÈSE (Visible uniquement en mode 'booker') -->
-    <div id="containerSynthese" class="mb-6" style="display: none;">
-      <button id="btnSynthese" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
-        Générer la Synthèse
-      </button>
-    </div>
-
-    <!-- RAPPORT DE SYNTHÈSE (Résultats) -->
-    <div id="resultatSynthese" class="p-5 bg-[#0d1b2a] rounded-xl card-border mb-6" style="display: none;">
-      <h3 class="font-serif text-lg font-bold text-white mb-3 text-indigo-300">Rapport de Synthèse Combiné</h3>
-      <div class="space-y-2 text-sm">
-        <div class="flex justify-between border-b border-gray-700 pb-2">
-          <span class="text-gray-300">Total 15.08 :</span>
-          <span id="total1508" class="font-bold text-white">0</span>
+    <!-- En-tête -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md py-4 px-6 no-print">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-amber-400 flex items-center gap-2">
+                    <span>📋</span> Fiche d'Entrée de Données - Postes Canada
+                </h1>
+                <p class="text-sm text-slate-400">Suivi des volumes, Tiers, Sortes CQ et Estimation Temps Préparation CQ</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="btnSyntheseHeader" onclick="ouvrirSynthese()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-indigo-900/30">
+                    📊 Synthèse Booker
+                </button>
+                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
+                    🖨️ Imprimer / PDF
+                </button>
+                <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+                    💾 Exporter (JSON)
+                </button>
+            </div>
         </div>
-        <div class="flex justify-between border-b border-gray-700 pb-2">
-          <span class="text-gray-300">Total BZ Route Régulière :</span>
-          <span id="totalBZReguliere" class="font-bold text-white">0</span>
+    </header>
+
+    <!-- Corps de l'application -->
+    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- Barre de contrôle & Sélection des modules -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg no-print">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                
+                <!-- Sélection du Module -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Module / Superviseur</label>
+                    <select id="moduleSelect" onchange="changeModule()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="Dany">Dany</option>
+                        <option value="Yves">Yves</option>
+                        <option value="Martin">Martin</option>
+                        <option value="Jonathan">Jonathan</option>
+                        <option value="Jean">Jean</option>
+                        <option value="Booker">Mode Booker</option>
+                    </select>
+                </div>
+
+                <!-- Date de saisie -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Date de Saisie</label>
+                    <input type="date" id="inputDate" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Recherche par route -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Rechercher une Route</label>
+                    <input type="text" id="searchRoute" placeholder="Ex: 1, Ach1, FA1..." oninput="filterRoutes()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Statut & Infos -->
+                <div class="flex items-center justify-between bg-slate-900/60 border border-slate-700/60 rounded-lg px-4 py-2">
+                    <div>
+                        <span class="text-xs text-slate-400 block">Routes Actives</span>
+                        <span id="routeCount" class="text-lg font-bold text-amber-400">0</span>
+                    </div>
+                    <button onclick="resetData()" class="text-xs text-rose-400 hover:text-rose-300 underline font-medium">Effacer saisie</button>
+                </div>
+
+            </div>
         </div>
-        <div class="flex justify-between border-b border-gray-700 pb-2">
-          <span class="text-gray-300">Total Routes Achemineur (Ach1 - Ach11) :</span>
-          <span id="totalAchemineurs" class="font-bold text-white">0</span>
+
+        <!-- Tableau Principal des Routes (2 lignes par route) -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="dataTable">
+                    <thead>
+                        <tr id="tableHeaders" class="bg-slate-900 text-slate-300 text-xs uppercase tracking-wider border-b border-slate-700">
+                            <!-- En-têtes dynamiques -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-700/50 text-sm">
+                        <!-- Lignes dynamiques -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="flex justify-between pt-2 text-base text-indigo-400 font-bold">
-          <span>Total Général Combiné :</span>
-          <span id="totalGeneral">0</span>
+
+    </main>
+
+    <!-- Modal de Synthèse Booker (Imprimable) -->
+    <div id="syntheseModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-4xl p-6 shadow-2xl space-y-6 text-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                <h2 class="text-xl font-bold text-amber-400 flex items-center gap-2"><span>📊</span> Rapport de Synthèse - Mode Booker</h2>
+                <button onclick="fermerSynthese()" class="no-print text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+
+            <div id="contenuRapport" class="space-y-6 text-sm">
+                <!-- Rempli dynamiquement -->
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-700 no-print">
+                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">🖨️ Imprimer le Rapport</button>
+                <button onclick="fermerSynthese()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Fermer</button>
+            </div>
         </div>
-      </div>
     </div>
 
-    <!-- Bouton de retour vers le menu -->
-    <button onclick="history.back()" class="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all cursor-pointer">
-      Retour
-    </button>
-  </div>
+    <!-- Script de calcul et de gestion -->
+    <script>
+        const supervisorRoutes = {
+            "Dany": [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 209, 213, 215, 217, 219, 223, 225],
+            "Yves": [2, 4, 6, 8, 10, 16, 18, 20, 22, 26, 28, 30, 32, 34, 64],
+            "Martin": [12, 14, 216, 218, 224, 228, 230, 232, 236, 238, 240, 244, 246, 248, 250, 252, 254, 256, 258, 260, 262, 264, 272, 282, 290, 310],
+            "Jonathan": [24, 201, 202, 203, 204, 205, 206, 207, 208, 210, 211, 212, 214, 220, 221, 222, 226, 227, 234, 242, 266, 268, 270, 274, 278, 286],
+            "Jean": [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 88, 90],
+            "Booker": ["BZ1", "BZ2", "Ach1", "Ach2", "Ach3", "Ach4", "Ach5", "Ach6", "Ach7", "Ach8", "Ach9", "Ach10", "Ach11", "FA1", "FA2"]
+        };
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      // Vérifier si l'URL contient ?mode=booker
-      const urlParams = new URLSearchParams(window.location.search);
-      const isBookerMode = urlParams.get('mode') === 'booker';
+        const requiredHeaders = [
+            "Route", "Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", 
+            "Tiers (1, 2, 3)", "Nombre sortes CQ", "Temps Préparation CQ (Est.)"
+        ];
 
-      if (isBookerMode) {
-        // Activer l'affichage du module Achemineur et du bouton Synthèse
-        document.getElementById('moduleAchemineur').style.display = 'block';
-        document.getElementById('containerSynthese').style.display = 'block';
-        document.getElementById('modeIndicator').textContent = "Mode Booker • Actif";
-        document.getElementById('modeIndicator').className = "text-xs uppercase tracking-widest text-emerald-400 font-semibold";
-      }
+        const cqFactors = {
+            3: 0.064, 4: 0.088, 5: 0.108, 6: 0.128, 7: 0.158, 8: 0.178, 
+            9: 0.22, 10: 0.246, 11: 0.266, 12: 0.286
+        };
 
-      // Logique de calcul du bouton Synthèse
-      const btnSynthese = document.getElementById('btnSynthese');
-      if (btnSynthese) {
-        btnSynthese.addEventListener('click', function() {
-          // 1. Récupérer la valeur 15.08
-          let val1508 = parseFloat(document.getElementById('valeur1508').value) || 0;
+        function getBaseVolumes(rNum) {
+            return {
+                "Courrier Manuel": (Math.random() * 30 + 5).toFixed(1),
+                "Courrier Séquence": (Math.random() * 250 + 150).toFixed(1),
+                "Paquets": (Math.random() * 12 + 2).toFixed(1),
+                "Colis": (Math.random() * 8 + 1).toFixed(1),
+                _tiersData: {
+                    1: { res: Math.floor(Math.random() * 80 + 20), apt: Math.floor(Math.random() * 30) },
+                    2: { res: Math.floor(Math.random() * 120 + 40), apt: Math.floor(Math.random() * 40) },
+                    3: { res: Math.floor(Math.random() * 100 + 30), apt: Math.floor(Math.random() * 50) }
+                }
+            };
+        }
 
-          // 2. Récupérer la valeur BZ route régulière
-          let valBZ = parseFloat(document.getElementById('valeurBZ').value) || 0;
+        let currentModule = "Dany";
+        let userInputs = JSON.parse(localStorage.getItem('postes_saisie_v10')) || {};
 
-          // 3. Calculer la somme de toutes les routes achemineur (Ach1 à Ach11)
-          let totalAch = 0;
-          const inputsAch = document.querySelectorAll('.achemineur-input');
-          inputsAch.forEach(input => {
-            totalAch += parseFloat(input.value) || 0;
-          });
-
-          // 4. Mettre à jour l'affichage des totaux
-          document.getElementById('total1508').textContent = val1508.toFixed(2);
-          document.getElementById('totalBZReguliere').textContent = valBZ.toFixed(2);
-          document.getElementById('totalAchemineurs').textContent = totalAch.toFixed(2);
-          document.getElementById('totalGeneral').textContent = (val1508 + valBZ + totalAch).toFixed(2);
-
-          // Afficher le bloc des résultats de synthèse
-          document.getElementById('resultatSynthese').style.display = 'block';
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('inputDate').valueAsDate = new Date();
+            renderTable();
         });
-      }
-    });
-  </script>
 
+        function changeModule() {
+            currentModule = document.getElementById('moduleSelect').value;
+            const btnSyn = document.getElementById('btnSyntheseHeader');
+            if (currentModule === "Booker") {
+                btnSyn.classList.remove('hidden');
+            } else {
+                btnSyn.classList.add('hidden');
+            }
+            renderTable();
+        }
+
+        function calculatePrepCQ(baseObj, routeKey) {
+            const userRow = userInputs[routeKey] || {};
+            const tiersChoice = parseInt(userRow["Tiers (1, 2, 3)"]);
+            const nbsCQ = parseInt(userRow["Nombre sortes CQ"]);
+
+            if (![1, 2, 3].includes(tiersChoice) || isNaN(nbsCQ) || nbsCQ < 3) {
+                return "-";
+            }
+
+            const tData = baseObj._tiersData[tiersChoice];
+            const sumResApt = tData.res + tData.apt;
+
+            let factor = cqFactors[nbsCQ];
+            if (!factor) {
+                factor = nbsCQ > 12 ? 0.286 + (nbsCQ - 12) * 0.02 : 0.064;
+            }
+
+            const result = sumResApt * nbsCQ * factor;
+            return result.toFixed(2) + " min";
+        }
+
+        function renderTable() {
+            const headerRow = document.getElementById('tableHeaders');
+            const tbody = document.getElementById('tableBody');
+            const searchTerm = document.getElementById('searchRoute').value.toLowerCase();
+
+            headerRow.innerHTML = '';
+            tbody.innerHTML = '';
+
+            requiredHeaders.forEach(h => {
+                const th = document.createElement('th');
+                th.className = "py-3 px-4 font-semibold text-xs text-slate-300 border-b border-slate-700";
+                th.innerText = h;
+                headerRow.appendChild(th);
+            });
+
+            const routeList = supervisorRoutes[currentModule] || [];
+            const filteredRoutes = routeList.filter(r => String(r).toLowerCase().includes(searchTerm));
+            
+            document.getElementById('routeCount').innerText = filteredRoutes.length;
+
+            filteredRoutes.forEach(rNum => {
+                const routeStr = String(rNum);
+                const routeKey = `${currentModule}_${routeStr}`;
+                const baseObj = getBaseVolumes(rNum);
+
+                if (!userInputs[routeKey]) {
+                    userInputs[routeKey] = {
+                        "Courrier Manuel": "",
+                        "Courrier Séquence": "",
+                        "Paquets": "",
+                        "Colis": "",
+                        "Tiers (1, 2, 3)": "",
+                        "Nombre sortes CQ": ""
+                    };
+                }
+
+                // --- LIGNE 1 : STANDARD ---
+                const trStandard = document.createElement('tr');
+                trStandard.className = "bg-slate-800/90";
+                
+                let tdRoute = document.createElement('td');
+                tdRoute.className = "py-3 px-4 font-bold text-amber-400 border-t border-slate-700/80";
+                tdRoute.innerHTML = `<span class="bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded text-xs">Route ${routeStr}</span>`;
+                trStandard.appendChild(tdRoute);
+
+                ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis"].forEach(key => {
+                    const td = document.createElement('td');
+                    td.className = "py-3 px-4 text-slate-300 text-xs border-t border-slate-700/80";
+                    td.innerHTML = `<span class="text-slate-400 text-[10px] block uppercase">Standard</span><span class="font-semibold text-white">${baseObj[key]}</span>`;
+                    trStandard.appendChild(td);
+                });
+
+                ["Tiers (1, 2, 3)", "Nombre sortes CQ"].forEach(() => {
+                    const td = document.createElement('td');
+                    td.className = "py-3 px-4 text-slate-400 text-xs border-t border-slate-700/80 italic";
+                    td.innerText = "-";
+                    trStandard.appendChild(td);
+                });
+
+                const tdCalcStd = document.createElement('td');
+                tdCalcStd.className = "py-3 px-4 text-emerald-400 font-bold text-xs border-t border-slate-700/80";
+                tdCalcStd.id = `calc_std_${routeKey}`;
+                tdCalcStd.innerText = calculatePrepCQ(baseObj, routeKey);
+                trStandard.appendChild(tdCalcStd);
+
+                tbody.appendChild(trStandard);
+
+                // --- LIGNE 2 : SAISIE TERRAIN ---
+                const trInput = document.createElement('tr');
+                trInput.className = "bg-slate-900/80 border-b border-slate-700";
+
+                let tdInputLabel = document.createElement('td');
+                tdInputLabel.className = "py-3 px-4 text-xs font-medium text-emerald-400 pl-6 flex items-center gap-1";
+                tdInputLabel.innerHTML = `✏️ <span>Saisie</span>`;
+                trInput.appendChild(tdInputLabel);
+
+                const editableKeys = ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", "Tiers (1, 2, 3)", "Nombre sortes CQ"];
+                editableKeys.forEach(key => {
+                    const td = document.createElement('td');
+                    td.className = "py-3 px-4";
+                    
+                    const input = document.createElement('input');
+                    input.type = "number";
+                    input.step = key.includes("Tiers") || key.includes("sortes") ? "1" : "0.1";
+                    input.placeholder = key.includes("Tiers") ? "1, 2 ou 3" : "Saisir...";
+                    input.className = "w-full bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
+                    input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
+                    
+                    input.oninput = (e) => {
+                        userInputs[routeKey][key] = e.target.value;
+                        localStorage.setItem('postes_saisie_v10', JSON.stringify(userInputs));
+                        document.getElementById(`calc_std_${routeKey}`).innerText = calculatePrepCQ(baseObj, routeKey);
+                    };
+
+                    td.appendChild(input);
+                    trInput.appendChild(td);
+                });
+
+                const tdEmpty = document.createElement('td');
+                tdEmpty.className = "py-3 px-4 text-xs text-slate-500";
+                tdEmpty.innerText = "Auto";
+                trInput.appendChild(tdEmpty);
+
+                tbody.appendChild(trInput);
+            });
+        }
+
+        function filterRoutes() { renderTable(); }
+
+        function ouvrirSynthese() {
+            if (currentModule !== "Booker") return;
+            const contenu = document.getElementById('contenuRapport');
+            
+            let tot1508Fact = 0, totBZFact = 0;
+            let tot1508Ach = 0, totBZAch = 0;
+            let tot1508FA = 0, totBZFA = 0;
+
+            supervisorRoutes["Booker"].forEach(rNum => {
+                const rStr = String(rNum);
+                const key = `Booker_${rStr}`;
+                const dat = userInputs[key] || {};
+                
+                // Utilisation de la saisie Courrier Séquence ou valeur par défaut
+                let valVol = parseFloat(dat["Courrier Séquence"]) || 50;
+
+                if (rStr.startsWith("BZ")) {
+                    if (rStr === "BZ1") totBZFact += valVol;
+                    else totBZAch += valVol;
+                } else if (rStr.startsWith("Ach")) {
+                    tot1508Ach += valVol;
+                } else if (rStr.startsWith("FA")) {
+                    tot1508FA += valVol;
+                }
+            });
+
+            // Calculs exacts selon vos règles de coûts
+            const coutFacteur = tot1508Fact + totBZFact + 27.3 + 936;
+            const coutAchemineur = tot1508Ach + totBZAch + 88;
+            const coutFA = tot1508FA + totBZFA + 16;
+            const coutTotalHeures = coutFacteur + coutAchemineur + coutFA;
+
+            contenu.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <h3 class="text-amber-400 font-bold uppercase text-xs tracking-wider mb-3">Section Facteur</h3>
+                        <p class="flex justify-between py-1 border-b border-slate-800"><span>Total 15.08 :</span> <strong class="text-white">${tot1508Fact.toFixed(1)}</strong></p>
+                        <p class="flex justify-between py-1"><span>Total BZ :</span> <strong class="text-white">${totBZFact.toFixed(1)}</strong></p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <h3 class="text-amber-400 font-bold uppercase text-xs tracking-wider mb-3">Section Achemineur</h3>
+                        <p class="flex justify-between py-1 border-b border-slate-800"><span>Total 15.08 :</span> <strong class="text-white">${tot1508Ach.toFixed(1)}</strong></p>
+                        <p class="flex justify-between py-1"><span>Total BZ :</span> <strong class="text-white">${totBZAch.toFixed(1)}</strong></p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <h3 class="text-amber-400 font-bold uppercase text-xs tracking-wider mb-3">Section FA</h3>
+                        <p class="flex justify-between py-1 border-b border-slate-800"><span>Total 15.08 :</span> <strong class="text-white">${tot1508FA.toFixed(1)}</strong></p>
+                        <p class="flex justify-between py-1"><span>Total BZ :</span> <strong class="text-white">${totBZFA.toFixed(1)}</strong></p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-4 rounded-xl border border-emerald-500/40 space-y-2">
+                    <h3 class="text-emerald-400 font-bold uppercase text-xs tracking-wider mb-2">Résumé des Coûts & Totaux</h3>
+                    <p class="flex justify-between py-1 border-b border-slate-800"><span>Coût Total Facteur :</span> <strong class="text-emerald-300">${coutFacteur.toFixed(2)}</strong></p>
+                    <p class="flex justify-between py-1 border-b border-slate-800"><span>Coût Total Achemineur :</span> <strong class="text-emerald-300">${coutAchemineur.toFixed(2)}</strong></p>
+                    <p class="flex justify-between py-1 border-b border-slate-800"><span>Coût Total FA :</span> <strong class="text-emerald-300">${coutFA.toFixed(2)}</strong></p>
+                    <p class="flex justify-between pt-2 text-base font-bold text-amber-400"><span>Coût Total en Heures (Global) :</span> <span>${coutTotalHeures.toFixed(2)} hrs</span></p>
+                </div>
+            `;
+
+            document.getElementById('syntheseModal').classList.remove('hidden');
+        }
+
+        function fermerSynthese() {
+            document.getElementById('syntheseModal').classList.add('hidden');
+        }
+
+        function resetData() {
+            if (confirm("Réinitialiser les données saisies pour ce module ?")) {
+                supervisorRoutes[currentModule].forEach(r => {
+                    delete userInputs[`${currentModule}_${r}`];
+                });
+                localStorage.setItem('postes_saisie_v10', JSON.stringify(userInputs));
+                renderTable();
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userInputs, null, 2));
+            const dl = document.createElement('a');
+            dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `saisie_${currentModule}_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dl);
+            dl.click();
+            dl.remove();
+        }
+    </script>
 </body>
 </html>
