@@ -25,7 +25,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1500px;
+            max-width: 1600px;
             margin: 0 auto;
             background: var(--card-bg);
             border-radius: 12px;
@@ -59,8 +59,8 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: 130px 140px 140px 110px 110px 90px 90px 90px 130px;
-            gap: 12px;
+            grid-template-columns: 120px 130px 130px 150px 110px 100px 85px 85px 85px 110px;
+            gap: 10px;
             align-items: end;
         }
         .form-group {
@@ -287,9 +287,14 @@
                 
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
-                    const empName = data.nom || data.name || docSnap.id;
-                    const empId = data.id || data.employeeId || 'N/A';
-                    employees.push({ name: empName, id: empId });
+                    // Utilisation des champs : prenom, nom, idEmploye, anciennete
+                    const prenom = data.prenom || '';
+                    const nomFamille = data.nom || '';
+                    const empName = `${prenom} ${nomFamille}`.trim() || docSnap.id;
+                    const empId = data.idEmploye || data.id || 'N/A';
+                    const empAnciennete = data.anciennete || 'N/A';
+                    
+                    employees.push({ name: empName, id: empId, anciennete: empAnciennete });
                 });
 
                 const idSelect = document.getElementById('idSelect');
@@ -374,6 +379,7 @@
             const emp = employees.find(e => e.name === nom);
             if (emp) {
                 document.getElementById('idSelect').value = emp.id;
+                document.getElementById('ancienneteInput').value = emp.anciennete;
             }
         }
 
@@ -382,6 +388,7 @@
             const emp = employees.find(e => e.id === idVal);
             if (emp) {
                 document.getElementById('nomSelect').value = emp.name;
+                document.getElementById('ancienneteInput').value = emp.anciennete;
             }
         }
 
@@ -404,13 +411,14 @@
             const route = document.getElementById('routeSelect').value;
             const nom = document.getElementById('nomSelect').value;
             const id = document.getElementById('idSelect').value;
+            const anciennete = document.getElementById('ancienneteInput').value;
             const heure1704 = parseFloat(document.getElementById('heure1704Input').value) || 0;
             const heure1508 = parseFloat(document.getElementById('heure1508Input').value) || 0;
             const heureBz = parseFloat(document.getElementById('heureBzInput').value) || 0;
             const totalHeures = heure1704 + heure1508 + heureBz;
 
             const calc = calculateBenchmark(route, heure1508, heureBz, heure1704);
-            const newEntry = { date, module, route, nom, id, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye, createdAt: new Date().toISOString() };
+            const newEntry = { date, module, route, nom, id, anciennete, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye, createdAt: new Date().toISOString() };
 
             if (editingIndex !== null) {
                 entries[editingIndex] = newEntry;
@@ -449,6 +457,7 @@
             updateModuleRoutes(item.route);
             document.getElementById('nomSelect').value = item.nom;
             document.getElementById('idSelect').value = item.id;
+            document.getElementById('ancienneteInput').value = item.anciennete || '';
             document.getElementById('heure1704Input').value = item.heure1704;
             document.getElementById('heure1508Input').value = item.heure1508;
             document.getElementById('heureBzInput').value = item.heureBz;
@@ -479,7 +488,7 @@
             tbody.innerHTML = '';
 
             if (entries.length === 0) {
-                tbody.innerHTML = `<tr id="emptyRow"><td colspan="13" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td></tr>`;
+                tbody.innerHTML = `<tr id="emptyRow"><td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td></tr>`;
                 document.getElementById('totalGlobalHeures').textContent = '0.00';
                 document.getElementById('totalGlobalEquiv').textContent = '0.00';
                 return;
@@ -498,6 +507,7 @@
                     <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.route}</span></td>
                     <td>${item.nom}</td>
                     <td>${item.id}</td>
+                    <td>${item.anciennete || 'N/A'}</td>
                     <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
                     <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
                     <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
@@ -547,7 +557,7 @@
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: #9ca3af;">Aucun résultat ne correspond aux critères du rapport.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: #9ca3af;">Aucun résultat ne correspond aux critères du rapport.</td></tr>`;
                 document.getElementById('reportTotalHeures').textContent = '0.00';
                 document.getElementById('reportTotalEquiv').textContent = '0.00';
                 return;
@@ -566,6 +576,7 @@
                     <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.route}</span></td>
                     <td>${item.nom}</td>
                     <td>${item.id}</td>
+                    <td>${item.anciennete || 'N/A'}</td>
                     <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
                     <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
                     <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
@@ -602,9 +613,9 @@
                 return;
             }
 
-            let csv = "Date,Module,Route,Nom,ID,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
+            let csv = "Date,Module,Route,Nom,ID,Anciennete,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
             filtered.forEach(e => {
-                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -707,9 +718,9 @@
                 alert("Aucune donnée à exporter.");
                 return;
             }
-            let csv = "Date,Module,Route,Nom,ID,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
+            let csv = "Date,Module,Route,Nom,ID,Anciennete,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
             entries.forEach(e => {
-                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -775,6 +786,10 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label for="ancienneteInput">Ancienneté</label>
+                    <input type="text" id="ancienneteInput" class="form-control" readonly placeholder="-" style="background: #e2e8f0;">
+                </div>
+                <div class="form-group">
                     <label for="heure1704Input">17.04</label>
                     <input type="number" step="0.01" min="0" id="heure1704Input" class="form-control" placeholder="0.00" value="0">
                 </div>
@@ -802,6 +817,7 @@
                     <th>Route</th>
                     <th>Nom de l'Employé</th>
                     <th>ID</th>
+                    <th>Ancienneté</th>
                     <th>Heure 17.04</th>
                     <th>Heure 15.08</th>
                     <th>Heure BZ</th>
@@ -814,7 +830,7 @@
             </thead>
             <tbody id="entriesTableBody">
                 <tr id="emptyRow">
-                    <td colspan="13" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td>
+                    <td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td>
                 </tr>
             </tbody>
         </table>
@@ -878,6 +894,7 @@
                         <th>Route</th>
                         <th>Nom</th>
                         <th>ID</th>
+                        <th>Ancienneté</th>
                         <th>Heure 17.04</th>
                         <th>Heure 15.08</th>
                         <th>Heure BZ</th>
@@ -888,7 +905,7 @@
                     </tr>
                 </thead>
                 <tbody id="reportTableBody">
-                    <tr><td colspan="12" style="text-align: center; color: #9ca3af;">Sélectionnez vos critères.</td></tr>
+                    <tr><td colspan="13" style="text-align: center; color: #9ca3af;">Sélectionnez vos critères.</td></tr>
                 </tbody>
             </table>
         </div>
