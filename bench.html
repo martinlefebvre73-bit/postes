@@ -248,6 +248,8 @@
         .mod-jean { background-color: #fef3c7 !important; color: #92400e; }
         .mod-yves { background-color: #d1fae5 !important; color: #065f46; }
         .mod-dany { background-color: #fef08a !important; color: #854d0e; }
+        .mod-achemineur { background-color: #fae8ff !important; color: #86198f; }
+        .mod-fa { background-color: #ccfbf1 !important; color: #115e59; }
         
         .status-msg {
             margin-top: 10px;
@@ -402,6 +404,10 @@
         let editingIndex = null;
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
 
+        // Vérification du mode booker via l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const isBookerMode = urlParams.get('mode') === 'booker';
+
         function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
             const match = routeStr ? routeStr.match(/\d+/) : null;
             const num = match ? parseInt(match[0], 10) : 0;
@@ -437,8 +443,36 @@
             "Yanick": [94, 96, 302, 306]
         };
 
+        // Ajout dynamique des modules et routes supplémentaires si le mode booker est actif
+        if (isBookerMode) {
+            supervisorRoutes["Achemineur"] = ["Ach1", "Ach2", "Ach3", "Ach4", "Ach5", "Ach6", "Ach7", "Ach8", "Ach9", "Ach10", "Ach11"];
+            supervisorRoutes["FA"] = ["FA1", "FA2"];
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('dateInput').valueAsDate = new Date();
+
+            // Afficher le bouton Synthèse et injecter les options de module si le mode booker est actif
+            if (isBookerMode) {
+                const syntheseBtn = document.getElementById('syntheseBtn');
+                if (syntheseBtn) syntheseBtn.style.display = 'inline-block';
+
+                const moduleSelect = document.getElementById('moduleSelect');
+                const filterModule = document.getElementById('filterModule');
+
+                const addOpt = (selectElem, val) => {
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = val;
+                    selectElem.appendChild(opt);
+                };
+
+                addOpt(moduleSelect, "Achemineur");
+                addOpt(moduleSelect, "FA");
+                addOpt(filterModule, "Achemineur");
+                addOpt(filterModule, "FA");
+            }
+
             populateAllRoutesDatalist();
 
             const employesList = document.getElementById('employesList');
@@ -462,7 +496,7 @@
                 idsList.appendChild(optId);
             });
 
-            document.getElementById('firebaseStatus').textContent = `Liste chargée (${employees.length} employés depuis CSV) & connecté à Firebase.`;
+            document.getElementById('firebaseStatus').textContent = `Liste chargée (${employees.length} employés depuis CSV) & connecté à Firebase.` + (isBookerMode ? " [Mode Booker Actif]" : "");
 
             saveAndRender();
         });
@@ -472,7 +506,10 @@
             routesList.innerHTML = '';
             const allRoutes = [];
             for (const [mod, routes] of Object.entries(supervisorRoutes)) {
-                routes.forEach(r => allRoutes.push({ route: `Route ${r}`, num: r, module: mod }));
+                routes.forEach(r => {
+                    const numVal = typeof r === 'number' ? r : parseInt(r.replace(/\D/g,'')) || 0;
+                    allRoutes.push({ route: typeof r === 'number' ? `Route ${r}` : r, num: numVal, module: mod });
+                });
             }
             allRoutes.sort((a, b) => a.num - b.num);
             allRoutes.forEach(item => {
@@ -484,15 +521,18 @@
         }
 
         window.updateModuleFromRouteInput = function() {
-            const routeVal = document.getElementById('routeInput').value;
-            const match = routeVal.match(/\d+/);
-            if (match) {
-                const num = parseInt(match[0], 10);
-                for (const [mod, routes] of Object.entries(supervisorRoutes)) {
-                    if (routes.includes(num)) {
-                        document.getElementById('moduleSelect').value = mod;
-                        break;
+            const routeVal = document.getElementById('routeInput').value.trim();
+            for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                const found = routes.some(r => {
+                    if (typeof r === 'number') {
+                        return routeVal.toLowerCase().includes(r.toString());
+                    } else {
+                        return routeVal.toLowerCase() === r.toLowerCase();
                     }
+                });
+                if (found) {
+                    document.getElementById('moduleSelect').value = mod;
+                    break;
                 }
             }
         }
@@ -524,6 +564,8 @@
                 case 'jean': return 'mod-jean';
                 case 'yves': return 'mod-yves';
                 case 'dany': return 'mod-dany';
+                case 'achemineur': return 'mod-achemineur';
+                case 'fa': return 'mod-fa';
                 default: return '';
             }
         }
@@ -671,6 +713,57 @@
             document.getElementById('totalGlobalEquiv').textContent = totalEquiv.toFixed(2);
         }
 
+        // --- SYNTHESE MODAL LOGIC ---
+        window.openSyntheseModal = function() {
+            document.getElementById('syntheseModal').style.display = 'block';
+            computeSyntheseData();
+        }
+
+        window.closeSyntheseModal = function() {
+            document.getElementById('syntheseModal').style.display = 'none';
+        }
+
+        function computeSyntheseData() {
+            const standardModules = ["yanick", "martin", "jonathan", "jean", "yves", "dany"];
+            
+            let t1508Facteur = 0, tBzFacteur = 0;
+            let t1508Achemineur = 0, tBzAchemineur = 0;
+            let t1508FA = 0, tBzFA = 0;
+
+            entries.forEach(e => {
+                const mod = (e.module || "").toLowerCase();
+                if (standardModules.includes(mod)) {
+                    t1508Facteur += (e.heure1508 || 0);
+                    tBzFacteur += (e.heureBz || 0);
+                } else if (mod === "achemineur") {
+                    t1508Achemineur += (e.heure1508 || 0);
+                    tBzAchemineur += (e.heureBz || 0);
+                } else if (mod === "fa") {
+                    t1508FA += (e.heure1508 || 0);
+                    tBzFA += (e.heureBz || 0);
+                }
+            });
+
+            // Calculs Grand Total demandés
+            const totalFacteur = t1508Facteur + tBzFacteur + 936 + 27.3;
+            const totalAchemineur = t1508Achemineur + tBzAchemineur + 88;
+            const totalFA = t1508FA + tBzFA + 16;
+
+            // Remplissage de l'interface
+            document.getElementById('syn1508Facteur').textContent = t1508Facteur.toFixed(2) + ' h';
+            document.getElementById('synBzFacteur').textContent = tBzFacteur.toFixed(2) + ' h';
+
+            document.getElementById('syn1508Achemineur').textContent = t1508Achemineur.toFixed(2) + ' h';
+            document.getElementById('synBzAchemineur').textContent = tBzAchemineur.toFixed(2) + ' h';
+
+            document.getElementById('syn1508FA').textContent = t1508FA.toFixed(2) + ' h';
+            document.getElementById('synBzFA').textContent = tBzFA.toFixed(2) + ' h';
+
+            document.getElementById('synTotalFacteur').textContent = totalFacteur.toFixed(2) + ' h';
+            document.getElementById('synTotalAchemineur').textContent = totalAchemineur.toFixed(2) + ' h';
+            document.getElementById('synTotalFA').textContent = totalFA.toFixed(2) + ' h';
+        }
+
         // --- RAPPORT MODAL LOGIC ---
         window.openReportModal = function() {
             document.getElementById('reportModal').style.display = 'block';
@@ -799,6 +892,9 @@
             const currentWeekNum = getWeekNumber(now);
 
             const modules = ["Yanick", "Martin", "Jonathan", "Jean", "Yves", "Dany"];
+            if (isBookerMode) {
+                modules.push("Achemineur", "FA");
+            }
             
             let dayHtml = '';
             let weekHtml = '';
@@ -890,6 +986,7 @@
             <p>Calcul automatique de l'équivalent benchmark 8h avec exceptions de routes</p>
         </div>
         <div class="header-actions">
+            <button id="syntheseBtn" class="btn" onclick="openSyntheseModal()" style="font-size: 1rem; font-weight: bold; background: #7c3aed; color: white; display: none;">📑 Synthèse</button>
             <button class="btn btn-warning" onclick="openSurveillerModal()" style="font-size: 1rem; font-weight: bold; background: #f59e0b;">🚨 À surveiller</button>
             <button class="btn btn-success" onclick="openReportModal()" style="font-size: 1rem; font-weight: bold; background: #0284c7;">📊 Générer un Rapport</button>
         </div>
@@ -948,7 +1045,7 @@
                 </div>
                 <div class="form-group">
                     <label for="routeInput">Route</label>
-                    <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: Route 12..." required oninput="updateModuleFromRouteInput()">
+                    <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: Route 12 ou Ach1..." required oninput="updateModuleFromRouteInput()">
                     <datalist id="routesList"></datalist>
                 </div>
                 <div class="form-group">
@@ -1018,6 +1115,49 @@
             <span class="total-badge" style="color: #059669;">Total Équivalent 8h : <span id="totalGlobalEquiv">0.00</span> h</span>
         </div>
         <button class="btn btn-primary" onclick="exportData()" style="background: #10b981;">Exporter tout en CSV</button>
+    </div>
+</div>
+
+<!-- SYNTHESE MODAL -->
+<div id="syntheseModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <span class="close-modal" onclick="closeSyntheseModal()">&times;</span>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">📑 Synthèse Booker (Facteur, Achemineur, FA)</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px;">
+            <!-- Section Facteur -->
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">Section Facteur</h3>
+                <p style="margin-bottom: 6px;">Total 15.08 Facteur : <strong id="syn1508Facteur">0.00 h</strong></p>
+                <p>Total BZ Facteur : <strong id="synBzFacteur">0.00 h</strong></p>
+            </div>
+
+            <!-- Section Achemineur -->
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">Section Achemineur</h3>
+                <p style="margin-bottom: 6px;">Total 15.08 Achemineur : <strong id="syn1508Achemineur">0.00 h</strong></p>
+                <p>Total BZ Achemineur : <strong id="synBzAchemineur">0.00 h</strong></p>
+            </div>
+
+            <!-- Section FA -->
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">Section FA</h3>
+                <p style="margin-bottom: 6px;">Total 15.08 FA : <strong id="syn1508FA">0.00 h</strong></p>
+                <p>Total BZ FA : <strong id="synBzFA">0.00 h</strong></p>
+            </div>
+
+            <!-- Section Grand Total -->
+            <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #3b82f6;">
+                <h3 style="color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid #3b82f6; padding-bottom: 5px;">Section Grand Total</h3>
+                <p style="margin-bottom: 6px;">Total Facteur : <strong id="synTotalFacteur" style="color: #1d4ed8;">0.00 h</strong></p>
+                <p style="margin-bottom: 6px;">Total Achemineur : <strong id="synTotalAchemineur" style="color: #1d4ed8;">0.00 h</strong></p>
+                <p>Total FA : <strong id="synTotalFA" style="color: #1d4ed8;">0.00 h</strong></p>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button class="btn btn-danger" onclick="closeSyntheseModal()">Fermer</button>
+        </div>
     </div>
 </div>
 
