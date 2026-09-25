@@ -3,391 +3,1130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feuille d'Entrée de Données - Postes Canada</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Feuille de Saisie avec Benchmark 8h - Postes Canada</title>
     <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .stats-section {
+            padding: 20px 30px;
+            background: #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .stats-section h3 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-card {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary);
+        }
+        .stat-card.green { border-left-color: #10b981; }
+        .stat-card.orange { border-left-color: #d97706; }
+        .stat-card.blue { border-left-color: #0369a1; }
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .stat-card .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-top: 4px;
+        }
+        .form-section {
+            padding: 25px 30px;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 120px 130px 140px 180px 120px 110px 85px 85px 85px 110px;
+            gap: 10px;
+            align-items: end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #4b5563;
+        }
+        .form-control {
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 38px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1e40af;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            margin-right: 4px;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .table-section {
+            padding: 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #4b5563;
+            font-weight: 600;
+        }
+        .actions-bar {
+            padding: 20px 30px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+        }
+        .total-badge {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            padding: 20px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 30px auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 1300px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #000;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        /* Module color classes */
+        .mod-yanick { background-color: #e0f2fe !important; color: #0369a1; }
+        .mod-martin { background-color: #1e3a8a !important; color: #ffffff !important; }
+        .mod-jonathan { background-color: #f3f4f6 !important; color: #374151; }
+        .mod-jean { background-color: #fef3c7 !important; color: #92400e; }
+        .mod-yves { background-color: #d1fae5 !important; color: #065f46; }
+        .mod-dany { background-color: #fef08a !important; color: #854d0e; }
+        
+        .status-msg {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #059669;
+            font-weight: 500;
+        }
+
         @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; color: black !important; }
-            table { font-size: 9px !important; }
-            #syntheseModal { background: white !important; color: black !important; position: absolute; top: 0; left: 0; width: 100%; height: auto; }
+            body * {
+                visibility: hidden;
+            }
+            #reportModal, #reportModal * {
+                visibility: visible;
+            }
+            #reportModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+            .filter-grid, .close-modal, button {
+                display: none !important;
+            }
         }
     </style>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
-    <!-- En-tête -->
-    <header class="bg-slate-800 border-b border-slate-700 shadow-md py-4 px-6 no-print">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-amber-400 flex items-center gap-2">
-                    <span>📋</span> Fiche d'Entrée de Données - Postes Canada
-                </h1>
-                <p class="text-sm text-slate-400">Suivi des volumes, Tiers, Sortes CQ et Estimation Temps Préparation CQ</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <button id="btnSyntheseHeader" onclick="ouvrirSynthese()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-indigo-900/30">
-                    📊 Synthèse Booker
-                </button>
-                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
-                    🖨️ Imprimer / PDF
-                </button>
-                <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
-                    💾 Exporter (JSON)
-                </button>
-            </div>
-        </div>
-    </header>
+    <!-- Firebase SDKs & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <!-- Corps de l'application -->
-    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
 
-        <!-- Barre de contrôle & Sélection des modules -->
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg no-print">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                
-                <!-- Sélection du Module -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Module / Superviseur</label>
-                    <select id="moduleSelect" onchange="changeModule()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        <option value="Dany">Dany</option>
-                        <option value="Yves">Yves</option>
-                        <option value="Martin">Martin</option>
-                        <option value="Jonathan">Jonathan</option>
-                        <option value="Jean">Jean</option>
-                        <option value="Achemineur">Achemineur</option>
-                        <option value="FA">FA</option>
-                    </select>
-                </div>
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-                <!-- Date de saisie -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Date de Saisie</label>
-                    <input type="date" id="inputDate" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                </div>
+        const rawEmployeesData = [
+            { nom: "Abdo", prenom: "Rassil", id: "7186641", anciennete: "2025/08/03" },
+            { nom: "Ahmat Goni", prenom: "Issa", id: "7186272", anciennete: "2025/06/08" },
+            { nom: "Akoua Ngome", prenom: "Serge", id: "7185805", anciennete: "2025/05/11" },
+            { nom: "Allah ounifi", prenom: "Amenne", id: "7186266", anciennete: "2025/06/08" },
+            { nom: "Araji", prenom: "Mohamad", id: "7185669", anciennete: "2025/05/18" },
+            { nom: "Arsenault", prenom: "Jean-Francois", id: "7145242", anciennete: "2013/05/13" },
+            { nom: "Babineau", prenom: "Marc", id: "7145551", anciennete: "2013/05/27" },
+            { nom: "Bahe", prenom: "Abdelkrim", id: "7186326", anciennete: "2025/06/15" },
+            { nom: "Barbeau", prenom: "Samuel", id: "7180479", anciennete: "2024/05/05" },
+            { nom: "Barrette", prenom: "Simon", id: "7183049", anciennete: "2024/09/15" },
+            { nom: "Bastien", prenom: "Cedric", id: "7180635", anciennete: "2024/05/12" },
+            { nom: "Baudry", prenom: "Marc-Andre", id: "7154516", anciennete: "2016/05/16" },
+            { nom: "Beauchamp", prenom: "Patrick", id: "7145788", anciennete: "2013/06/03" },
+            { nom: "Bedard", prenom: "David", id: "7185803", anciennete: "2025/05/11" },
+            { nom: "Begin", prenom: "Charles-Antoine", id: "7182270", anciennete: "2024/07/07" },
+            { nom: "Belanger", prenom: "Jonathan", id: "7164936", anciennete: "2019/04/29" },
+            { nom: "Belanger", prenom: "Kevin", id: "7179043", anciennete: "2024/01/21" },
+            { nom: "Belhumeur", prenom: "Francis", id: "7165030", anciennete: "2019/05/06" },
+            { nom: "Benmoussa", prenom: "Youssef", id: "7186263", anciennete: "2025/06/08" },
+            { nom: "Bergevin", prenom: "Mathieu", id: "7180461", anciennete: "2024/05/05" },
+            { nom: "Bernier", prenom: "Steve", id: "7153678", anciennete: "2015/10/26" },
+            { nom: "Blais", prenom: "Gabriel", id: "7185906", anciennete: "2025/05/18" },
+            { nom: "Blais", prenom: "Marc-Andre", id: "7165215", anciennete: "2019/05/13" },
+            { nom: "Blanchet", prenom: "Marc", id: "7180735", anciennete: "2024/05/12" },
+            { nom: "Boily", prenom: "Gabriel", id: "7185675", anciennete: "2025/05/18" },
+            { nom: "Boivin", prenom: "Alexandre", id: "7180462", anciennete: "2024/05/05" },
+            { nom: "Bonin", prenom: "Maxime", id: "7176462", anciennete: "2023/04/17" },
+            { nom: "Boucher", prenom: "Olivier", id: "7176431", anciennete: "2023/04/17" },
+            { nom: "Boudreault", prenom: "David", id: "7164939", anciennete: "2019/04/29" },
+            { nom: "Bouffard", prenom: "Michael", id: "7185696", anciennete: "2025/05/18" },
+            { nom: "Boukhedimi", prenom: "Abdenour", id: "7186271", anciennete: "2025/06/08" },
+            { nom: "Boulanger", prenom: "Kevin", id: "7165217", anciennete: "2019/05/13" },
+            { nom: "Bourassa", prenom: "Simon", id: "7164966", anciennete: "2019/04/29" },
+            { nom: "Boutin", prenom: "Vincent", id: "7178873", anciennete: "2024/01/14" },
+            { nom: "Boyer", prenom: "Maxime", id: "7182274", anciennete: "2024/07/07" },
+            { nom: "Brochu", prenom: "Cedric", id: "7185804", anciennete: "2025/05/11" },
+            { nom: "Brosseau", prenom: "Kevin", id: "7165158", anciennete: "2019/05/13" },
+            { nom: "Brousseau", prenom: "Alexandre", id: "7183047", anciennete: "2024/09/15" },
+            { nom: "Brunelle", prenom: "Alexandre", id: "7176657", anciennete: "2023/04/17" },
+            { nom: "Busque", prenom: "Marc-Antoine", id: "7182258", anciennete: "2024/07/07" },
+            { nom: "Cadieux", prenom: "Alexandre", id: "7178875", anciennete: "2024/01/14" },
+            { nom: "Camara", prenom: "Mamadou Saliou", id: "7186638", anciennete: "2025/08/03" },
+            { nom: "Caron", prenom: "Jonathan", id: "7182410", anciennete: "2024/07/21" },
+            { nom: "Caron", prenom: "William", id: "7182390", anciennete: "2024/07/21" },
+            { nom: "Chamberland", prenom: "Jean-Sebastien", id: "7165034", anciennete: "2019/05/06" },
+            { nom: "Champagne", prenom: "Alexandre", id: "7182260", anciennete: "2024/07/07" },
+            { nom: "Charbonneau", prenom: "Alexandre", id: "7176674", anciennete: "2023/04/17" },
+            { nom: "Charbonneau", prenom: "Francis", id: "7180472", anciennete: "2024/05/05" },
+            { nom: "Charland", prenom: "Michael", id: "7185811", anciennete: "2025/05/11" },
+            { nom: "Charron", prenom: "Guillaume", id: "7178877", anciennete: "2024/01/14" },
+            { nom: "Chartrand", prenom: "Sebastien", id: "7154471", anciennete: "2016/05/16" },
+            { nom: "Chauvin", prenom: "Marc-Andre", id: "7180633", anciennete: "2024/05/12" },
+            { nom: "Chenier", prenom: "Marc-Antoine", id: "7182276", anciennete: "2024/07/07" },
+            { nom: "Cisse", prenom: "Aboubacar", id: "7186267", anciennete: "2025/06/08" },
+            { nom: "Cloutier", prenom: "Alexandre", id: "7182405", anciennete: "2024/07/21" },
+            { nom: "Cloutier", prenom: "Nicolas", id: "7178872", anciennete: "2024/01/14" },
+            { nom: "Cote", prenom: "Alexandre", id: "7180460", anciennete: "2024/05/05" },
+            { nom: "Cote", prenom: "Jonathan", id: "7182259", anciennete: "2024/07/07" },
+            { nom: "Cote", prenom: "Samuel", id: "7182273", anciennete: "2024/07/07" },
+            { nom: "Coulibaly", prenom: "Sekouba", id: "7186265", anciennete: "2025/06/08" },
+            { nom: "Couture", prenom: "Kevin", id: "7180636", anciennete: "2024/05/12" },
+            { nom: "Couture", prenom: "Samuel", id: "7182271", anciennete: "2024/07/07" },
+            { nom: "Cuerrier", prenom: "Gabriel", id: "7185802", anciennete: "2025/05/11" },
+            { nom: "Daigneault", prenom: "Mathieu", id: "7182275", anciennete: "2024/07/07" },
+            { nom: "Dandurand", prenom: "Samuel", id: "7182272", anciennete: "2024/07/07" },
+            { nom: "Darsigny", prenom: "Alexandre", id: "7180473", anciennete: "2024/05/05" },
+            { nom: "De Grandpre", prenom: "Marc-Andre", id: "7185801", anciennete: "2025/05/11" },
+            { nom: "Demers", prenom: "Guillaume", id: "7180634", anciennete: "2024/05/12" },
+            { nom: "Desbiens", prenom: "Alexandre", id: "7182392", anciennete: "2024/07/21" },
+            { nom: "Deschamps", prenom: "Jonathan", id: "7180470", anciennete: "2024/05/05" },
+            { nom: "Deschenes", prenom: "Samuel", id: "7185806", anciennete: "2025/05/11" },
+            { nom: "Desgagnnes", prenom: "Marc-Antoine", id: "7182262", anciennete: "2024/07/07" },
+            { nom: "Desjardins", prenom: "Kevin", id: "7180468", anciennete: "2024/05/05" },
+            { nom: "Deslauriers", prenom: "Samuel", id: "7185907", anciennete: "2025/05/18" },
+            { nom: "Desmarais", prenom: "Jonathan", id: "7180733", anciennete: "2024/05/12" },
+            { nom: "Desrochers", prenom: "Alexandre", id: "7180464", anciennete: "2024/05/05" },
+            { nom: "Desroches", prenom: "Guillaume", id: "7182391", anciennete: "2024/07/21" },
+            { nom: "Dion", prenom: "Marc-Andre", id: "7180463", anciennete: "2024/05/05" },
+            { nom: "Dionne", prenom: "Samuel", id: "7185807", anciennete: "2025/05/11" },
+            { nom: "Dorion", prenom: "Jonathan", id: "7180465", anciennete: "2024/05/05" },
+            { nom: "Doucet", prenom: "Alexandre", id: "7182263", anciennete: "2024/07/07" },
+            { nom: "Drolet", prenom: "Guillaume", id: "7182393", anciennete: "2024/07/21" },
+            { nom: "Dube", prenom: "Marc-Andre", id: "7180466", anciennete: "2024/05/05" },
+            { nom: "Ducharme", prenom: "Samuel", id: "7185808", anciennete: "2025/05/11" },
+            { nom: "Dufour", prenom: "Jonathan", id: "7180467", anciennete: "2024/05/05" },
+            { nom: "Dumont", prenom: "Alexandre", id: "7182264", anciennete: "2024/07/07" },
+            { nom: "Dupuis", prenom: "Guillaume", id: "7182394", anciennete: "2024/07/21" },
+            { nom: "Durand", prenom: "Marc-Andre", id: "7180469", anciennete: "2024/05/05" },
+            { nom: "Durocher", prenom: "Samuel", id: "7185809", anciennete: "2025/05/11" },
+            { nom: "Ethier", prenom: "Jonathan", id: "7180471", anciennete: "2024/05/05" },
+            { nom: "Fecteau", prenom: "Alexandre", id: "7182265", anciennete: "2024/07/07" },
+            { nom: "File", prenom: "Guillaume", id: "7182395", anciennete: "2024/07/21" },
+            { nom: "Fontaine", prenom: "Marc-Andre", id: "7180474", anciennete: "2024/05/05" },
+            { nom: "Forcier", prenom: "Samuel", id: "7185810", anciennete: "2025/05/11" },
+            { nom: "Fortin", prenom: "Jonathan", id: "7180475", anciennete: "2024/05/05" },
+            { nom: "Fournier", prenom: "Alexandre", id: "7182266", anciennete: "2024/07/07" },
+            { nom: "Gagne", prenom: "Guillaume", id: "7182396", anciennete: "2024/07/21" },
+            { nom: "Gagnon", prenom: "Marc-Andre", id: "7180476", anciennete: "2024/05/05" },
+            { nom: "Garand", prenom: "Samuel", id: "7185812", anciennete: "2025/05/11" },
+            { nom: "Gauthier", prenom: "Jonathan", id: "7180477", anciennete: "2024/05/05" }
+        ];
 
-                <!-- Recherche par route -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Rechercher une Route</label>
-                    <input type="text" id="searchRoute" placeholder="Ex: 1, Ach1, FA1..." oninput="filterRoutes()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                </div>
+        let employees = [];
+        let editingIndex = null;
+        let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
 
-                <!-- Statut & Infos -->
-                <div class="flex items-center justify-between bg-slate-900/60 border border-slate-700/60 rounded-lg px-4 py-2">
-                    <div>
-                        <span class="text-xs text-slate-400 block">Routes Actives</span>
-                        <span id="routeCount" class="text-lg font-bold text-amber-400">0</span>
-                    </div>
-                    <button onclick="resetData()" class="text-xs text-rose-400 hover:text-rose-300 underline font-medium">Effacer saisie</button>
-                </div>
+        function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
+            const match = routeStr ? routeStr.match(/\d+/) : null;
+            const num = match ? parseInt(match[0], 10) : 0;
+            const exceptions = { 90: 5.97, 94: 4.17, 96: 4.28, 302: 3.65, 306: 3.68, 310: 5.55 };
+            const benchmark = exceptions[num] !== undefined ? exceptions[num] : 8.0;
+            const equiv8h = (heure1508 + heureBz) * (benchmark / 8.0);
+            
+            let benchmarkPaye = 0;
+            if (heure1508 <= 2) {
+                benchmarkPaye = (heure1508 * 1.5) + heureBz;
+            } else {
+                benchmarkPaye = (2 * 1.5) + ((heure1508 - 2) * 2.0) + heureBz;
+            }
+            return { benchmark, equiv8h, benchmarkPaye };
+        }
 
-            </div>
-        </div>
+        function saveAndRender() {
+            entries = entries.map(e => {
+                const calc = calculateBenchmark(e.route, e.heure1508, e.heureBz, e.heure1704);
+                return { ...e, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye };
+            });
+            localStorage.setItem('cams_entries', JSON.stringify(entries));
+            renderTable();
+            updateStatsSummary();
+        }
 
-        <!-- Tableau Principal des Routes (2 lignes par route) -->
-        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse" id="dataTable">
-                    <thead>
-                        <tr id="tableHeaders" class="bg-slate-900 text-slate-300 text-xs uppercase tracking-wider border-b border-slate-700">
-                            <!-- En-têtes dynamiques -->
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-700/50 text-sm">
-                        <!-- Lignes dynamiques -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Modal de Synthèse Booker (Imprimable) -->
-    <div id="syntheseModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-4xl p-6 shadow-2xl space-y-6 text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-4">
-                <h2 class="text-xl font-bold text-amber-400 flex items-center gap-2"><span>📊</span> Rapport de Synthèse - Mode Booker</h2>
-                <button onclick="fermerSynthese()" class="no-print text-slate-400 hover:text-white text-lg font-bold">&times;</button>
-            </div>
-
-            <div id="contenuRapport" class="space-y-6 text-sm">
-                <!-- Rempli dynamiquement -->
-            </div>
-
-            <div class="flex justify-end gap-3 pt-4 border-t border-slate-700 no-print">
-                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">🖨️ Imprimer le Rapport</button>
-                <button onclick="fermerSynthese()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Fermer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script de calcul et de gestion -->
-    <script>
         const supervisorRoutes = {
             "Dany": [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 209, 213, 215, 217, 219, 223, 225],
             "Yves": [2, 4, 6, 8, 10, 16, 18, 20, 22, 26, 28, 30, 32, 34, 64],
             "Martin": [12, 14, 216, 218, 224, 228, 230, 232, 236, 238, 240, 244, 246, 248, 250, 252, 254, 256, 258, 260, 262, 264, 272, 282, 290, 310],
             "Jonathan": [24, 201, 202, 203, 204, 205, 206, 207, 208, 210, 211, 212, 214, 220, 221, 222, 226, 227, 234, 242, 266, 268, 270, 274, 278, 286],
             "Jean": [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 88, 90],
-            "Achemineur": ["Ach1", "Ach2", "Ach3", "Ach4", "Ach5", "Ach6", "Ach7", "Ach8", "Ach9", "Ach10", "Ach11"],
-            "FA": ["FA1", "FA2"]
+            "Yanick": [94, 96, 302, 306]
         };
 
-        const requiredHeaders = [
-            "Route", "Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", 
-            "Tiers (1, 2, 3)", "Nombre sortes CQ", "Temps Préparation CQ (Est.)"
-        ];
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('dateInput').valueAsDate = new Date();
+            populateAllRoutesDatalist();
 
-        const cqFactors = {
-            3: 0.064, 4: 0.088, 5: 0.108, 6: 0.128, 7: 0.158, 8: 0.178, 
-            9: 0.22, 10: 0.246, 11: 0.266, 12: 0.286
-        };
+            const employesList = document.getElementById('employesList');
+            const idsList = document.getElementById('idsList');
+            employesList.innerHTML = '';
+            idsList.innerHTML = '';
 
-        function getBaseVolumes(rNum) {
-            return {
-                "Courrier Manuel": (Math.random() * 30 + 5).toFixed(1),
-                "Courrier Séquence": (Math.random() * 250 + 150).toFixed(1),
-                "Paquets": (Math.random() * 12 + 2).toFixed(1),
-                "Colis": (Math.random() * 8 + 1).toFixed(1),
-                _tiersData: {
-                    1: { res: Math.floor(Math.random() * 80 + 20), apt: Math.floor(Math.random() * 30) },
-                    2: { res: Math.floor(Math.random() * 120 + 40), apt: Math.floor(Math.random() * 40) },
-                    3: { res: Math.floor(Math.random() * 100 + 30), apt: Math.floor(Math.random() * 50) }
-                }
-            };
-        }
+            rawEmployeesData.forEach((data) => {
+                const empName = `${data.prenom} ${data.nom}`.trim();
+                const empId = data.id;
+                const empAnciennete = data.anciennete;
+                
+                employees.push({ name: empName, id: empId, anciennete: empAnciennete });
 
-        let currentModule = "Dany";
-        let userInputs = JSON.parse(localStorage.getItem('postes_saisie_v10')) || {};
+                const optNom = document.createElement('option');
+                optNom.value = empName;
+                employesList.appendChild(optNom);
 
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('inputDate').valueAsDate = new Date();
-            renderTable();
+                const optId = document.createElement('option');
+                optId.value = empId;
+                idsList.appendChild(optId);
+            });
+
+            document.getElementById('firebaseStatus').textContent = `Liste chargée (${employees.length} employés depuis CSV) & connecté à Firebase.`;
+
+            saveAndRender();
         });
 
-        function changeModule() {
-            currentModule = document.getElementById('moduleSelect').value;
-            const btnSyn = document.getElementById('btnSyntheseHeader');
-            if (currentModule === "Achemineur" || currentModule === "FA") {
-                btnSyn.classList.remove('hidden');
-            } else {
-                btnSyn.classList.add('hidden');
+        function populateAllRoutesDatalist() {
+            const routesList = document.getElementById('routesList');
+            routesList.innerHTML = '';
+            const allRoutes = [];
+            for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                routes.forEach(r => allRoutes.push({ route: `Route ${r}`, num: r, module: mod }));
             }
-            renderTable();
+            allRoutes.sort((a, b) => a.num - b.num);
+            allRoutes.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.route;
+                opt.textContent = `${item.module}`;
+                routesList.appendChild(opt);
+            });
         }
 
-        function calculatePrepCQ(baseObj, routeKey) {
-            const userRow = userInputs[routeKey] || {};
-            const tiersChoice = parseInt(userRow["Tiers (1, 2, 3)"]);
-            const nbsCQ = parseInt(userRow["Nombre sortes CQ"]);
+        window.updateModuleFromRouteInput = function() {
+            const routeVal = document.getElementById('routeInput').value;
+            const match = routeVal.match(/\d+/);
+            if (match) {
+                const num = parseInt(match[0], 10);
+                for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                    if (routes.includes(num)) {
+                        document.getElementById('moduleSelect').value = mod;
+                        break;
+                    }
+                }
+            }
+        }
 
-            if (![1, 2, 3].includes(tiersChoice) || isNaN(nbsCQ) || nbsCQ < 3) {
-                return "-";
+        window.updateEmployeeById = function() {
+            const nomInput = document.getElementById('nomInput').value.trim();
+            const emp = employees.find(e => e.name.toLowerCase() === nomInput.toLowerCase());
+            if (emp) {
+                document.getElementById('idInput').value = emp.id;
+                document.getElementById('ancienneteInput').value = emp.anciennete;
+            }
+        }
+
+        window.updateEmployeeByName = function() {
+            const idInput = document.getElementById('idInput').value.trim();
+            const emp = employees.find(e => e.id.toLowerCase() === idInput.toLowerCase());
+            if (emp) {
+                document.getElementById('nomInput').value = emp.name;
+                document.getElementById('ancienneteInput').value = emp.anciennete;
+            }
+        }
+
+        function getModuleClass(moduleName) {
+            if (!moduleName) return '';
+            switch(moduleName.toLowerCase()) {
+                case 'yanick': return 'mod-yanick';
+                case 'martin': return 'mod-martin';
+                case 'jonathan': return 'mod-jonathan';
+                case 'jean': return 'mod-jean';
+                case 'yves': return 'mod-yves';
+                case 'dany': return 'mod-dany';
+                default: return '';
+            }
+        }
+
+        function updateStatsSummary() {
+            let tot1704 = 0;
+            let tot1508 = 0;
+            let totBz = 0;
+            let totGlobal = 0;
+            let totEquiv = 0;
+            let totPaye = 0;
+
+            entries.forEach(e => {
+                tot1704 += (e.heure1704 || 0);
+                tot1508 += (e.heure1508 || 0);
+                totBz += (e.heureBz || 0);
+                totGlobal += (e.totalHeures || 0);
+                totEquiv += (e.equiv8h || 0);
+                totPaye += (e.benchmarkPaye || 0);
+            });
+
+            document.getElementById('stat1704').textContent = tot1704.toFixed(2) + ' h';
+            document.getElementById('stat1508').textContent = tot1508.toFixed(2) + ' h';
+            document.getElementById('statBz').textContent = totBz.toFixed(2) + ' h';
+            document.getElementById('statGlobal').textContent = totGlobal.toFixed(2) + ' h';
+            document.getElementById('statEquiv').textContent = totEquiv.toFixed(2) + ' h';
+            document.getElementById('statPaye').textContent = totPaye.toFixed(2) + ' h';
+        }
+
+        window.addEntry = async function(event) {
+            event.preventDefault();
+            const date = document.getElementById('dateInput').value;
+            const module = document.getElementById('moduleSelect').value;
+            const route = document.getElementById('routeInput').value;
+            const nom = document.getElementById('nomInput').value;
+            const id = document.getElementById('idInput').value;
+            const anciennete = document.getElementById('ancienneteInput').value;
+            const heure1704 = parseFloat(document.getElementById('heure1704Input').value) || 0;
+            const heure1508 = parseFloat(document.getElementById('heure1508Input').value) || 0;
+            const heureBz = parseFloat(document.getElementById('heureBzInput').value) || 0;
+            const totalHeures = heure1704 + heure1508 + heureBz;
+
+            const calc = calculateBenchmark(route, heure1508, heureBz, heure1704);
+            const newEntry = { date, module, route, nom, id, anciennete, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye, createdAt: new Date().toISOString() };
+
+            if (editingIndex !== null) {
+                entries[editingIndex] = newEntry;
+                editingIndex = null;
+                document.getElementById('submitBtn').textContent = "Ajouter";
+                document.getElementById('submitBtn').style.background = "var(--primary)";
+            } else {
+                entries.push(newEntry);
             }
 
-            const tData = baseObj._tiersData[tiersChoice];
-            const sumResApt = tData.res + tData.apt;
+            saveAndRender();
 
-            let factor = cqFactors[nbsCQ];
-            if (!factor) {
-                factor = nbsCQ > 12 ? 0.286 + (nbsCQ - 12) * 0.02 : 0.064;
+            try {
+                await addDoc(collection(db, "bench"), newEntry);
+                document.getElementById('firebaseStatus').textContent = "Saisie enregistrée et synchronisée dans Firebase (collection 'bench').";
+                document.getElementById('firebaseStatus').style.color = "#059669";
+            } catch (err) {
+                console.error("Erreur sauvegarde Firebase bench:", err);
+                document.getElementById('firebaseStatus').textContent = "Erreur de synchronisation Firebase (collection 'bench').";
+                document.getElementById('firebaseStatus').style.color = "#dc2626";
             }
 
-            const result = sumResApt * nbsCQ * factor;
-            return result.toFixed(2) + " min";
+            document.getElementById('entryForm').reset();
+            document.getElementById('dateInput').valueAsDate = new Date();
+        }
+
+        window.editEntry = function(index) {
+            const item = entries[index];
+            editingIndex = index;
+
+            document.getElementById('dateInput').value = item.date || '';
+            document.getElementById('moduleSelect').value = item.module || '';
+            document.getElementById('routeInput').value = item.route || '';
+            document.getElementById('nomInput').value = item.nom || '';
+            document.getElementById('idInput').value = item.id || '';
+            document.getElementById('ancienneteInput').value = item.anciennete || '';
+            document.getElementById('heure1704Input').value = item.heure1704;
+            document.getElementById('heure1508Input').value = item.heure1508;
+            document.getElementById('heureBzInput').value = item.heureBz;
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = "Mettre à jour";
+            submitBtn.style.background = "#f59e0b";
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.deleteEntry = function(index) {
+            if (editingIndex === index) {
+                document.getElementById('entryForm').reset();
+                document.getElementById('dateInput').valueAsDate = new Date();
+                document.getElementById('submitBtn').textContent = "Ajouter";
+                document.getElementById('submitBtn').style.background = "var(--primary)";
+                editingIndex = null;
+            }
+            entries.splice(index, 1);
+            saveAndRender();
         }
 
         function renderTable() {
-            const headerRow = document.getElementById('tableHeaders');
-            const tbody = document.getElementById('tableBody');
-            const searchTerm = document.getElementById('searchRoute').value.toLowerCase();
-
-            headerRow.innerHTML = '';
+            const tbody = document.getElementById('entriesTableBody');
             tbody.innerHTML = '';
 
-            requiredHeaders.forEach(h => {
-                const th = document.createElement('th');
-                th.className = "py-3 px-4 font-semibold text-xs text-slate-300 border-b border-slate-700";
-                th.innerText = h;
-                headerRow.appendChild(th);
-            });
-
-            const routeList = supervisorRoutes[currentModule] || [];
-            const filteredRoutes = routeList.filter(r => String(r).toLowerCase().includes(searchTerm));
-            
-            document.getElementById('routeCount').innerText = filteredRoutes.length;
-
-            filteredRoutes.forEach(rNum => {
-                const routeStr = String(rNum);
-                const routeKey = `${currentModule}_${routeStr}`;
-                const baseObj = getBaseVolumes(rNum);
-
-                if (!userInputs[routeKey]) {
-                    userInputs[routeKey] = {
-                        "Courrier Manuel": "",
-                        "Courrier Séquence": "",
-                        "Paquets": "",
-                        "Colis": "",
-                        "Tiers (1, 2, 3)": "",
-                        "Nombre sortes CQ": ""
-                    };
-                }
-
-                // --- LIGNE 1 : STANDARD ---
-                const trStandard = document.createElement('tr');
-                trStandard.className = "bg-slate-800/90";
-                
-                let tdRoute = document.createElement('td');
-                tdRoute.className = "py-3 px-4 font-bold text-amber-400 border-t border-slate-700/80";
-                tdRoute.innerHTML = `<span class="bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded text-xs">Route ${routeStr}</span>`;
-                trStandard.appendChild(tdRoute);
-
-                ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis"].forEach(key => {
-                    const td = document.createElement('td');
-                    td.className = "py-3 px-4 text-slate-300 text-xs border-t border-slate-700/80";
-                    td.innerHTML = `<span class="text-slate-400 text-[10px] block uppercase">Standard</span><span class="font-semibold text-white">${baseObj[key]}</span>`;
-                    trStandard.appendChild(td);
-                });
-
-                ["Tiers (1, 2, 3)", "Nombre sortes CQ"].forEach(() => {
-                    const td = document.createElement('td');
-                    td.className = "py-3 px-4 text-slate-400 text-xs border-t border-slate-700/80 italic";
-                    td.innerText = "-";
-                    trStandard.appendChild(td);
-                });
-
-                const tdCalcStd = document.createElement('td');
-                tdCalcStd.className = "py-3 px-4 text-emerald-400 font-bold text-xs border-t border-slate-700/80";
-                tdCalcStd.id = `calc_std_${routeKey}`;
-                tdCalcStd.innerText = calculatePrepCQ(baseObj, routeKey);
-                trStandard.appendChild(tdCalcStd);
-
-                tbody.appendChild(trStandard);
-
-                // --- LIGNE 2 : SAISIE TERRAIN ---
-                const trInput = document.createElement('tr');
-                trInput.className = "bg-slate-900/80 border-b border-slate-700";
-
-                let tdInputLabel = document.createElement('td');
-                tdInputLabel.className = "py-3 px-4 text-xs font-medium text-emerald-400 pl-6 flex items-center gap-1";
-                tdInputLabel.innerHTML = `✏️ <span>Saisie</span>`;
-                trInput.appendChild(tdInputLabel);
-
-                const editableKeys = ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", "Tiers (1, 2, 3)", "Nombre sortes CQ"];
-                editableKeys.forEach(key => {
-                    const td = document.createElement('td');
-                    td.className = "py-3 px-4";
-                    
-                    const input = document.createElement('input');
-                    input.type = "number";
-                    input.step = key.includes("Tiers") || key.includes("sortes") ? "1" : "0.1";
-                    input.placeholder = key.includes("Tiers") ? "1, 2 ou 3" : "Saisir...";
-                    input.className = "w-full bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
-                    input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
-                    
-                    input.oninput = (e) => {
-                        userInputs[routeKey][key] = e.target.value;
-                        localStorage.setItem('postes_saisie_v10', JSON.stringify(userInputs));
-                        document.getElementById(`calc_std_${routeKey}`).innerText = calculatePrepCQ(baseObj, routeKey);
-                    };
-
-                    td.appendChild(input);
-                    trInput.appendChild(td);
-                });
-
-                const tdEmpty = document.createElement('td');
-                tdEmpty.className = "py-3 px-4 text-xs text-slate-500";
-                tdEmpty.innerText = "Auto";
-                trInput.appendChild(tdEmpty);
-
-                tbody.appendChild(trInput);
-            });
-        }
-
-        function filterRoutes() { renderTable(); }
-
-        function ouvrirSynthese() {
-            const contenu = document.getElementById('contenuRapport');
-            
-            let tot1508Fact = 0, totBZFact = 0;
-            let tot1508Ach = 0, totBZAch = 0;
-            let tot1508FA = 0, totBZFA = 0;
-
-            // Parcourir Achemineur
-            supervisorRoutes["Achemineur"].forEach(rNum => {
-                const dat = userInputs[`Achemineur_${rNum}`] || {};
-                let valVol = parseFloat(dat["Courrier Séquence"]) || 50;
-                tot1508Ach += valVol;
-            });
-
-            // Parcourir FA
-            supervisorRoutes["FA"].forEach(rNum => {
-                const dat = userInputs[`FA_${rNum}`] || {};
-                let valVol = parseFloat(dat["Courrier Séquence"]) || 50;
-                tot1508FA += valVol;
-            });
-
-            const coutFacteur = tot1508Fact + totBZFact + 27.3 + 936;
-            const coutAchemineur = tot1508Ach + totBZAch + 88;
-            const coutFA = tot1508FA + totBZFA + 16;
-            const coutTotalHeures = coutFacteur + coutAchemineur + coutFA;
-
-            contenu.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-                        <h3 class="text-amber-400 font-bold uppercase text-xs tracking-wider mb-3">Section Facteur</h3>
-                        <p class="flex justify-between py-1 border-b border-slate-800"><span>Total 15.08 :</span> <strong class="text-white">${tot1508Fact.toFixed(1)}</strong></p>
-                        <p class="flex justify-between py-1"><span>Total BZ :</span> <strong class="text-white">${totBZFact.toFixed(1)}</strong></p>
-                    </div>
-
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-                        <h3 class="text-amber-400 font-bold uppercase text-xs tracking-wider mb-3">Section Achemineur</h3>
-                        <p class="flex justify-between py-1 border-b border-slate-800"><span>Total 15.08 :</span> <strong class="text-white">${tot1508Ach.toFixed(1)}</strong></p>
-                        <p class="flex justify-between py-1"><span>Total BZ :</span> <strong class="text-white">${totBZAch.toFixed(1)}</strong></p>
-                    </div>
-
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
-                        <h3 class="text-amber-400 font-bold uppercase text-xs tracking-wider mb-3">Section FA</h3>
-                        <p class="flex justify-between py-1 border-b border-slate-800"><span>Total 15.08 :</span> <strong class="text-white">${tot1508FA.toFixed(1)}</strong></p>
-                        <p class="flex justify-between py-1"><span>Total BZ :</span> <strong class="text-white">${totBZFA.toFixed(1)}</strong></p>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900 p-4 rounded-xl border border-emerald-500/40 space-y-2">
-                    <h3 class="text-emerald-400 font-bold uppercase text-xs tracking-wider mb-2">Résumé des Coûts & Totaux</h3>
-                    <p class="flex justify-between py-1 border-b border-slate-800"><span>Coût Total Facteur :</span> <strong class="text-emerald-300">${coutFacteur.toFixed(2)}</strong></p>
-                    <p class="flex justify-between py-1 border-b border-slate-800"><span>Coût Total Achemineur :</span> <strong class="text-emerald-300">${coutAchemineur.toFixed(2)}</strong></p>
-                    <p class="flex justify-between py-1 border-b border-slate-800"><span>Coût Total FA :</span> <strong class="text-emerald-300">${coutFA.toFixed(2)}</strong></p>
-                    <p class="flex justify-between pt-2 text-base font-bold text-amber-400"><span>Coût Total en Heures (Global) :</span> <span>${coutTotalHeures.toFixed(2)} hrs</span></p>
-                </div>
-            `;
-
-            document.getElementById('syntheseModal').classList.remove('hidden');
-        }
-
-        function fermerSynthese() {
-            document.getElementById('syntheseModal').classList.add('hidden');
-        }
-
-        function resetData() {
-            if (confirm("Réinitialiser les données saisies pour ce module ?")) {
-                supervisorRoutes[currentModule].forEach(r => {
-                    delete userInputs[`${currentModule}_${r}`];
-                });
-                localStorage.setItem('postes_saisie_v10', JSON.stringify(userInputs));
-                renderTable();
+            if (entries.length === 0) {
+                tbody.innerHTML = `<tr id="emptyRow"><td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td></tr>`;
+                document.getElementById('totalGlobalHeures').textContent = '0.00';
+                document.getElementById('totalGlobalEquiv').textContent = '0.00';
+                return;
             }
+
+            let totalGlobal = 0;
+            let totalEquiv = 0;
+            entries.forEach((item, index) => {
+                totalGlobal += item.totalHeures;
+                totalEquiv += (item.equiv8h || 0);
+                const tr = document.createElement('tr');
+                const modClass = getModuleClass(item.module);
+                tr.innerHTML = `
+                    <td>${item.date || 'N/A'}</td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.module || ''}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.route || ''}</span></td>
+                    <td>${item.nom}</td>
+                    <td>${item.id}</td>
+                    <td>${item.anciennete || 'N/A'}</td>
+                    <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
+                    <td style="text-align: right; font-weight: 600;">${item.totalHeures.toFixed(2)} h</td>
+                    <td style="text-align: right; color: #0369a1; font-weight: 500;">${(item.benchmark || 8.0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #059669; font-weight: 600;">${(item.equiv8h || 0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #d97706; font-weight: 600;">${(item.benchmarkPaye || 0).toFixed(2)} h</td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-warning" onclick="editEntry(${index})">Modifier</button>
+                        <button class="btn btn-danger" onclick="deleteEntry(${index})">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('totalGlobalHeures').textContent = totalGlobal.toFixed(2);
+            document.getElementById('totalGlobalEquiv').textContent = totalEquiv.toFixed(2);
         }
 
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userInputs, null, 2));
-            const dl = document.createElement('a');
-            dl.setAttribute("href", dataStr);
-            dl.setAttribute("download", `saisie_${currentModule}_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(dl);
-            dl.click();
-            dl.remove();
+        // --- RAPPORT MODAL LOGIC ---
+        window.openReportModal = function() {
+            document.getElementById('reportModal').style.display = 'block';
+            runReport();
+        }
+
+        window.closeReportModal = function() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        window.runReport = function() {
+            const fModule = document.getElementById('filterModule').value.toLowerCase();
+            const fRoute = document.getElementById('filterRoute').value.toLowerCase().trim();
+            const fNom = document.getElementById('filterNom').value.toLowerCase().trim();
+            const fId = document.getElementById('filterId').value.toLowerCase().trim();
+            const fDate = document.getElementById('filterDate').value;
+
+            const filtered = entries.filter(item => {
+                const matchModule = !fModule || (item.module && item.module.toLowerCase() === fModule);
+                const matchRoute = !fRoute || (item.route && item.route.toLowerCase().includes(fRoute));
+                const matchNom = !fNom || (item.nom && item.nom.toLowerCase().includes(fNom));
+                const matchId = !fId || (item.id && item.id.toLowerCase().includes(fId));
+                const matchDate = !fDate || item.date === fDate;
+                return matchModule && matchRoute && matchNom && matchId && matchDate;
+            });
+
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: #9ca3af;">Aucun résultat ne correspond aux critères du rapport.</td></tr>`;
+                document.getElementById('reportTotalHeures').textContent = '0.00';
+                document.getElementById('reportTotalEquiv').textContent = '0.00';
+                return;
+            }
+
+            let reportTotal = 0;
+            let reportEquiv = 0;
+            filtered.forEach(item => {
+                reportTotal += item.totalHeures;
+                reportEquiv += (item.equiv8h || 0);
+                const tr = document.createElement('tr');
+                const modClass = getModuleClass(item.module);
+                tr.innerHTML = `
+                    <td>${item.date || 'N/A'}</td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.module || ''}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.route || ''}</span></td>
+                    <td>${item.nom}</td>
+                    <td>${item.id}</td>
+                    <td>${item.anciennete || 'N/A'}</td>
+                    <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
+                    <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
+                    <td style="text-align: right; font-weight: 600;">${item.totalHeures.toFixed(2)} h</td>
+                    <td style="text-align: right; color: #0369a1;">${(item.benchmark || 8.0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #059669; font-weight: 600;">${(item.equiv8h || 0).toFixed(2)} h</td>
+                    <td style="text-align: right; color: #d97706; font-weight: 600;">${(item.benchmarkPaye || 0).toFixed(2)} h</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('reportTotalHeures').textContent = reportTotal.toFixed(2);
+            document.getElementById('reportTotalEquiv').textContent = reportEquiv.toFixed(2);
+        }
+
+        window.printReport = function() {
+            window.print();
+        }
+
+        window.exportReportCSV = function() {
+            const fModule = document.getElementById('filterModule').value.toLowerCase();
+            const fRoute = document.getElementById('filterRoute').value.toLowerCase().trim();
+            const fNom = document.getElementById('filterNom').value.toLowerCase().trim();
+            const fId = document.getElementById('filterId').value.toLowerCase().trim();
+            const fDate = document.getElementById('filterDate').value;
+
+            const filtered = entries.filter(item => {
+                const matchModule = !fModule || (item.module && item.module.toLowerCase() === fModule);
+                const matchRoute = !fRoute || (item.route && item.route.toLowerCase().includes(fRoute));
+                const matchNom = !fNom || (item.nom && item.nom.toLowerCase().includes(fNom));
+                const matchId = !fId || (item.id && item.id.toLowerCase().includes(fId));
+                const matchDate = !fDate || item.date === fDate;
+                return matchModule && matchRoute && matchNom && matchId && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                alert("Aucune donnée à exporter pour ce rapport.");
+                return;
+            }
+
+            let csv = "Date,Module,Route,Nom,ID,Anciennete,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
+            filtered.forEach(e => {
+                csv += `"${e.date || ''}","${e.module || ''}","${e.route || ''}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'rapport_benchmark_cams.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- À SURVEILLER LOGIC ---
+        window.openSurveillerModal = function() {
+            document.getElementById('surveillerModal').style.display = 'block';
+            computeSurveillerData();
+        }
+
+        window.closeSurveillerModal = function() {
+            document.getElementById('surveillerModal').style.display = 'none';
+        }
+
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+            return { year: d.getUTCFullYear(), week: weekNo };
+        }
+
+        function computeSurveillerData() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const currentWeekNum = getWeekNumber(now);
+
+            const modules = ["Yanick", "Martin", "Jonathan", "Jean", "Yves", "Dany"];
+            
+            let dayHtml = '';
+            let weekHtml = '';
+
+            modules.forEach(mod => {
+                const modEntries = entries.filter(e => e.module && e.module.toLowerCase() === mod.toLowerCase());
+
+                // 1. DAY
+                const dayMap = {};
+                modEntries.filter(e => e.date === todayStr).forEach(e => {
+                    dayMap[e.nom] = (dayMap[e.nom] || 0) + (e.heure1508 || 0);
+                });
+
+                const topDay = Object.entries(dayMap)
+                    .map(([nom, hrs]) => ({ nom, hrs }))
+                    .sort((a, b) => b.hrs - a.hrs)
+                    .slice(0, 2);
+
+                dayHtml += `<div style="margin-bottom: 15px; background: white; padding: 12px; border-radius: 6px; border-left: 4px solid var(--primary);">
+                    <strong>Module ${mod} :</strong><br>`;
+                if (topDay.length === 0) {
+                    dayHtml += `<span style="color: #94a3af; font-size: 0.85rem;">Aucune heure 15.08 aujourd'hui.</span>`;
+                } else {
+                    topDay.forEach((emp, idx) => {
+                        dayHtml += `<div style="font-size: 0.9rem; margin-top: 3px;">${idx+1}. <strong>${emp.nom}</strong> : <span style="color: #059669; font-weight: 600;">${emp.hrs.toFixed(2)} h</span></div>`;
+                    });
+                }
+                dayHtml += `</div>`;
+
+                // 2. WEEK
+                const weekMap = {};
+                modEntries.forEach(e => {
+                    if (e.date) {
+                        const d = new Date(e.date);
+                        const wk = getWeekNumber(d);
+                        if (wk.year === currentWeekNum.year && wk.week === currentWeekNum.week) {
+                            weekMap[e.nom] = (weekMap[e.nom] || 0) + (e.heure1508 || 0);
+                        }
+                    }
+                });
+
+                const topWeek = Object.entries(weekMap)
+                    .map(([nom, hrs]) => ({ nom, hrs }))
+                    .sort((a, b) => b.hrs - a.hrs)
+                    .slice(0, 2);
+
+                weekHtml += `<div style="margin-bottom: 15px; background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #10b981;">
+                    <strong>Module ${mod} :</strong><br>`;
+                if (topWeek.length === 0) {
+                    weekHtml += `<span style="color: #94a3af; font-size: 0.85rem;">Aucune heure 15.08 cette semaine.</span>`;
+                } else {
+                    topWeek.forEach((emp, idx) => {
+                        weekHtml += `<div style="font-size: 0.9rem; margin-top: 3px;">${idx+1}. <strong>${emp.nom}</strong> : <span style="color: #059669; font-weight: 600;">${emp.hrs.toFixed(2)} h</span></div>`;
+                    });
+                }
+                weekHtml += `</div>`;
+            });
+
+            document.getElementById('surveillerDayContent').innerHTML = dayHtml;
+            document.getElementById('surveillerWeekContent').innerHTML = weekHtml;
+        }
+
+        window.exportData = function() {
+            if (entries.length === 0) {
+                alert("Aucune donnée à exporter.");
+                return;
+            }
+            let csv = "Date,Module,Route,Nom,ID,Anciennete,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
+            entries.forEach(e => {
+                csv += `"${e.date || ''}","${e.module || ''}","${e.route || ''}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'feuille_de_saisie_benchmark.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     </script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Feuille de Saisie - Postes Canada (Benchmark 8h)</h1>
+            <p>Calcul automatique de l'équivalent benchmark 8h avec exceptions de routes</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-warning" onclick="openSurveillerModal()" style="font-size: 1rem; font-weight: bold; background: #f59e0b;">🚨 À surveiller</button>
+            <button class="btn btn-success" onclick="openReportModal()" style="font-size: 1rem; font-weight: bold; background: #0284c7;">📊 Générer un Rapport</button>
+        </div>
+    </header>
+
+    <!-- Tableau de Statistique / Résumé en haut -->
+    <div class="stats-section">
+        <h3>📈 Tableau Statistiques & Totaux Globaux</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total 17.04</div>
+                <div class="stat-value" id="stat1704">0.00 h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total 15.08</div>
+                <div class="stat-value" id="stat1508">0.00 h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total BZ</div>
+                <div class="stat-value" id="statBz">0.00 h</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-label">Total Heures</div>
+                <div class="stat-value" id="statGlobal">0.00 h</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-label">Total Équivalent 8h</div>
+                <div class="stat-value" id="statEquiv">0.00 h</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Total Bench Payé</div>
+                <div class="stat-value" id="statPaye">0.00 h</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div id="firebaseStatus" class="status-msg" style="margin-bottom: 12px;">Connexion à Firebase en cours...</div>
+        <form id="entryForm" onsubmit="addEntry(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="dateInput">Date</label>
+                    <input type="date" id="dateInput" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="moduleSelect">Module</label>
+                    <select id="moduleSelect" class="form-control" required>
+                        <option value="" disabled selected>Module...</option>
+                        <option value="Yanick">Yanick</option>
+                        <option value="Martin">Martin</option>
+                        <option value="Jonathan">Jonathan</option>
+                        <option value="Jean">Jean</option>
+                        <option value="Yves">Yves</option>
+                        <option value="Dany">Dany</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="routeInput">Route</label>
+                    <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: Route 12..." required oninput="updateModuleFromRouteInput()">
+                    <datalist id="routesList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="nomInput">Employé (Prénom Nom)</label>
+                    <input type="text" id="nomInput" class="form-control" list="employesList" placeholder="Rechercher nom..." required oninput="updateEmployeeById()">
+                    <datalist id="employesList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="idInput">ID</label>
+                    <input type="text" id="idInput" class="form-control" list="idsList" placeholder="ID..." required oninput="updateEmployeeByName()">
+                    <datalist id="idsList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="ancienneteInput">Ancienneté</label>
+                    <input type="text" id="ancienneteInput" class="form-control" readonly placeholder="-" style="background: #e2e8f0;">
+                </div>
+                <div class="form-group">
+                    <label for="heure1704Input">17.04</label>
+                    <input type="number" step="0.01" min="0" id="heure1704Input" class="form-control" placeholder="0.00" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="heure1508Input">15.08</label>
+                    <input type="number" step="0.01" min="0" id="heure1508Input" class="form-control" placeholder="0.00" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="heureBzInput">BZ</label>
+                    <input type="number" step="0.01" min="0" id="heureBzInput" class="form-control" placeholder="0.00" value="0">
+                </div>
+                <div>
+                    <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%;">Ajouter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Module</th>
+                    <th>Route</th>
+                    <th>Nom de l'Employé</th>
+                    <th>ID</th>
+                    <th>Ancienneté</th>
+                    <th>Heure 17.04</th>
+                    <th>Heure 15.08</th>
+                    <th>Heure BZ</th>
+                    <th>Total Heures</th>
+                    <th>Benchmark Route</th>
+                    <th>Équivalent 8h</th>
+                    <th>Benchmark Payé</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTableBody">
+                <tr id="emptyRow">
+                    <td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="actions-bar" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span class="total-badge" style="margin-right: 20px;">Total Heures : <span id="totalGlobalHeures">0.00</span> h</span>
+            <span class="total-badge" style="color: #059669;">Total Équivalent 8h : <span id="totalGlobalEquiv">0.00</span> h</span>
+        </div>
+        <button class="btn btn-primary" onclick="exportData()" style="background: #10b981;">Exporter tout en CSV</button>
+    </div>
+</div>
+
+<!-- RAPPORT MODAL -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeReportModal()">&times;</span>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">📊 Rapport avec Équivalent Benchmark 8h</h2>
+        
+        <div class="filter-grid">
+            <div class="form-group">
+                <label for="filterModule">Module</label>
+                <select id="filterModule" class="form-control" onchange="runReport()">
+                    <option value="">Tous les modules</option>
+                    <option value="Yanick">Yanick</option>
+                    <option value="Martin">Martin</option>
+                    <option value="Jonathan">Jonathan</option>
+                    <option value="Jean">Jean</option>
+                    <option value="Yves">Yves</option>
+                    <option value="Dany">Dany</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filterRoute">Route (ou groupe ex: 2, 4)</label>
+                <input type="text" id="filterRoute" class="form-control" placeholder="Ex: Route 2..." oninput="runReport()">
+            </div>
+            <div class="form-group">
+                <label for="filterNom">Nom Employé</label>
+                <input type="text" id="filterNom" class="form-control" placeholder="Rechercher nom..." oninput="runReport()">
+            </div>
+            <div class="form-group">
+                <label for="filterId">ID Employé</label>
+                <input type="text" id="filterId" class="form-control" placeholder="Rechercher ID..." oninput="runReport()">
+            </div>
+            <div class="form-group">
+                <label for="filterDate">Date</label>
+                <input type="date" id="filterDate" class="form-control" onchange="runReport()">
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="runReport()" style="width: 100%;">Filtrer</button>
+            </div>
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Module</th>
+                        <th>Route</th>
+                        <th>Nom</th>
+                        <th>ID</th>
+                        <th>Ancienneté</th>
+                        <th>Heure 17.04</th>
+                        <th>Heure 15.08</th>
+                        <th>Heure BZ</th>
+                        <th>Total Heures</th>
+                        <th>Benchmark Route</th>
+                        <th>Équivalent 8h</th>
+                        <th>Benchmark Payé</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                    <tr><td colspan="13" style="text-align: center; color: #9ca3af;">Sélectionnez vos critères.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="total-badge" style="margin-right: 20px;">Total Heures Rapport : <span id="reportTotalHeures">0.00</span> h</span>
+                <span class="total-badge" style="color: #059669;">Total Équivalent 8h Rapport : <span id="reportTotalEquiv">0.00</span> h</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="printReport()" style="background: #6366f1;">🖨️ Imprimer le Rapport</button>
+                <button class="btn btn-success" onclick="exportReportCSV()">Exporter le Rapport en CSV</button>
+                <button class="btn btn-danger" onclick="closeReportModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- À SURVEILLER MODAL -->
+<div id="surveillerModal" class="modal">
+    <div class="modal-content" style="max-width: 1100px;">
+        <span class="close-modal" onclick="closeSurveillerModal()">&times;</span>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">🚨 Employés à Surveiller (Top 2 par Module en Heures 15.08)</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">📅 Pour le Jour (Aujourd'hui)</h3>
+                <div id="surveillerDayContent" style="max-height: 350px; overflow-y: auto;">
+                    <p style="color: #64748b;">Chargement...</p>
+                </div>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">📆 Pour la Semaine en Cours</h3>
+                <div id="surveillerWeekContent" style="max-height: 350px; overflow-y: auto;">
+                    <p style="color: #64748b;">Chargement...</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button class="btn btn-danger" onclick="closeSurveillerModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
