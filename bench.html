@@ -241,7 +241,7 @@
         let editingIndex = null;
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
 
-        // Helper to compute benchmark, equivalent 8h, and benchmark payé with new 15.08 rule
+        // Helper to compute benchmark, equivalent 8h, and benchmark payé
         function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
             const match = routeStr.match(/\d+/);
             const num = match ? parseInt(match[0], 10) : 0;
@@ -292,11 +292,19 @@
                     employees.push({ name: empName, id: empId });
                 });
 
+                const idSelect = document.getElementById('idSelect');
+                idSelect.innerHTML = '<option value="" disabled selected>ID...</option>';
+
                 employees.forEach(emp => {
                     const opt = document.createElement('option');
                     opt.value = emp.name;
                     opt.textContent = emp.name;
                     nomSelect.appendChild(opt);
+
+                    const optId = document.createElement('option');
+                    optId.value = emp.id;
+                    optId.textContent = emp.id;
+                    idSelect.appendChild(optId);
                 });
                 
                 document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${employees.length} employés chargés).`;
@@ -365,7 +373,15 @@
             const nom = document.getElementById('nomSelect').value;
             const emp = employees.find(e => e.name === nom);
             if (emp) {
-                document.getElementById('idInput').value = emp.id;
+                document.getElementById('idSelect').value = emp.id;
+            }
+        }
+
+        window.updateEmployeeByName = function() {
+            const idVal = document.getElementById('idSelect').value;
+            const emp = employees.find(e => e.id === idVal);
+            if (emp) {
+                document.getElementById('nomSelect').value = emp.name;
             }
         }
 
@@ -387,7 +403,7 @@
             const module = document.getElementById('moduleSelect').value;
             const route = document.getElementById('routeSelect').value;
             const nom = document.getElementById('nomSelect').value;
-            const id = document.getElementById('idInput').value;
+            const id = document.getElementById('idSelect').value;
             const heure1704 = parseFloat(document.getElementById('heure1704Input').value) || 0;
             const heure1508 = parseFloat(document.getElementById('heure1508Input').value) || 0;
             const heureBz = parseFloat(document.getElementById('heureBzInput').value) || 0;
@@ -432,7 +448,7 @@
             document.getElementById('moduleSelect').value = item.module;
             updateModuleRoutes(item.route);
             document.getElementById('nomSelect').value = item.nom;
-            document.getElementById('idInput').value = item.id;
+            document.getElementById('idSelect').value = item.id;
             document.getElementById('heure1704Input').value = item.heure1704;
             document.getElementById('heure1508Input').value = item.heure1508;
             document.getElementById('heureBzInput').value = item.heureBz;
@@ -711,7 +727,7 @@
 <div class="container">
     <header>
         <div>
-            <h1>Feuille de Saisie - Postes Canada / CAMS (Benchmark 8h)</h1>
+            <h1>Feuille de Saisie - Postes Canada (Benchmark 8h)</h1>
             <p>Calcul automatique de l'équivalent benchmark 8h avec exceptions de routes</p>
         </div>
         <div class="header-actions">
@@ -753,8 +769,10 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="idInput">ID</label>
-                    <input type="text" id="idInput" class="form-control" readonly placeholder="Auto">
+                    <label for="idSelect">ID</label>
+                    <select id="idSelect" class="form-control" required onchange="updateEmployeeByName()">
+                        <option value="" disabled selected>ID...</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="heure1704Input">17.04</label>
