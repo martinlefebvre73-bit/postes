@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuille d'Entrée de Données - Postes Canada (Firebase)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            table { font-size: 8px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <!-- En-tête -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md py-4 px-6 no-print">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-amber-400 flex items-center gap-2">
+                    <span>📋</span> Fiche d'Entrée de Données - Postes Canada
+                </h1>
+                <p class="text-sm text-slate-400">Synchronisation automatique en temps réel (Firebase Firestore)</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Indicateur de statut Firebase -->
+                <div id="syncStatus" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2">
+                    <span id="syncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="syncText" class="text-slate-300">Synchronisé avec Firebase</span>
+                </div>
+                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
+                    🖨️ Imprimer / PDF
+                </button>
+                <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+                    💾 Exporter (JSON)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Corps de l'application -->
+    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- Tableau Statistiques en haut (Standard vs Réel) -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-2">
+                <span>📊</span> Tableau Statistiques (Standard vs Réel) - Module <span id="statModuleName" class="text-white font-bold">Dany</span>
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                
+                <!-- Courrier Manuel -->
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3">
+                    <span class="text-[11px] text-slate-400 block uppercase font-semibold mb-1">Courrier Manuel</span>
+                    <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-1 mb-1">
+                        <span class="text-slate-400">Standard:</span>
+                        <span id="statManuelStd" class="font-bold text-amber-400">0.0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Réel (Saisi):</span>
+                        <span id="statManuelReel" class="font-bold text-emerald-400">0.0</span>
+                    </div>
+                </div>
+
+                <!-- Courrier Séquence -->
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3">
+                    <span class="text-[11px] text-slate-400 block uppercase font-semibold mb-1">Courrier Séquence</span>
+                    <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-1 mb-1">
+                        <span class="text-slate-400">Standard:</span>
+                        <span id="statSequenceStd" class="font-bold text-amber-400">0.0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Réel (Saisi):</span>
+                        <span id="statSequenceReel" class="font-bold text-emerald-400">0.0</span>
+                    </div>
+                </div>
+
+                <!-- Paquets -->
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3">
+                    <span class="text-[11px] text-slate-400 block uppercase font-semibold mb-1">Paquets</span>
+                    <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-1 mb-1">
+                        <span class="text-slate-400">Standard:</span>
+                        <span id="statPaquetsStd" class="font-bold text-amber-400">0.0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Réel (Saisi):</span>
+                        <span id="statPaquetsReel" class="font-bold text-emerald-400">0.0</span>
+                    </div>
+                </div>
+
+                <!-- Colis -->
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3">
+                    <span class="text-[11px] text-slate-400 block uppercase font-semibold mb-1">Colis</span>
+                    <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-1 mb-1">
+                        <span class="text-slate-400">Standard:</span>
+                        <span id="statColisStd" class="font-bold text-amber-400">0.0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Réel (Saisi):</span>
+                        <span id="statColisReel" class="font-bold text-emerald-400">0.0</span>
+                    </div>
+                </div>
+
+                <!-- Temps Total CQ & Liv -->
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3">
+                    <span class="text-[11px] text-slate-400 block uppercase font-semibold mb-1">Temps Total CQ / Liv.</span>
+                    <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-1 mb-1">
+                        <span class="text-slate-400">Standard:</span>
+                        <span id="statTempsStd" class="font-bold text-cyan-400">-</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Réel (Saisi):</span>
+                        <span id="statTempsReel" class="font-bold text-emerald-400">0.0 m</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Barre de contrôle & Sélection des modules -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg no-print">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                
+                <!-- Sélection du Module -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Module / Superviseur</label>
+                    <select id="moduleSelect" onchange="changeModule()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="Dany">Dany</option>
+                        <option value="Yves">Yves</option>
+                        <option value="Martin">Martin</option>
+                        <option value="Jonathan">Jonathan</option>
+                        <option value="Jean">Jean</option>
+                        <option value="Tous">Tous (Tous les modules)</option>
+                    </select>
+                </div>
+
+                <!-- Date de saisie -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Date de Saisie</label>
+                    <input type="date" id="inputDate" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Recherche par route -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Rechercher une Route</label>
+                    <input type="text" id="searchRoute" placeholder="Ex: 1, 201..." oninput="filterRoutes()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <!-- Statut & Infos -->
+                <div class="flex items-center justify-between bg-slate-900/60 border border-slate-700/60 rounded-lg px-4 py-2">
+                    <div>
+                        <span class="text-xs text-slate-400 block">Routes Actives</span>
+                        <span id="routeCount" class="text-lg font-bold text-amber-400">0</span>
+                    </div>
+                    <button onclick="resetData()" class="text-xs text-rose-400 hover:text-rose-300 underline font-medium">Effacer saisie</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Tableau Principal des Routes (2 lignes par route) -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="dataTable">
+                    <thead>
+                        <tr id="tableHeaders" class="bg-slate-900 text-slate-300 text-xs uppercase tracking-wider border-b border-slate-700">
+                            <!-- En-têtes dynamiques -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-700/50 text-sm">
+                        <!-- Lignes dynamiques -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Import SDK Firebase via CDN -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+            authDomain: "postes-26884.firebaseapp.com",
+            projectId: "postes-26884",
+            storageBucket: "postes-26884.firebasestorage.app",
+            messagingSenderId: "75974397689",
+            appId: "1:75974397689:web:5fd12942788612c62b1c28",
+            measurementId: "G-83YPF62ET5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const supervisorRoutes = {
+            "Dany": [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 209, 213, 215, 217, 219, 223, 225],
+            "Yves": [2, 4, 6, 8, 10, 16, 18, 20, 22, 26, 28, 30, 32, 34, 64],
+            "Martin": [12, 14, 216, 218, 224, 228, 230, 232, 236, 238, 240, 244, 246, 248, 250, 252, 254, 256, 258, 260, 262, 264, 272, 282, 290, 310],
+            "Jonathan": [24, 201, 202, 203, 204, 205, 206, 207, 208, 210, 211, 212, 214, 220, 221, 222, 226, 227, 234, 242, 266, 268, 270, 274, 278, 286],
+            "Jean": [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 88, 90]
+        };
+
+        const masterVolumeDB = {
+            1: {cm: 3.2, cs: 2.2, pq: 15.0, col: 10.6, o_res: 95, o_apt: 31, r_res: 207, r_apt: 0, b_res: 165, b_apt: 329, t_ext: 275.8},
+            2: {cm: 2.4, cs: 1.9, pq: 18.0, col: 9.5, o_res: 92, o_apt: 0, r_res: 425, r_apt: 425, b_res: 131, b_apt: 341, t_ext: 291.0},
+            3: {cm: 2.6, cs: 1.6, pq: 20.0, col: 0.0, o_res: 101, o_apt: 5, r_res: 120, r_apt: 0, b_res: 113, b_apt: 113, t_ext: 323.9},
+            4: {cm: 3.8, cs: 2.9, pq: 24.0, col: 0.0, o_res: 258, o_apt: 35, r_res: 294, r_apt: 115, b_res: 467, b_apt: 500, t_ext: 315.6},
+            5: {cm: 1.9, cs: 1.3, pq: 11.0, col: 0.0, o_res: 313, o_apt: 298, r_res: 320, r_apt: 212, b_res: 120, b_apt: 120, t_ext: 299.4},
+            6: {cm: 3.5, cs: 2.6, pq: 19.0, col: 5.2, o_res: 88, o_apt: 12, r_res: 190, r_apt: 45, b_res: 210, b_apt: 180, t_ext: 310.0},
+            7: {cm: 2.1, cs: 1.5, pq: 14.0, col: 3.1, o_res: 110, o_apt: 20, r_res: 215, r_apt: 10, b_res: 140, b_apt: 220, t_ext: 285.0},
+            8: {cm: 4.0, cs: 3.1, pq: 22.0, col: 8.0, o_res: 150, o_apt: 45, r_res: 310, r_apt: 80, b_res: 290, b_apt: 310, t_ext: 320.0},
+            9: {cm: 2.8, cs: 2.0, pq: 16.0, col: 4.5, o_res: 95, o_apt: 15, r_res: 180, r_apt: 25, b_res: 175, b_apt: 195, t_ext: 295.0},
+            10: {cm: 3.1, cs: 2.4, pq: 17.0, col: 6.0, o_res: 130, o_apt: 30, r_res: 240, r_apt: 60, b_res: 220, b_apt: 250, t_ext: 305.0},
+            11: {cm: 2.5, cs: 1.8, pq: 13.0, col: 2.5, o_res: 85, o_apt: 10, r_res: 160, r_apt: 15, b_res: 130, b_apt: 160, t_ext: 280.0},
+            12: {cm: 3.6, cs: 2.7, pq: 21.0, col: 7.2, o_res: 170, o_apt: 50, r_res: 330, r_apt: 90, b_res: 310, b_apt: 340, t_ext: 315.0},
+            13: {cm: 2.2, cs: 1.6, pq: 12.0, col: 3.0, o_res: 90, o_apt: 18, r_res: 170, r_apt: 20, b_res: 150, b_apt: 180, t_ext: 290.0},
+            14: {cm: 3.3, cs: 2.5, pq: 18.5, col: 5.5, o_res: 140, o_apt: 35, r_res: 260, r_apt: 70, b_res: 240, b_apt: 270, t_ext: 300.0},
+            15: {cm: 2.7, cs: 1.9, pq: 15.5, col: 4.0, o_res: 100, o_apt: 22, r_res: 190, r_apt: 30, b_res: 180, b_apt: 210, t_ext: 295.0},
+            16: {cm: 3.9, cs: 3.0, pq: 23.0, col: 8.5, o_res: 190, o_apt: 60, r_res: 360, r_apt: 100, b_res: 340, b_apt: 380, t_ext: 325.0},
+            17: {cm: 2.4, cs: 1.7, pq: 13.5, col: 3.5, o_res: 95, o_apt: 12, r_res: 175, r_apt: 18, b_res: 160, b_apt: 190, t_ext: 288.0},
+            18: {cm: 3.0, cs: 2.2, pq: 16.5, col: 5.0, o_res: 120, o_apt: 28, r_res: 230, r_apt: 55, b_res: 210, b_apt: 240, t_ext: 302.0},
+            19: {cm: 2.6, cs: 1.9, pq: 14.5, col: 4.2, o_res: 105, o_apt: 20, r_res: 200, r_apt: 35, b_res: 190, b_apt: 220, t_ext: 293.0},
+            20: {cm: 3.5, cs: 2.6, pq: 19.5, col: 6.5, o_res: 160, o_apt: 40, r_res: 300, r_apt: 85, b_res: 280, b_apt: 310, t_ext: 312.0},
+            21: {cm: 2.3, cs: 1.6, pq: 12.5, col: 2.8, o_res: 88, o_apt: 14, r_res: 165, r_apt: 15, b_res: 145, b_apt: 175, t_ext: 282.0},
+            22: {cm: 3.2, cs: 2.4, pq: 17.5, col: 5.8, o_res: 135, o_apt: 32, r_res: 250, r_apt: 65, b_res: 230, b_apt: 260, t_ext: 304.0},
+            23: {cm: 2.8, cs: 2.0, pq: 15.0, col: 4.5, o_res: 112, o_apt: 25, r_res: 210, r_apt: 40, b_res: 200, b_apt: 230, t_ext: 296.0},
+            24: {cm: 3.7, cs: 2.8, pq: 20.5, col: 7.0, o_res: 175, o_apt: 52, r_res: 340, r_apt: 95, b_res: 320, b_apt: 350, t_ext: 318.0},
+            25: {cm: 2.5, cs: 1.8, pq: 14.0, col: 3.8, o_res: 98, o_apt: 18, r_res: 185, r_apt: 25, b_res: 170, b_apt: 200, t_ext: 286.0},
+            26: {cm: 3.4, cs: 2.5, pq: 18.0, col: 6.2, o_res: 145, o_apt: 38, r_res: 270, r_apt: 75, b_res: 250, b_apt: 280, t_ext: 308.0},
+            27: {cm: 2.9, cs: 2.1, pq: 16.0, col: 4.8, o_res: 118, o_apt: 26, r_res: 220, r_apt: 45, b_res: 210, b_apt: 240, t_ext: 298.0},
+            28: {cm: 3.8, cs: 2.9, pq: 21.5, col: 7.5, o_res: 185, o_apt: 55, r_res: 350, r_apt: 105, b_res: 330, b_apt: 360, t_ext: 322.0},
+            29: {cm: 2.6, cs: 1.9, pq: 14.5, col: 4.0, o_res: 102, o_apt: 20, r_res: 195, r_apt: 28, b_res: 180, b_apt: 210, t_ext: 292.0},
+            30: {cm: 3.3, cs: 2.5, pq: 18.5, col: 6.0, o_res: 140, o_apt: 34, r_res: 260, r_apt: 70, b_res: 240, b_apt: 270, t_ext: 305.0}
+        };
+
+        const cqFactors = {
+            3: 0.064, 4: 0.088, 5: 0.108, 6: 0.128, 7: 0.158, 8: 0.178, 
+            9: 0.22, 10: 0.246, 11: 0.266, 12: 0.286
+        };
+
+        const requiredHeaders = [
+            "Module", "Route", "Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", 
+            "Tiers (1, 2, 3)", "Nombre sortes CQ", "Temps Préparation CQ", "Temps Livraison"
+        ];
+
+        let currentModule = "Dany";
+        let userInputs = {};
+
+        async function loadDataFromFirebase() {
+            try {
+                const docRef = doc(db, "volume", "saisie_data");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    userInputs = docSnap.data();
+                } else {
+                    userInputs = {};
+                }
+                renderTable();
+            } catch (error) {
+                console.error("Erreur de chargement Firebase:", error);
+                document.getElementById('syncText').innerText = "Mode hors ligne / Erreur";
+                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+                renderTable();
+            }
+        }
+
+        async function saveToFirebase() {
+            try {
+                document.getElementById('syncText').innerText = "Sauvegarde...";
+                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
+                
+                await setDoc(doc(db, "volume", "saisie_data"), userInputs);
+                
+                document.getElementById('syncText').innerText = "Synchronisé avec Firebase";
+                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+            } catch (error) {
+                console.error("Erreur de sauvegarde Firebase:", error);
+                document.getElementById('syncText').innerText = "Erreur de sync Firebase";
+                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+            }
+        }
+
+        window.changeModule = function() {
+            currentModule = document.getElementById('moduleSelect').value;
+            document.getElementById('statModuleName').innerText = currentModule;
+            renderTable();
+        };
+
+        window.filterRoutes = function() {
+            renderTable();
+        };
+
+        window.resetData = async function() {
+            if (currentModule === "Tous") {
+                if (confirm("Réinitialiser l'ensemble des données de tous les modules ?")) {
+                    userInputs = {};
+                    await saveToFirebase();
+                    renderTable();
+                }
+            } else {
+                if (confirm(`Réinitialiser les données saisies pour le module ${currentModule} ?`)) {
+                    supervisorRoutes[currentModule].forEach(r => {
+                        delete userInputs[`${currentModule}_${r}`];
+                    });
+                    await saveToFirebase();
+                    renderTable();
+                }
+            }
+        };
+
+        window.exportData = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userInputs, null, 2));
+            const dl = document.createElement('a');
+            dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `saisie_${currentModule}_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dl);
+            dl.click();
+            dl.remove();
+        };
+
+        function getActiveRoutesList() {
+            if (currentModule === "Tous") {
+                let all = [];
+                Object.keys(supervisorRoutes).forEach(mod => {
+                    supervisorRoutes[mod].forEach(r => {
+                        all.push({ mod: mod, rNum: r });
+                    });
+                });
+                return all;
+            } else {
+                let list = supervisorRoutes[currentModule] || [];
+                return list.map(r => ({ mod: currentModule, rNum: r }));
+            }
+        }
+
+        function calculatePrepCQ(rNum, routeKey, isReel = false) {
+            const routeData = masterVolumeDB[rNum] || { o_res: 100, o_apt: 20, r_res: 200, r_apt: 30, b_res: 150, b_apt: 40 };
+            const userRow = userInputs[routeKey] || {};
+            
+            let tiersChoice, nbsCQ;
+            if (isReel) {
+                tiersChoice = parseInt(userRow["Tiers (1, 2, 3)"]);
+                nbsCQ = parseInt(userRow["Nombre sortes CQ"]);
+            } else {
+                return 0;
+            }
+
+            if (![1, 2, 3].includes(tiersChoice) || isNaN(nbsCQ) || nbsCQ < 3) {
+                return 0;
+            }
+
+            let sumResApt = 0;
+            if (tiersChoice === 1) sumResApt = routeData.o_res + routeData.o_apt;
+            else if (tiersChoice === 2) sumResApt = routeData.r_res + routeData.r_apt;
+            else if (tiersChoice === 3) sumResApt = routeData.b_res + routeData.b_apt;
+
+            let factor = cqFactors[nbsCQ];
+            if (!factor) {
+                factor = nbsCQ > 12 ? 0.286 + (nbsCQ - 12) * 0.02 : 0.064;
+            }
+
+            return sumResApt * nbsCQ * factor;
+        }
+
+        function calculateLivraison(rNum, routeKey, isReel = false) {
+            const routeData = masterVolumeDB[rNum] || { t_ext: 300.0 };
+            const userRow = userInputs[routeKey] || {};
+            
+            let tiersChoice, nbsCQ;
+            if (isReel) {
+                tiersChoice = parseInt(userRow["Tiers (1, 2, 3)"]);
+                nbsCQ = parseInt(userRow["Nombre sortes CQ"]);
+            } else {
+                return 0;
+            }
+
+            if (![1, 2, 3].includes(tiersChoice) || isNaN(nbsCQ) || nbsCQ < 3) {
+                return 0;
+            }
+
+            const tExt = routeData.t_ext;
+            return (tExt / 3) * (60 / 40) - (tExt / 3);
+        }
+
+        function renderTable() {
+            const headerRow = document.getElementById('tableHeaders');
+            const tbody = document.getElementById('tableBody');
+            const searchTerm = document.getElementById('searchRoute').value.toLowerCase();
+
+            headerRow.innerHTML = '';
+            tbody.innerHTML = '';
+
+            requiredHeaders.forEach(h => {
+                const th = document.createElement('th');
+                th.className = "py-3 px-3 font-semibold text-xs text-slate-300 border-b border-slate-700";
+                th.innerText = h;
+                headerRow.appendChild(th);
+            });
+
+            const activeRoutes = getActiveRoutesList();
+            const filteredRoutes = activeRoutes.filter(item => String(item.rNum).toLowerCase().includes(searchTerm));
+            
+            document.getElementById('routeCount').innerText = filteredRoutes.length;
+
+            let stdManuel = 0, reelManuel = 0;
+            let stdSequence = 0, reelSequence = 0;
+            let stdPaquets = 0, reelPaquets = 0;
+            let stdColis = 0, reelColis = 0;
+            let reelTempsTotal = 0;
+
+            activeRoutes.forEach(item => {
+                const routeStr = String(item.rNum);
+                const routeKey = `${item.mod}_${routeStr}`;
+                const routeData = masterVolumeDB[item.rNum] || { cm: 3.0, cs: 2.0, pq: 15.0, col: 5.0 };
+                const userRow = userInputs[routeKey] || {};
+
+                // Cumul Standard
+                stdManuel += routeData.cm !== undefined ? routeData.cm : 3.0;
+                stdSequence += routeData.cs !== undefined ? routeData.cs : 2.0;
+                stdPaquets += routeData.pq !== undefined ? routeData.pq : 15.0;
+                stdColis += routeData.col !== undefined ? routeData.col : 5.0;
+
+                // Cumul Réel
+                reelManuel += parseFloat(userRow["Courrier Manuel"] !== undefined && userRow["Courrier Manuel"] !== "" ? userRow["Courrier Manuel"] : 0);
+                reelSequence += parseFloat(userRow["Courrier Séquence"] !== undefined && userRow["Courrier Séquence"] !== "" ? userRow["Courrier Séquence"] : 0);
+                reelPaquets += parseFloat(userRow["Paquets"] !== undefined && userRow["Paquets"] !== "" ? userRow["Paquets"] : 0);
+                reelColis += parseFloat(userRow["Colis"] !== undefined && userRow["Colis"] !== "" ? userRow["Colis"] : 0);
+
+                reelTempsTotal += calculatePrepCQ(item.rNum, routeKey, true) + calculateLivraison(item.rNum, routeKey, true);
+            });
+
+            // Affichage des stats en haut
+            document.getElementById('statManuelStd').innerText = stdManuel.toFixed(1);
+            document.getElementById('statManuelReel').innerText = reelManuel.toFixed(1);
+
+            document.getElementById('statSequenceStd').innerText = stdSequence.toFixed(1);
+            document.getElementById('statSequenceReel').innerText = reelSequence.toFixed(1);
+
+            document.getElementById('statPaquetsStd').innerText = stdPaquets.toFixed(1);
+            document.getElementById('statPaquetsReel').innerText = reelPaquets.toFixed(1);
+
+            document.getElementById('statColisStd').innerText = stdColis.toFixed(1);
+            document.getElementById('statColisReel').innerText = reelColis.toFixed(1);
+
+            document.getElementById('statTempsStd').innerText = "-";
+            document.getElementById('statTempsReel').innerText = reelTempsTotal.toFixed(1) + " m";
+
+            filteredRoutes.forEach(item => {
+                const rNum = item.rNum;
+                const mod = item.mod;
+                const routeStr = String(rNum);
+                const routeKey = `${mod}_${routeStr}`;
+                const routeData = masterVolumeDB[rNum] || { cm: 3.0, cs: 2.0, pq: 15.0, col: 5.0 };
+
+                if (!userInputs[routeKey]) {
+                    userInputs[routeKey] = {
+                        "Courrier Manuel": "",
+                        "Courrier Séquence": "",
+                        "Paquets": "",
+                        "Colis": "",
+                        "Tiers (1, 2, 3)": "",
+                        "Nombre sortes CQ": ""
+                    };
+                }
+
+                // --- LIGNE 1 : STANDARD ---
+                const trStandard = document.createElement('tr');
+                trStandard.className = "bg-slate-800/90";
+                
+                let tdMod = document.createElement('td');
+                tdMod.className = "py-3 px-3 text-xs text-slate-300 font-medium border-t border-slate-700/80";
+                tdMod.innerHTML = `<span class="bg-indigo-500/15 text-indigo-300 px-2 py-0.5 rounded">${mod}</span>`;
+                trStandard.appendChild(tdMod);
+
+                let tdRoute = document.createElement('td');
+                tdRoute.className = "py-3 px-3 font-bold text-amber-400 border-t border-slate-700/80";
+                tdRoute.innerHTML = `<span class="bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded text-xs">Route ${routeStr}</span>`;
+                trStandard.appendChild(tdRoute);
+
+                const stdVals = [
+                    routeData.cm !== undefined ? routeData.cm : 3.0,
+                    routeData.cs !== undefined ? routeData.cs : 2.0,
+                    routeData.pq !== undefined ? routeData.pq : 15.0,
+                    routeData.col !== undefined ? routeData.col : 5.0
+                ];
+
+                stdVals.forEach(val => {
+                    const td = document.createElement('td');
+                    td.className = "py-3 px-3 text-slate-300 text-xs border-t border-slate-700/80";
+                    td.innerHTML = `<span class="text-slate-400 text-[9px] block uppercase">Standard</span><span class="font-semibold text-white">${val}</span>`;
+                    trStandard.appendChild(td);
+                });
+
+                ["Tiers (1, 2, 3)", "Nombre sortes CQ"].forEach(() => {
+                    const td = document.createElement('td');
+                    td.className = "py-3 px-3 text-slate-400 text-xs border-t border-slate-700/80 italic";
+                    td.innerText = "-";
+                    trStandard.appendChild(td);
+                });
+
+                const prepVal = calculatePrepCQ(rNum, routeKey, true);
+                const tdPrep = document.createElement('td');
+                tdPrep.className = "py-3 px-3 text-emerald-400 font-bold text-xs border-t border-slate-700/80";
+                tdPrep.id = `prep_${routeKey}`;
+                tdPrep.innerText = prepVal === 0 ? "-" : prepVal.toFixed(2) + " min";
+                trStandard.appendChild(tdPrep);
+
+                const livVal = calculateLivraison(rNum, routeKey, true);
+                const tdLiv = document.createElement('td');
+                tdLiv.className = "py-3 px-3 text-cyan-400 font-bold text-xs border-t border-slate-700/80";
+                tdLiv.id = `liv_${routeKey}`;
+                tdLiv.innerText = livVal === 0 ? "-" : livVal.toFixed(2) + " min";
+                trStandard.appendChild(tdLiv);
+
+                tbody.appendChild(trStandard);
+
+                // --- LIGNE 2 : SAISIE TERRAIN ---
+                const trInput = document.createElement('tr');
+                trInput.className = "bg-slate-900/80 border-b border-slate-700";
+
+                let tdInputMod = document.createElement('td');
+                tdInputMod.className = "py-3 px-3 text-xs text-slate-500";
+                tdInputMod.innerText = "-";
+                trInput.appendChild(tdInputMod);
+
+                let tdInputLabel = document.createElement('td');
+                tdInputLabel.className = "py-3 px-3 text-xs font-medium text-emerald-400 pl-4 flex items-center gap-1";
+                tdInputLabel.innerHTML = `✏️ <span>Saisie</span>`;
+                trInput.appendChild(tdInputLabel);
+
+                const editableKeys = ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", "Tiers (1, 2, 3)", "Nombre sortes CQ"];
+                editableKeys.forEach(key => {
+                    const td = document.createElement('td');
+                    td.className = "py-3 px-3";
+                    
+                    const input = document.createElement('input');
+                    input.type = "number";
+                    input.step = key.includes("Tiers") || key.includes("sortes") ? "1" : "0.1";
+                    input.placeholder = key.includes("Tiers") ? "1, 2, 3" : "Saisir...";
+                    input.className = "w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
+                    input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
+                    
+                    input.oninput = (e) => {
+                        userInputs[routeKey][key] = e.target.value;
+                        
+                        const newPrep = calculatePrepCQ(rNum, routeKey, true);
+                        document.getElementById(`prep_${routeKey}`).innerText = newPrep === 0 ? "-" : newPrep.toFixed(2) + " min";
+                        
+                        const newLiv = calculateLivraison(rNum, routeKey, true);
+                        document.getElementById(`liv_${routeKey}`).innerText = newLiv === 0 ? "-" : newLiv.toFixed(2) + " min";
+                        
+                        renderTable();
+                        saveToFirebase();
+                    };
+
+                    td.appendChild(input);
+                    trInput.appendChild(td);
+                });
+
+                const tdEmpty = document.createElement('td');
+                tdEmpty.className = "py-3 px-3 text-xs text-slate-500";
+                tdEmpty.innerText = "Auto";
+                trInput.appendChild(tdEmpty);
+
+                tbody.appendChild(trInput);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('inputDate').valueAsDate = new Date();
+            loadDataFromFirebase();
+        });
+    </script>
+</body>
+</html>
