@@ -24,7 +24,7 @@
                 </h1>
                 <p class="text-sm text-slate-400">Synchronisation automatique en temps réel (Firebase Firestore)</p>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 flex-wrap">
                 <!-- Indicateur de statut Firebase -->
                 <div id="syncStatus" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2">
                     <span id="syncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -35,6 +35,10 @@
                 </button>
                 <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
                     💾 Exporter (JSON)
+                </button>
+                <!-- Nouveau bouton de réinitialisation global -->
+                <button onclick="resetData()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-rose-900/30">
+                    🗑️ Réinitialiser
                 </button>
             </div>
         </div>
