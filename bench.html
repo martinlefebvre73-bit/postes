@@ -59,7 +59,7 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: 120px 130px 130px 180px 120px 110px 85px 85px 85px 110px;
+            grid-template-columns: 120px 130px 140px 180px 120px 110px 85px 85px 85px 110px;
             gap: 10px;
             align-items: end;
         }
@@ -236,7 +236,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Données des employés chargées directement depuis le fichier CSV
+        // Données des employés chargées depuis le fichier CSV
         const rawEmployeesData = [
             { nom: "Abdo", prenom: "Rassil", id: "7186641", anciennete: "2025/08/03" },
             { nom: "Ahmat Goni", prenom: "Issa", id: "7186272", anciennete: "2025/06/08" },
@@ -345,7 +345,7 @@
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
 
         function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
-            const match = routeStr.match(/\d+/);
+            const match = routeStr ? routeStr.match(/\d+/) : null;
             const num = match ? parseInt(match[0], 10) : 0;
             const exceptions = { 90: 5.97, 94: 4.17, 96: 4.28, 302: 3.65, 306: 3.68, 310: 5.55 };
             const benchmark = exceptions[num] !== undefined ? exceptions[num] : 8.0;
@@ -380,14 +380,13 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('dateInput').valueAsDate = new Date();
-            populateAllRoutes();
+            populateAllRoutesDatalist();
 
             const employesList = document.getElementById('employesList');
             const idsList = document.getElementById('idsList');
             employesList.innerHTML = '';
             idsList.innerHTML = '';
 
-            // Chargement des données CSV locales
             rawEmployeesData.forEach((data) => {
                 const empName = `${data.prenom} ${data.nom}`.trim();
                 const empId = data.id;
@@ -409,9 +408,9 @@
             saveAndRender();
         });
 
-        function populateAllRoutes() {
-            const routeSelect = document.getElementById('routeSelect');
-            routeSelect.innerHTML = '<option value="" disabled selected>Route...</option>';
+        function populateAllRoutesDatalist() {
+            const routesList = document.getElementById('routesList');
+            routesList.innerHTML = '';
             const allRoutes = [];
             for (const [mod, routes] of Object.entries(supervisorRoutes)) {
                 routes.forEach(r => allRoutes.push({ route: `Route ${r}`, num: r, module: mod }));
@@ -420,41 +419,19 @@
             allRoutes.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.route;
-                opt.textContent = `${item.route} (${item.module})`;
-                routeSelect.appendChild(opt);
+                opt.textContent = `${item.module}`;
+                routesList.appendChild(opt);
             });
         }
 
-        window.updateModuleRoutes = function(selectedRoute = null) {
-            const mod = document.getElementById('moduleSelect').value;
-            const routeSelect = document.getElementById('routeSelect');
-            routeSelect.innerHTML = '<option value="" disabled selected>Route...</option>';
-            routeSelect.className = "form-control";
-
-            if (mod && supervisorRoutes[mod]) {
-                routeSelect.classList.add(`mod-${mod.toLowerCase()}`);
-                supervisorRoutes[mod].forEach(r => {
-                    const opt = document.createElement('option');
-                    opt.value = `Route ${r}`;
-                    opt.textContent = `Route ${r} (${mod})`;
-                    routeSelect.appendChild(opt);
-                });
-                if (selectedRoute) {
-                    routeSelect.value = selectedRoute;
-                }
-            }
-        }
-
-        window.updateModuleFromRoute = function() {
-            const routeVal = document.getElementById('routeSelect').value;
+        window.updateModuleFromRouteInput = function() {
+            const routeVal = document.getElementById('routeInput').value;
             const match = routeVal.match(/\d+/);
             if (match) {
                 const num = parseInt(match[0], 10);
                 for (const [mod, routes] of Object.entries(supervisorRoutes)) {
                     if (routes.includes(num)) {
                         document.getElementById('moduleSelect').value = mod;
-                        const routeSelect = document.getElementById('routeSelect');
-                        routeSelect.className = `form-control mod-${mod.toLowerCase()}`;
                         break;
                     }
                 }
@@ -480,6 +457,7 @@
         }
 
         function getModuleClass(moduleName) {
+            if (!moduleName) return '';
             switch(moduleName.toLowerCase()) {
                 case 'yanick': return 'mod-yanick';
                 case 'martin': return 'mod-martin';
@@ -495,7 +473,7 @@
             event.preventDefault();
             const date = document.getElementById('dateInput').value;
             const module = document.getElementById('moduleSelect').value;
-            const route = document.getElementById('routeSelect').value;
+            const route = document.getElementById('routeInput').value;
             const nom = document.getElementById('nomInput').value;
             const id = document.getElementById('idInput').value;
             const anciennete = document.getElementById('ancienneteInput').value;
@@ -530,8 +508,6 @@
 
             document.getElementById('entryForm').reset();
             document.getElementById('dateInput').valueAsDate = new Date();
-            populateAllRoutes();
-            document.getElementById('routeSelect').className = "form-control";
         }
 
         window.editEntry = function(index) {
@@ -539,10 +515,10 @@
             editingIndex = index;
 
             document.getElementById('dateInput').value = item.date || '';
-            document.getElementById('moduleSelect').value = item.module;
-            updateModuleRoutes(item.route);
-            document.getElementById('nomInput').value = item.nom;
-            document.getElementById('idInput').value = item.id;
+            document.getElementById('moduleSelect').value = item.module || '';
+            document.getElementById('routeInput').value = item.route || '';
+            document.getElementById('nomInput').value = item.nom || '';
+            document.getElementById('idInput').value = item.id || '';
             document.getElementById('ancienneteInput').value = item.anciennete || '';
             document.getElementById('heure1704Input').value = item.heure1704;
             document.getElementById('heure1508Input').value = item.heure1508;
@@ -559,8 +535,6 @@
             if (editingIndex === index) {
                 document.getElementById('entryForm').reset();
                 document.getElementById('dateInput').valueAsDate = new Date();
-                populateAllRoutes();
-                document.getElementById('routeSelect').className = "form-control";
                 document.getElementById('submitBtn').textContent = "Ajouter";
                 document.getElementById('submitBtn').style.background = "var(--primary)";
                 editingIndex = null;
@@ -589,8 +563,8 @@
                 const modClass = getModuleClass(item.module);
                 tr.innerHTML = `
                     <td>${item.date || 'N/A'}</td>
-                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.module}</span></td>
-                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.route}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.module || ''}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px; font-weight: 500;" class="${modClass}">${item.route || ''}</span></td>
                     <td>${item.nom}</td>
                     <td>${item.id}</td>
                     <td>${item.anciennete || 'N/A'}</td>
@@ -631,10 +605,10 @@
             const fDate = document.getElementById('filterDate').value;
 
             const filtered = entries.filter(item => {
-                const matchModule = !fModule || item.module.toLowerCase() === fModule;
-                const matchRoute = !fRoute || item.route.toLowerCase().includes(fRoute);
-                const matchNom = !fNom || item.nom.toLowerCase().includes(fNom);
-                const matchId = !fId || item.id.toLowerCase().includes(fId);
+                const matchModule = !fModule || (item.module && item.module.toLowerCase() === fModule);
+                const matchRoute = !fRoute || (item.route && item.route.toLowerCase().includes(fRoute));
+                const matchNom = !fNom || (item.nom && item.nom.toLowerCase().includes(fNom));
+                const matchId = !fId || (item.id && item.id.toLowerCase().includes(fId));
                 const matchDate = !fDate || item.date === fDate;
                 return matchModule && matchRoute && matchNom && matchId && matchDate;
             });
@@ -658,8 +632,8 @@
                 const modClass = getModuleClass(item.module);
                 tr.innerHTML = `
                     <td>${item.date || 'N/A'}</td>
-                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.module}</span></td>
-                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.route}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.module || ''}</span></td>
+                    <td><span style="padding: 3px 6px; border-radius: 4px;" class="${modClass}">${item.route || ''}</span></td>
                     <td>${item.nom}</td>
                     <td>${item.id}</td>
                     <td>${item.anciennete || 'N/A'}</td>
@@ -686,10 +660,10 @@
             const fDate = document.getElementById('filterDate').value;
 
             const filtered = entries.filter(item => {
-                const matchModule = !fModule || item.module.toLowerCase() === fModule;
-                const matchRoute = !fRoute || item.route.toLowerCase().includes(fRoute);
-                const matchNom = !fNom || item.nom.toLowerCase().includes(fNom);
-                const matchId = !fId || item.id.toLowerCase().includes(fId);
+                const matchModule = !fModule || (item.module && item.module.toLowerCase() === fModule);
+                const matchRoute = !fRoute || (item.route && item.route.toLowerCase().includes(fRoute));
+                const matchNom = !fNom || (item.nom && item.nom.toLowerCase().includes(fNom));
+                const matchId = !fId || (item.id && item.id.toLowerCase().includes(fId));
                 const matchDate = !fDate || item.date === fDate;
                 return matchModule && matchRoute && matchNom && matchId && matchDate;
             });
@@ -701,7 +675,7 @@
 
             let csv = "Date,Module,Route,Nom,ID,Anciennete,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
             filtered.forEach(e => {
-                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+                csv += `"${e.date || ''}","${e.module || ''}","${e.route || ''}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -742,7 +716,7 @@
             let weekHtml = '';
 
             modules.forEach(mod => {
-                const modEntries = entries.filter(e => e.module.toLowerCase() === mod.toLowerCase());
+                const modEntries = entries.filter(e => e.module && e.module.toLowerCase() === mod.toLowerCase());
 
                 // 1. DAY
                 const dayMap = {};
@@ -806,7 +780,7 @@
             }
             let csv = "Date,Module,Route,Nom,ID,Anciennete,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
             entries.forEach(e => {
-                csv += `"${e.date || ''}","${e.module}","${e.route}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
+                csv += `"${e.date || ''}","${e.module || ''}","${e.route || ''}","${e.nom}","${e.id}","${e.anciennete || ''}",${e.heure1704.toFixed(2)},${e.heure1508.toFixed(2)},${e.heureBz.toFixed(2)},${e.totalHeures.toFixed(2)},${(e.benchmark || 8).toFixed(2)},${(e.equiv8h || 0).toFixed(2)},${(e.benchmarkPaye || 0).toFixed(2)}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -843,7 +817,7 @@
                 </div>
                 <div class="form-group">
                     <label for="moduleSelect">Module</label>
-                    <select id="moduleSelect" class="form-control" required onchange="updateModuleRoutes()">
+                    <select id="moduleSelect" class="form-control" required>
                         <option value="" disabled selected>Module...</option>
                         <option value="Yanick">Yanick</option>
                         <option value="Martin">Martin</option>
@@ -854,10 +828,9 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="routeSelect">Route</label>
-                    <select id="routeSelect" class="form-control" required onchange="updateModuleFromRoute()">
-                        <option value="" disabled selected>Module d'abord...</option>
-                    </select>
+                    <label for="routeInput">Route</label>
+                    <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: Route 12..." required oninput="updateModuleFromRouteInput()">
+                    <datalist id="routesList"></datalist>
                 </div>
                 <div class="form-group">
                     <label for="nomInput">Employé (Prénom Nom)</label>
