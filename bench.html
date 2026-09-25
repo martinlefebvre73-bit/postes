@@ -225,13 +225,12 @@
         import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
-            authDomain: "postes-26884.firebaseapp.com",
-            projectId: "postes-26884",
-            storageBucket: "postes-26884.firebasestorage.app",
-            messagingSenderId: "75974397689",
-            appId: "1:75974397689:web:5fd12942788612c62b1c28",
-            measurementId: "G-83YPF62ET5"
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -281,13 +280,15 @@
             populateAllRoutes();
 
             try {
+                // Chargement depuis la collection 'employes'
                 const querySnapshot = await getDocs(collection(db, "employes"));
-                const nomSelect = document.getElementById('nomSelect');
-                nomSelect.innerHTML = '<option value="" disabled selected>Employé...</option>';
+                const employesList = document.getElementById('employesList');
+                const idsList = document.getElementById('idsList');
+                employesList.innerHTML = '';
+                idsList.innerHTML = '';
                 
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
-                    // Utilisation des champs : prenom, nom, idEmploye, anciennete
                     const prenom = data.prenom || '';
                     const nomFamille = data.nom || '';
                     const empName = `${prenom} ${nomFamille}`.trim() || docSnap.id;
@@ -295,21 +296,15 @@
                     const empAnciennete = data.anciennete || 'N/A';
                     
                     employees.push({ name: empName, id: empId, anciennete: empAnciennete });
-                });
 
-                const idSelect = document.getElementById('idSelect');
-                idSelect.innerHTML = '<option value="" disabled selected>ID...</option>';
-
-                employees.forEach(emp => {
-                    const opt = document.createElement('option');
-                    opt.value = emp.name;
-                    opt.textContent = emp.name;
-                    nomSelect.appendChild(opt);
+                    // Remplissage des datalists pour l'autocomplétion / suggestion
+                    const optNom = document.createElement('option');
+                    optNom.value = empName;
+                    employesList.appendChild(optNom);
 
                     const optId = document.createElement('option');
-                    optId.value = emp.id;
-                    optId.textContent = emp.id;
-                    idSelect.appendChild(optId);
+                    optId.value = empId;
+                    idsList.appendChild(optId);
                 });
                 
                 document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${employees.length} employés chargés).`;
@@ -374,20 +369,20 @@
             }
         }
 
-        window.updateEmployeeId = function() {
-            const nom = document.getElementById('nomSelect').value;
-            const emp = employees.find(e => e.name === nom);
+        window.updateEmployeeById = function() {
+            const nomInput = document.getElementById('nomInput').value.trim();
+            const emp = employees.find(e => e.name.toLowerCase() === nomInput.toLowerCase());
             if (emp) {
-                document.getElementById('idSelect').value = emp.id;
+                document.getElementById('idInput').value = emp.id;
                 document.getElementById('ancienneteInput').value = emp.anciennete;
             }
         }
 
         window.updateEmployeeByName = function() {
-            const idVal = document.getElementById('idSelect').value;
-            const emp = employees.find(e => e.id === idVal);
+            const idInput = document.getElementById('idInput').value.trim();
+            const emp = employees.find(e => e.id.toLowerCase() === idInput.toLowerCase());
             if (emp) {
-                document.getElementById('nomSelect').value = emp.name;
+                document.getElementById('nomInput').value = emp.name;
                 document.getElementById('ancienneteInput').value = emp.anciennete;
             }
         }
@@ -409,8 +404,8 @@
             const date = document.getElementById('dateInput').value;
             const module = document.getElementById('moduleSelect').value;
             const route = document.getElementById('routeSelect').value;
-            const nom = document.getElementById('nomSelect').value;
-            const id = document.getElementById('idSelect').value;
+            const nom = document.getElementById('nomInput').value;
+            const id = document.getElementById('idInput').value;
             const anciennete = document.getElementById('ancienneteInput').value;
             const heure1704 = parseFloat(document.getElementById('heure1704Input').value) || 0;
             const heure1508 = parseFloat(document.getElementById('heure1508Input').value) || 0;
@@ -455,8 +450,8 @@
             document.getElementById('dateInput').value = item.date || '';
             document.getElementById('moduleSelect').value = item.module;
             updateModuleRoutes(item.route);
-            document.getElementById('nomSelect').value = item.nom;
-            document.getElementById('idSelect').value = item.id;
+            document.getElementById('nomInput').value = item.nom;
+            document.getElementById('idInput').value = item.id;
             document.getElementById('ancienneteInput').value = item.anciennete || '';
             document.getElementById('heure1704Input').value = item.heure1704;
             document.getElementById('heure1508Input').value = item.heure1508;
@@ -774,16 +769,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="nomSelect">Employé</label>
-                    <select id="nomSelect" class="form-control" required onchange="updateEmployeeId()">
-                        <option value="" disabled selected>Employé...</option>
-                    </select>
+                    <label for="nomInput">Employé</label>
+                    <input type="text" id="nomInput" class="form-control" list="employesList" placeholder="Nom..." required oninput="updateEmployeeById()">
+                    <datalist id="employesList"></datalist>
                 </div>
                 <div class="form-group">
-                    <label for="idSelect">ID</label>
-                    <select id="idSelect" class="form-control" required onchange="updateEmployeeByName()">
-                        <option value="" disabled selected>ID...</option>
-                    </select>
+                    <label for="idInput">ID</label>
+                    <input type="text" id="idInput" class="form-control" list="idsList" placeholder="ID..." required oninput="updateEmployeeByName()">
+                    <datalist id="idsList"></datalist>
                 </div>
                 <div class="form-group">
                     <label for="ancienneteInput">Ancienneté</label>
