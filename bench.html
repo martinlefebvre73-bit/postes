@@ -504,32 +504,58 @@
         function populateAllRoutesDatalist() {
             const routesList = document.getElementById('routesList');
             routesList.innerHTML = '';
-            const allRoutes = [];
+            
+            // 1. Remplissage des routes standard (numériques) triées
+            const numericRoutes = [];
             for (const [mod, routes] of Object.entries(supervisorRoutes)) {
-                routes.forEach(r => {
-                    const numVal = typeof r === 'number' ? r : parseInt(r.replace(/\D/g,'')) || 0;
-                    allRoutes.push({ route: typeof r === 'number' ? `Route ${r}` : r, num: numVal, module: mod });
-                });
+                if (mod !== "Achemineur" && mod !== "FA") {
+                    routes.forEach(r => numericRoutes.push({ route: `Route ${r}`, num: r, module: mod }));
+                }
             }
-            allRoutes.sort((a, b) => a.num - b.num);
-            allRoutes.forEach(item => {
+            numericRoutes.sort((a, b) => a.num - b.num);
+            numericRoutes.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.route;
                 opt.textContent = `${item.module}`;
                 routesList.appendChild(opt);
             });
+
+            // 2. Regroupement et ajout de la section Achemineur (Ach1 à Ach11) si active
+            if (supervisorRoutes["Achemineur"]) {
+                supervisorRoutes["Achemineur"].forEach(ach => {
+                    const opt = document.createElement('option');
+                    opt.value = ach;
+                    opt.textContent = `Achemineur (${ach})`;
+                    routesList.appendChild(opt);
+                });
+            }
+
+            // 3. Regroupement et ajout de la section FA (FA1, FA2) si active
+            if (supervisorRoutes["FA"]) {
+                supervisorRoutes["FA"].forEach(fa => {
+                    const opt = document.createElement('option');
+                    opt.value = fa;
+                    opt.textContent = `FA (${fa})`;
+                    routesList.appendChild(opt);
+                });
+            }
         }
 
         window.updateModuleFromRouteInput = function() {
-            const routeVal = document.getElementById('routeInput').value.trim();
+            const routeVal = document.getElementById('routeInput').value.trim().toLowerCase();
+            
+            if (routeVal.startsWith('ach')) {
+                document.getElementById('moduleSelect').value = "Achemineur";
+                return;
+            }
+            if (routeVal.startsWith('fa')) {
+                document.getElementById('moduleSelect').value = "FA";
+                return;
+            }
+
             for (const [mod, routes] of Object.entries(supervisorRoutes)) {
-                const found = routes.some(r => {
-                    if (typeof r === 'number') {
-                        return routeVal.toLowerCase().includes(r.toString());
-                    } else {
-                        return routeVal.toLowerCase() === r.toLowerCase();
-                    }
-                });
+                if (mod === "Achemineur" || mod === "FA") continue;
+                const found = routes.some(r => routeVal.includes(r.toString()));
                 if (found) {
                     document.getElementById('moduleSelect').value = mod;
                     break;
