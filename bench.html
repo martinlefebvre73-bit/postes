@@ -505,40 +505,45 @@
             const routesList = document.getElementById('routesList');
             routesList.innerHTML = '';
             
-            // 1. Remplissage des routes standard (numériques) triées
-            const numericRoutes = [];
+            const allRoutes = [];
             for (const [mod, routes] of Object.entries(supervisorRoutes)) {
-                if (mod !== "Achemineur" && mod !== "FA") {
-                    routes.forEach(r => numericRoutes.push({ route: `Route ${r}`, num: r, module: mod }));
-                }
+                routes.forEach(r => {
+                    const numVal = typeof r === 'number' ? r : parseInt(r.replace(/\D/g,'')) || 0;
+                    allRoutes.push({ route: typeof r === 'number' ? `Route ${r}` : r, num: numVal, module: mod });
+                });
             }
-            numericRoutes.sort((a, b) => a.num - b.num);
-            numericRoutes.forEach(item => {
+            allRoutes.sort((a, b) => a.num - b.num);
+            allRoutes.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.route;
                 opt.textContent = `${item.module}`;
                 routesList.appendChild(opt);
             });
+        }
 
-            // 2. Regroupement et ajout de la section Achemineur (Ach1 à Ach11) si active
-            if (supervisorRoutes["Achemineur"]) {
-                supervisorRoutes["Achemineur"].forEach(ach => {
-                    const opt = document.createElement('option');
-                    opt.value = ach;
-                    opt.textContent = `Achemineur (${ach})`;
-                    routesList.appendChild(opt);
-                });
+        // --- FILTRAGE DES ROUTES SELON LE MODULE CHOISI ---
+        window.updateRoutesListForModule = function() {
+            const selectedModule = document.getElementById('moduleSelect').value;
+            const routesList = document.getElementById('routesList');
+            routesList.innerHTML = '';
+
+            if (!selectedModule || !supervisorRoutes[selectedModule]) {
+                populateAllRoutesDatalist();
+                return;
             }
 
-            // 3. Regroupement et ajout de la section FA (FA1, FA2) si active
-            if (supervisorRoutes["FA"]) {
-                supervisorRoutes["FA"].forEach(fa => {
-                    const opt = document.createElement('option');
-                    opt.value = fa;
-                    opt.textContent = `FA (${fa})`;
-                    routesList.appendChild(opt);
-                });
-            }
+            const routes = supervisorRoutes[selectedModule];
+            routes.forEach(r => {
+                const opt = document.createElement('option');
+                if (selectedModule === "Achemineur" || selectedModule === "FA") {
+                    opt.value = r;
+                    opt.textContent = `${selectedModule}`;
+                } else {
+                    opt.value = `Route ${r}`;
+                    opt.textContent = `${selectedModule}`;
+                }
+                routesList.appendChild(opt);
+            });
         }
 
         window.updateModuleFromRouteInput = function() {
@@ -546,10 +551,12 @@
             
             if (routeVal.startsWith('ach')) {
                 document.getElementById('moduleSelect').value = "Achemineur";
+                updateRoutesListForModule();
                 return;
             }
             if (routeVal.startsWith('fa')) {
                 document.getElementById('moduleSelect').value = "FA";
+                updateRoutesListForModule();
                 return;
             }
 
@@ -558,6 +565,7 @@
                 const found = routes.some(r => routeVal.includes(r.toString()));
                 if (found) {
                     document.getElementById('moduleSelect').value = mod;
+                    updateRoutesListForModule();
                     break;
                 }
             }
@@ -668,6 +676,7 @@
 
             document.getElementById('dateInput').value = item.date || '';
             document.getElementById('moduleSelect').value = item.module || '';
+            updateRoutesListForModule(); // Mettre à jour la liste des routes correspondantes
             document.getElementById('routeInput').value = item.route || '';
             document.getElementById('nomInput').value = item.nom || '';
             document.getElementById('idInput').value = item.id || '';
@@ -770,12 +779,10 @@
                 }
             });
 
-            // Calculs Grand Total demandés
             const totalFacteur = t1508Facteur + tBzFacteur + 936 + 27.3;
             const totalAchemineur = t1508Achemineur + tBzAchemineur + 88;
             const totalFA = t1508FA + tBzFA + 16;
 
-            // Remplissage de l'interface
             document.getElementById('syn1508Facteur').textContent = t1508Facteur.toFixed(2) + ' h';
             document.getElementById('synBzFacteur').textContent = tBzFacteur.toFixed(2) + ' h';
 
@@ -1059,7 +1066,7 @@
                 </div>
                 <div class="form-group">
                     <label for="moduleSelect">Module</label>
-                    <select id="moduleSelect" class="form-control" required>
+                    <select id="moduleSelect" class="form-control" required onchange="updateRoutesListForModule()">
                         <option value="" disabled selected>Module...</option>
                         <option value="Yanick">Yanick</option>
                         <option value="Martin">Martin</option>
