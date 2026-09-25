@@ -529,7 +529,6 @@
             const blocSst = document.getElementById('blocSstOptions');
             const blocObs = document.getElementById('blocObservationOptions');
             
-            // Gestion du bloc SST
             if (selectElement.value === 'SST') {
                 blocSst.classList.remove('d-none');
             } else {
@@ -540,7 +539,6 @@
                 document.getElementById('sstAutre').checked = false;
             }
 
-            // Gestion du bloc Observation
             if (selectElement.value === 'Observation') {
                 blocObs.classList.remove('d-none');
             } else {
@@ -730,13 +728,11 @@
                     let nomSup = sup.nom || 'Sans nom';
                     let courrielSup = sup.courriel || sup.email || '';
 
-                    // Option pour Superviseur
                     let optionSup = document.createElement('option');
                     optionSup.value = courrielSup; 
                     optionSup.textContent = `${nomSup} (${courrielSup})`;
                     selectSup.appendChild(optionSup);
 
-                    // Option pour Inspecteur (basé sur la liste des superviseurs)
                     let optionInsp = document.createElement('option');
                     optionInsp.value = nomSup; 
                     optionInsp.textContent = nomSup;
@@ -1435,7 +1431,8 @@
                         if (!retardsParSuperviseur[supEmail]) {
                             retardsParSuperviseur[supEmail] = "";
                         }
-                        retardsParSuperviseur[supEmail] += `- Employé : ${item.nom} (ID: ${item.idEmploye}, Ancienneté: ${ancienneteTxt}), Échéance dépassée le : ${item.dateEcheance}%0A`;
+                        // Modification intégrée : ajout de chaque employé et sa date d'échéance dans le texte du courriel[cite: 1]
+                        retardsParSuperviseur[supEmail] += `- Employé : ${item.nom} (ID: ${item.idEmploye}, Ancienneté: ${ancienneteTxt}) | Échéance dépassée le : ${item.dateEcheance}%0A`;
                     }
                 });
 
@@ -1474,7 +1471,8 @@
                 
                 html += `<h5 class="mt-4 text-light">Expédier les rapports aux superviseurs :</h5>`;
                 for (let [email, details] of Object.entries(retardsParSuperviseur)) {
-                    html += `<button class="btn btn-danger m-1" onclick="window.location.href='mailto:${email}?subject=Rapport des retards de suivi&body=Voici vos dossiers en retard :%0A%0A${details}'">Envoyer à ${email}</button> `;
+                    let corpsMessage = `Bonjour,%0A%0AVoici la liste de vos employés en situation de retard de suivi :%0A%0A${details}%0AMerci de régulariser ces dossiers.`;
+                    html += `<button class="btn btn-danger m-1" onclick="window.location.href='mailto:${email}?subject=Rapport des retards de suivi&body=${corpsMessage}'">Envoyer à ${email}</button> `;
                 }
                 contenu.innerHTML = html;
 
