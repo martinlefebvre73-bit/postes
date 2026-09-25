@@ -222,15 +222,16 @@
     <!-- Firebase SDKs & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
-            authDomain: "postesst.firebaseapp.com",
-            projectId: "postesst",
-            storageBucket: "postesst.firebasestorage.app",
-            messagingSenderId: "39362155503",
-            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+            authDomain: "postes-26884.firebaseapp.com",
+            projectId: "postes-26884",
+            storageBucket: "postes-26884.firebasestorage.app",
+            messagingSenderId: "75974397689",
+            appId: "1:75974397689:web:5fd12942788612c62b1c28",
+            measurementId: "G-83YPF62ET5"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -240,14 +241,20 @@
         let editingIndex = null;
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
 
-        // Helper to compute benchmark and equivalent 8h
+        // Helper to compute benchmark, equivalent 8h, and benchmark payé with new 15.08 rule
         function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
             const match = routeStr.match(/\d+/);
             const num = match ? parseInt(match[0], 10) : 0;
             const exceptions = { 90: 5.97, 94: 4.17, 96: 4.28, 302: 3.65, 306: 3.68, 310: 5.55 };
             const benchmark = exceptions[num] !== undefined ? exceptions[num] : 8.0;
             const equiv8h = (heure1508 + heureBz) * (benchmark / 8.0);
-            const benchmarkPaye = (heure1508 * 1.5) + heureBz;
+            
+            let benchmarkPaye = 0;
+            if (heure1508 <= 2) {
+                benchmarkPaye = (heure1508 * 1.5) + heureBz;
+            } else {
+                benchmarkPaye = (2 * 1.5) + ((heure1508 - 2) * 2.0) + heureBz;
+            }
             return { benchmark, equiv8h, benchmarkPaye };
         }
 
@@ -271,6 +278,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('dateInput').valueAsDate = new Date();
+            populateAllRoutes();
 
             try {
                 const querySnapshot = await getDocs(collection(db, "employes"));
@@ -301,6 +309,22 @@
             saveAndRender();
         });
 
+        function populateAllRoutes() {
+            const routeSelect = document.getElementById('routeSelect');
+            routeSelect.innerHTML = '<option value="" disabled selected>Route...</option>';
+            const allRoutes = [];
+            for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                routes.forEach(r => allRoutes.push({ route: `Route ${r}`, num: r, module: mod }));
+            }
+            allRoutes.sort((a, b) => a.num - b.num);
+            allRoutes.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.route;
+                opt.textContent = `${item.route} (${item.module})`;
+                routeSelect.appendChild(opt);
+            });
+        }
+
         window.updateModuleRoutes = function(selectedRoute = null) {
             const mod = document.getElementById('moduleSelect').value;
             const routeSelect = document.getElementById('routeSelect');
@@ -312,11 +336,27 @@
                 supervisorRoutes[mod].forEach(r => {
                     const opt = document.createElement('option');
                     opt.value = `Route ${r}`;
-                    opt.textContent = `Route ${r}`;
+                    opt.textContent = `Route ${r} (${mod})`;
                     routeSelect.appendChild(opt);
                 });
                 if (selectedRoute) {
                     routeSelect.value = selectedRoute;
+                }
+            }
+        }
+
+        window.updateModuleFromRoute = function() {
+            const routeVal = document.getElementById('routeSelect').value;
+            const match = routeVal.match(/\d+/);
+            if (match) {
+                const num = parseInt(match[0], 10);
+                for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                    if (routes.includes(num)) {
+                        document.getElementById('moduleSelect').value = mod;
+                        const routeSelect = document.getElementById('routeSelect');
+                        routeSelect.className = `form-control mod-${mod.toLowerCase()}`;
+                        break;
+                    }
                 }
             }
         }
@@ -341,7 +381,7 @@
             }
         }
 
-        window.addEntry = function(event) {
+        window.addEntry = async function(event) {
             event.preventDefault();
             const date = document.getElementById('dateInput').value;
             const module = document.getElementById('moduleSelect').value;
@@ -354,20 +394,33 @@
             const totalHeures = heure1704 + heure1508 + heureBz;
 
             const calc = calculateBenchmark(route, heure1508, heureBz, heure1704);
+            const newEntry = { date, module, route, nom, id, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye, createdAt: new Date().toISOString() };
 
             if (editingIndex !== null) {
-                entries[editingIndex] = { date, module, route, nom, id, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye };
+                entries[editingIndex] = newEntry;
                 editingIndex = null;
                 document.getElementById('submitBtn').textContent = "Ajouter";
                 document.getElementById('submitBtn').style.background = "var(--primary)";
             } else {
-                entries.push({ date, module, route, nom, id, heure1704, heure1508, heureBz, totalHeures, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye });
+                entries.push(newEntry);
             }
 
             saveAndRender();
+
+            // Save to Firebase collection 'bench'
+            try {
+                await addDoc(collection(db, "bench"), newEntry);
+                document.getElementById('firebaseStatus').textContent = "Saisie enregistrée et synchronisée dans Firebase (collection 'bench').";
+                document.getElementById('firebaseStatus').style.color = "#059669";
+            } catch (err) {
+                console.error("Erreur sauvegarde Firebase bench:", err);
+                document.getElementById('firebaseStatus').textContent = "Erreur de synchronisation Firebase (collection 'bench').";
+                document.getElementById('firebaseStatus').style.color = "#dc2626";
+            }
+
             document.getElementById('entryForm').reset();
             document.getElementById('dateInput').valueAsDate = new Date();
-            document.getElementById('routeSelect').innerHTML = '<option value="" disabled selected>Module d'abord...</option>';
+            populateAllRoutes();
             document.getElementById('routeSelect').className = "form-control";
         }
 
@@ -395,7 +448,7 @@
             if (editingIndex === index) {
                 document.getElementById('entryForm').reset();
                 document.getElementById('dateInput').valueAsDate = new Date();
-                document.getElementById('routeSelect').innerHTML = '<option value="" disabled selected>Module d'abord...</option>';
+                populateAllRoutes();
                 document.getElementById('routeSelect').className = "form-control";
                 document.getElementById('submitBtn').textContent = "Ajouter";
                 document.getElementById('submitBtn').style.background = "var(--primary)";
@@ -689,7 +742,7 @@
                 </div>
                 <div class="form-group">
                     <label for="routeSelect">Route</label>
-                    <select id="routeSelect" class="form-control" required>
+                    <select id="routeSelect" class="form-control" required onchange="updateModuleFromRoute()">
                         <option value="" disabled selected>Module d'abord...</option>
                     </select>
                 </div>
