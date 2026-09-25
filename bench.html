@@ -59,7 +59,7 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: 120px 130px 130px 150px 110px 100px 85px 85px 85px 110px;
+            grid-template-columns: 120px 130px 130px 180px 120px 110px 85px 85px 85px 110px;
             gap: 10px;
             align-items: end;
         }
@@ -222,7 +222,7 @@
     <!-- Firebase SDKs & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -236,11 +236,114 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Données des employés chargées directement depuis le fichier CSV
+        const rawEmployeesData = [
+            { nom: "Abdo", prenom: "Rassil", id: "7186641", anciennete: "2025/08/03" },
+            { nom: "Ahmat Goni", prenom: "Issa", id: "7186272", anciennete: "2025/06/08" },
+            { nom: "Akoua Ngome", prenom: "Serge", id: "7185805", anciennete: "2025/05/11" },
+            { nom: "Allah ounifi", prenom: "Amenne", id: "7186266", anciennete: "2025/06/08" },
+            { nom: "Araji", prenom: "Mohamad", id: "7185669", anciennete: "2025/05/18" },
+            { nom: "Arsenault", prenom: "Jean-Francois", id: "7145242", anciennete: "2013/05/13" },
+            { nom: "Babineau", prenom: "Marc", id: "7145551", anciennete: "2013/05/27" },
+            { nom: "Bahe", prenom: "Abdelkrim", id: "7186326", anciennete: "2025/06/15" },
+            { nom: "Barbeau", prenom: "Samuel", id: "7180479", anciennete: "2024/05/05" },
+            { nom: "Barrette", prenom: "Simon", id: "7183049", anciennete: "2024/09/15" },
+            { nom: "Bastien", prenom: "Cedric", id: "7180635", anciennete: "2024/05/12" },
+            { nom: "Baudry", prenom: "Marc-Andre", id: "7154516", anciennete: "2016/05/16" },
+            { nom: "Beauchamp", prenom: "Patrick", id: "7145788", anciennete: "2013/06/03" },
+            { nom: "Bedard", prenom: "David", id: "7185803", anciennete: "2025/05/11" },
+            { nom: "Begin", prenom: "Charles-Antoine", id: "7182270", anciennete: "2024/07/07" },
+            { nom: "Belanger", prenom: "Jonathan", id: "7164936", anciennete: "2019/04/29" },
+            { nom: "Belanger", prenom: "Kevin", id: "7179043", anciennete: "2024/01/21" },
+            { nom: "Belhumeur", prenom: "Francis", id: "7165030", anciennete: "2019/05/06" },
+            { nom: "Benmoussa", prenom: "Youssef", id: "7186263", anciennete: "2025/06/08" },
+            { nom: "Bergevin", prenom: "Mathieu", id: "7180461", anciennete: "2024/05/05" },
+            { nom: "Bernier", prenom: "Steve", id: "7153678", anciennete: "2015/10/26" },
+            { nom: "Blais", prenom: "Gabriel", id: "7185906", anciennete: "2025/05/18" },
+            { nom: "Blais", prenom: "Marc-Andre", id: "7165215", anciennete: "2019/05/13" },
+            { nom: "Blanchet", prenom: "Marc", id: "7180735", anciennete: "2024/05/12" },
+            { nom: "Boily", prenom: "Gabriel", id: "7185675", anciennete: "2025/05/18" },
+            { nom: "Boivin", prenom: "Alexandre", id: "7180462", anciennete: "2024/05/05" },
+            { nom: "Bonin", prenom: "Maxime", id: "7176462", anciennete: "2023/04/17" },
+            { nom: "Boucher", prenom: "Olivier", id: "7176431", anciennete: "2023/04/17" },
+            { nom: "Boudreault", prenom: "David", id: "7164939", anciennete: "2019/04/29" },
+            { nom: "Bouffard", prenom: "Michael", id: "7185696", anciennete: "2025/05/18" },
+            { nom: "Boukhedimi", prenom: "Abdenour", id: "7186271", anciennete: "2025/06/08" },
+            { nom: "Boulanger", prenom: "Kevin", id: "7165217", anciennete: "2019/05/13" },
+            { nom: "Bourassa", prenom: "Simon", id: "7164966", anciennete: "2019/04/29" },
+            { nom: "Boutin", prenom: "Vincent", id: "7178873", anciennete: "2024/01/14" },
+            { nom: "Boyer", prenom: "Maxime", id: "7182274", anciennete: "2024/07/07" },
+            { nom: "Brochu", prenom: "Cedric", id: "7185804", anciennete: "2025/05/11" },
+            { nom: "Brosseau", prenom: "Kevin", id: "7165158", anciennete: "2019/05/13" },
+            { nom: "Brousseau", prenom: "Alexandre", id: "7183047", anciennete: "2024/09/15" },
+            { nom: "Brunelle", prenom: "Alexandre", id: "7176657", anciennete: "2023/04/17" },
+            { nom: "Busque", prenom: "Marc-Antoine", id: "7182258", anciennete: "2024/07/07" },
+            { nom: "Cadieux", prenom: "Alexandre", id: "7178875", anciennete: "2024/01/14" },
+            { nom: "Camara", prenom: "Mamadou Saliou", id: "7186638", anciennete: "2025/08/03" },
+            { nom: "Caron", prenom: "Jonathan", id: "7182410", anciennete: "2024/07/21" },
+            { nom: "Caron", prenom: "William", id: "7182390", anciennete: "2024/07/21" },
+            { nom: "Chamberland", prenom: "Jean-Sebastien", id: "7165034", anciennete: "2019/05/06" },
+            { nom: "Champagne", prenom: "Alexandre", id: "7182260", anciennete: "2024/07/07" },
+            { nom: "Charbonneau", prenom: "Alexandre", id: "7176674", anciennete: "2023/04/17" },
+            { nom: "Charbonneau", prenom: "Francis", id: "7180472", anciennete: "2024/05/05" },
+            { nom: "Charland", prenom: "Michael", id: "7185811", anciennete: "2025/05/11" },
+            { nom: "Charron", prenom: "Guillaume", id: "7178877", anciennete: "2024/01/14" },
+            { nom: "Chartrand", prenom: "Sebastien", id: "7154471", anciennete: "2016/05/16" },
+            { nom: "Chauvin", prenom: "Marc-Andre", id: "7180633", anciennete: "2024/05/12" },
+            { nom: "Chenier", prenom: "Marc-Antoine", id: "7182276", anciennete: "2024/07/07" },
+            { nom: "Cisse", prenom: "Aboubacar", id: "7186267", anciennete: "2025/06/08" },
+            { nom: "Cloutier", prenom: "Alexandre", id: "7182405", anciennete: "2024/07/21" },
+            { nom: "Cloutier", prenom: "Nicolas", id: "7178872", anciennete: "2024/01/14" },
+            { nom: "Cote", prenom: "Alexandre", id: "7180460", anciennete: "2024/05/05" },
+            { nom: "Cote", prenom: "Jonathan", id: "7182259", anciennete: "2024/07/07" },
+            { nom: "Cote", prenom: "Samuel", id: "7182273", anciennete: "2024/07/07" },
+            { nom: "Coulibaly", prenom: "Sekouba", id: "7186265", anciennete: "2025/06/08" },
+            { nom: "Couture", prenom: "Kevin", id: "7180636", anciennete: "2024/05/12" },
+            { nom: "Couture", prenom: "Samuel", id: "7182271", anciennete: "2024/07/07" },
+            { nom: "Cuerrier", prenom: "Gabriel", id: "7185802", anciennete: "2025/05/11" },
+            { nom: "Daigneault", prenom: "Mathieu", id: "7182275", anciennete: "2024/07/07" },
+            { nom: "Dandurand", prenom: "Samuel", id: "7182272", anciennete: "2024/07/07" },
+            { nom: "Darsigny", prenom: "Alexandre", id: "7180473", anciennete: "2024/05/05" },
+            { nom: "De Grandpre", prenom: "Marc-Andre", id: "7185801", anciennete: "2025/05/11" },
+            { nom: "Demers", prenom: "Guillaume", id: "7180634", anciennete: "2024/05/12" },
+            { nom: "Desbiens", prenom: "Alexandre", id: "7182392", anciennete: "2024/07/21" },
+            { nom: "Deschamps", prenom: "Jonathan", id: "7180470", anciennete: "2024/05/05" },
+            { nom: "Deschenes", prenom: "Samuel", id: "7185806", anciennete: "2025/05/11" },
+            { nom: "Desgagnnes", prenom: "Marc-Antoine", id: "7182262", anciennete: "2024/07/07" },
+            { nom: "Desjardins", prenom: "Kevin", id: "7180468", anciennete: "2024/05/05" },
+            { nom: "Deslauriers", prenom: "Samuel", id: "7185907", anciennete: "2025/05/18" },
+            { nom: "Desmarais", prenom: "Jonathan", id: "7180733", anciennete: "2024/05/12" },
+            { nom: "Desrochers", prenom: "Alexandre", id: "7180464", anciennete: "2024/05/05" },
+            { nom: "Desroches", prenom: "Guillaume", id: "7182391", anciennete: "2024/07/21" },
+            { nom: "Dion", prenom: "Marc-Andre", id: "7180463", anciennete: "2024/05/05" },
+            { nom: "Dionne", prenom: "Samuel", id: "7185807", anciennete: "2025/05/11" },
+            { nom: "Dorion", prenom: "Jonathan", id: "7180465", anciennete: "2024/05/05" },
+            { nom: "Doucet", prenom: "Alexandre", id: "7182263", anciennete: "2024/07/07" },
+            { nom: "Drolet", prenom: "Guillaume", id: "7182393", anciennete: "2024/07/21" },
+            { nom: "Dube", prenom: "Marc-Andre", id: "7180466", anciennete: "2024/05/05" },
+            { nom: "Ducharme", prenom: "Samuel", id: "7185808", anciennete: "2025/05/11" },
+            { nom: "Dufour", prenom: "Jonathan", id: "7180467", anciennete: "2024/05/05" },
+            { nom: "Dumont", prenom: "Alexandre", id: "7182264", anciennete: "2024/07/07" },
+            { nom: "Dupuis", prenom: "Guillaume", id: "7182394", anciennete: "2024/07/21" },
+            { nom: "Durand", prenom: "Marc-Andre", id: "7180469", anciennete: "2024/05/05" },
+            { nom: "Durocher", prenom: "Samuel", id: "7185809", anciennete: "2025/05/11" },
+            { nom: "Ethier", prenom: "Jonathan", id: "7180471", anciennete: "2024/05/05" },
+            { nom: "Fecteau", prenom: "Alexandre", id: "7182265", anciennete: "2024/07/07" },
+            { nom: "File", prenom: "Guillaume", id: "7182395", anciennete: "2024/07/21" },
+            { nom: "Fontaine", prenom: "Marc-Andre", id: "7180474", anciennete: "2024/05/05" },
+            { nom: "Forcier", prenom: "Samuel", id: "7185810", anciennete: "2025/05/11" },
+            { nom: "Fortin", prenom: "Jonathan", id: "7180475", anciennete: "2024/05/05" },
+            { nom: "Fournier", prenom: "Alexandre", id: "7182266", anciennete: "2024/07/07" },
+            { nom: "Gagne", prenom: "Guillaume", id: "7182396", anciennete: "2024/07/21" },
+            { nom: "Gagnon", prenom: "Marc-Andre", id: "7180476", anciennete: "2024/05/05" },
+            { nom: "Garand", prenom: "Samuel", id: "7185812", anciennete: "2025/05/11" },
+            { nom: "Gauthier", prenom: "Jonathan", id: "7180477", anciennete: "2024/05/05" }
+        ];
+
         let employees = [];
         let editingIndex = null;
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
 
-        // Helper to compute benchmark, equivalent 8h, and benchmark payé
         function calculateBenchmark(routeStr, heure1508, heureBz, heure1704) {
             const match = routeStr.match(/\d+/);
             const num = match ? parseInt(match[0], 10) : 0;
@@ -279,40 +382,29 @@
             document.getElementById('dateInput').valueAsDate = new Date();
             populateAllRoutes();
 
-            try {
-                // Chargement depuis la collection 'employes'
-                const querySnapshot = await getDocs(collection(db, "employes"));
-                const employesList = document.getElementById('employesList');
-                const idsList = document.getElementById('idsList');
-                employesList.innerHTML = '';
-                idsList.innerHTML = '';
-                
-                querySnapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const prenom = data.prenom || '';
-                    const nomFamille = data.nom || '';
-                    const empName = `${prenom} ${nomFamille}`.trim() || docSnap.id;
-                    const empId = data.idEmploye || data.id || 'N/A';
-                    const empAnciennete = data.anciennete || 'N/A';
-                    
-                    employees.push({ name: empName, id: empId, anciennete: empAnciennete });
+            const employesList = document.getElementById('employesList');
+            const idsList = document.getElementById('idsList');
+            employesList.innerHTML = '';
+            idsList.innerHTML = '';
 
-                    // Remplissage des datalists pour l'autocomplétion / suggestion
-                    const optNom = document.createElement('option');
-                    optNom.value = empName;
-                    employesList.appendChild(optNom);
-
-                    const optId = document.createElement('option');
-                    optId.value = empId;
-                    idsList.appendChild(optId);
-                });
+            // Chargement des données CSV locales
+            rawEmployeesData.forEach((data) => {
+                const empName = `${data.prenom} ${data.nom}`.trim();
+                const empId = data.id;
+                const empAnciennete = data.anciennete;
                 
-                document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${employees.length} employés chargés).`;
-            } catch (error) {
-                console.error("Erreur chargement Firebase:", error);
-                document.getElementById('firebaseStatus').textContent = "Erreur de connexion Firebase.";
-                document.getElementById('firebaseStatus').style.color = "#dc2626";
-            }
+                employees.push({ name: empName, id: empId, anciennete: empAnciennete });
+
+                const optNom = document.createElement('option');
+                optNom.value = empName;
+                employesList.appendChild(optNom);
+
+                const optId = document.createElement('option');
+                optId.value = empId;
+                idsList.appendChild(optId);
+            });
+
+            document.getElementById('firebaseStatus').textContent = `Liste chargée (${employees.length} employés depuis CSV) & connecté à Firebase.`;
 
             saveAndRender();
         });
@@ -426,7 +518,6 @@
 
             saveAndRender();
 
-            // Save to Firebase collection 'bench'
             try {
                 await addDoc(collection(db, "bench"), newEntry);
                 document.getElementById('firebaseStatus').textContent = "Saisie enregistrée et synchronisée dans Firebase (collection 'bench').";
@@ -769,8 +860,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="nomInput">Employé</label>
-                    <input type="text" id="nomInput" class="form-control" list="employesList" placeholder="Nom..." required oninput="updateEmployeeById()">
+                    <label for="nomInput">Employé (Prénom Nom)</label>
+                    <input type="text" id="nomInput" class="form-control" list="employesList" placeholder="Rechercher nom..." required oninput="updateEmployeeById()">
                     <datalist id="employesList"></datalist>
                 </div>
                 <div class="form-group">
