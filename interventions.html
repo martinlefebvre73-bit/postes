@@ -322,8 +322,9 @@
                     </div>
                 </div>
 
-                <div class="d-flex gap-3 mt-4">
+                <div class="d-flex gap-3 mt-4 flex-wrap align-items-center">
                     <button type="submit" class="btn btn-success btn-lg flex-grow-1">Enregistrer l'intervention</button>
+                    <button type="button" onclick="copierEtOuvrirSST()" class="py-3 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center border-0" style="background-color: #d97706;">Observation SST</button>
                     <button type="button" class="btn btn-secondary btn-lg" onclick="retourAccueil()">Annuler</button>
                 </div>
             </form>
@@ -695,6 +696,17 @@
                 document.getElementById('description').value += " " + event.results[0][0].transcript;
             };
             reconnaissance.start();
+        };
+
+        window.copierEtOuvrirSST = () => {
+            const descriptionText = document.getElementById('description').value;
+            
+            navigator.clipboard.writeText(descriptionText).then(() => {
+                window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank');
+            }).catch(err => {
+                console.error('Erreur lors de la copie dans le presse-papier : ', err);
+                alert("Impossible de copier la description dans le presse-papier.");
+            });
         };
 
         document.getElementById('formIntervention').addEventListener('submit', async (e) => {
