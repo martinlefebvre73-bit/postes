@@ -60,11 +60,9 @@
                 background-color: #ffffff !important;
                 color: #000000 !important;
             }
-            /* Masquer l'accueil, les statistiques, le menu et le bouton d'impression lui-même */
             #vue-accueil, .btn, form, h1, #select-type-container {
                 display: none !important;
             }
-            /* Afficher uniquement la zone de rapport active */
             #zone-affichage {
                 display: block !important;
                 background-color: #ffffff !important;
@@ -79,7 +77,6 @@
                 font-size: 1.5rem;
                 margin-bottom: 20px;
             }
-            /* Adapter les tableaux pour l'impression sur papier en mode paysage */
             .table {
                 color: #000000 !important;
                 border-color: #000000 !important;
@@ -109,12 +106,35 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <button class="btn btn-outline-light btn-sm" onclick="location.href='index.html'">← Retour au menu principal</button>
             <h1 class="text-center text-white fw-bold m-0">Tableau de Bord - Suivi des Interventions</h1>
-            <div></div> <!-- Spacer pour alignement -->
+            <div></div>
         </div>
 
         <!-- PAGE D'ACCUEIL -->
         <div id="vue-accueil">
             
+            <!-- TABLEAU SUPPLÉMENTAIRE - MODE CHEF (Observations de la semaine par superviseur) -->
+            <div id="cardModeChef" class="card shadow-lg p-4 mb-4 border-warning d-none">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h4 class="text-warning m-0">👑 Mode Chef : Observations de la Semaine en Cours (Lun - Ven)</h4>
+                    <span class="badge bg-warning text-dark">Fonction exclusive Chef</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Superviseur</th>
+                                <th>Nombre d'Observations (Semaine en cours)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableau-chef-observations">
+                            <tr>
+                                <td colspan="2" class="text-muted">Chargement des données...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- TABLEAU DES STATISTIQUES (KPIs) -->
             <div class="card shadow-lg p-4 mb-4">
                 <h4 class="text-light mb-3 text-center">État Global du Suivi</h4>
@@ -197,7 +217,6 @@
                 <h3 id="titre-zone" class="m-0"></h3>
                 <button class="btn btn-outline-light btn-sm" onclick="retourAccueil()">Fermer / Retour</button>
             </div>
-            <!-- Sélecteur dynamique optionnel pour le rapport par type ou filtres -->
             <div id="select-type-container" class="mb-3"></div>
             <div id="contenu-zone"></div>
         </div>
@@ -211,12 +230,10 @@
             
             <form id="formIntervention">
                 <div class="row">
-                    <!-- Date -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Date de l'intervention</label>
                         <input type="date" class="form-control" id="dateIntervention" required>
                     </div>
-                    <!-- Sélection de l'employé (Nom & Prénom) par liste déroulante -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Employé (Liste déroulante par Nom)</label>
                         <select class="form-select" id="nomEmploye" onchange="remplirParNom(this)">
@@ -226,12 +243,10 @@
                 </div>
 
                 <div class="row">
-                    <!-- Saisie de l'ID de l'employé -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">ID de l'employé (Saisie directe possible)</label>
                         <input type="text" class="form-control" id="idEmploye" placeholder="Ex: 12345" oninput="remplirParId(this)">
                     </div>
-                    <!-- Ancienneté -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Ancienneté</label>
                         <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté automatique">
@@ -239,7 +254,6 @@
                 </div>
 
                 <div class="row">
-                    <!-- Type d'intervention -->
                     <div class="col-md-12 mb-3">
                         <label class="form-label">Type d'intervention</label>
                         <select class="form-select" id="typeIntervention" required onchange="verifierTypeIntervention(this)">
@@ -252,21 +266,17 @@
                     </div>
                 </div>
 
-                <!-- Bloc optionnel pour SST (Gravité & Catégories d'incidents) -->
+                <!-- Bloc optionnel pour SST -->
                 <div id="blocSstOptions" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
                     <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :[cite: 1]</label>
                     <div class="d-flex gap-4 mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="graviteSst" id="sstMineur" value="Mineur" checked>
-                            <label class="form-check-label text-light" for="sstMineur">
-                                Mineur[cite: 1]
-                            </label>
+                            <label class="form-check-label text-light" for="sstMineur">Mineur[cite: 1]</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="graviteSst" id="sstMajeur" value="Majeur">
-                            <label class="form-check-label text-light" for="sstMajeur">
-                                Majeur[cite: 1]
-                            </label>
+                            <label class="form-check-label text-light" for="sstMajeur">Majeur[cite: 1]</label>
                         </div>
                     </div>
 
@@ -274,51 +284,39 @@
                     <div class="d-flex gap-4 flex-wrap">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="sstChuteGlissade" value="Chute et Glissade">
-                            <label class="form-check-label text-light" for="sstChuteGlissade">
-                                Chute et Glissade
-                            </label>
+                            <label class="form-check-label text-light" for="sstChuteGlissade">Chute et Glissade</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="sstDistraction" value="Distraction">
-                            <label class="form-check-label text-light" for="sstDistraction">
-                                Distraction
-                            </label>
+                            <label class="form-check-label text-light" for="sstDistraction">Distraction</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="sstAutre" value="Autre">
-                            <label class="form-check-label text-light" for="sstAutre">
-                                Autre
-                            </label>
+                            <label class="form-check-label text-light" for="sstAutre">Autre</label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bloc optionnel pour Observation (Conforme, Anomalie mineur, Anomalie majeur) -->
+                <!-- Bloc optionnel pour Observation -->
                 <div id="blocObservationOptions" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
                     <label class="form-label text-warning fw-bold mb-2">Statut de l'observation :</label>
                     <div class="d-flex gap-4 flex-wrap">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="obsConforme" value="Conforme">
-                            <label class="form-check-label text-light" for="obsConforme">
-                                Conforme
-                            </label>
+                            <label class="form-check-label text-light" for="obsConforme">Conforme</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="obsAnomalieMineur" value="Anomalie mineur">
-                            <label class="form-check-label text-light" for="obsAnomalieMineur">
-                                Anomalie mineur
-                            </label>
+                            <label class="form-check-label text-light" for="obsAnomalieMineur">Anomalie mineur</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="obsAnomalieMajeur" value="Anomalie majeur">
-                            <label class="form-check-label text-light" for="obsAnomalieMajeur">
-                                Anomalie majeur
-                            </label>
+                            <label class="form-check-label text-light" for="obsAnomalieMajeur">Anomalie majeur</label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Description avec Dictée Vocale -->
+                <!-- Description -->
                 <div class="mb-3">
                     <label class="form-label">Description (Dictée vocale possible)</label>
                     <div class="input-group">
@@ -328,7 +326,6 @@
                 </div>
 
                 <div class="row">
-                    <!-- Prochaine intervention -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Prochaine intervention</label>
                         <select class="form-select" id="prochainRdv" required>
@@ -339,7 +336,6 @@
                             <option value="0">Aucun (Ferme le dossier)</option>
                         </select>
                     </div>
-                    <!-- Superviseur responsable -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Superviseur responsable</label>
                         <select class="form-select" id="superviseur" required>
@@ -348,7 +344,6 @@
                     </div>
                 </div>
 
-                <!-- Section Inspecteur -->
                 <div class="row">
                     <div class="col-md-12 mb-3">
                         <label class="form-label">Inspecteur</label>
@@ -433,7 +428,6 @@
                             </div>
                         </div>
 
-                        <!-- Bloc optionnel SST pour la modification -->
                         <div id="blocSstOptionsEdit" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
                             <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :[cite: 1]</label>
                             <div class="d-flex gap-4">
@@ -495,6 +489,16 @@
         const auth = getAuth(app);
 
         let listeEmployesMemoire = [];
+        let estModeChef = false;
+
+        // --- GESTION DU MODE CHEF ET DES ACCÈS ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'chef') {
+                estModeChef = true;
+                document.getElementById('cardModeChef').classList.remove('d-none');
+            }
+        });
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -563,7 +567,71 @@
             await chargerStatistiques();
             await chargerEmployes();
             await chargerSuperviseurs();
+            if (estModeChef) {
+                await chargerTableauChefObservationsSemaine();
+            }
         };
+
+        // --- CALCUL DES OBSERVATIONS DE LA SEMAINE EN COURS (LUNDI AU VENDREDI) POUR LE MODE CHEF ---
+        window.chargerTableauChefObservationsSemaine = async () => {
+            const tbody = document.getElementById('tableau-chef-observations');
+            try {
+                // Déterminer le Lundi et le Vendredi de la semaine en cours
+                const maintenant = new Date();
+                const jourSemaine = maintenant.getDay(); // 0 = Dimanche, 1 = Lundi, ...
+                const distanceLundi = jourSemaine === 0 ? -6 : 1 - jourSemaine;
+                
+                const lundi = new Date(maintenant);
+                lundi.setDate(maintenant.getDate() + distanceLundi);
+                lundi.setHours(0, 0, 0, 0);
+
+                const vendredi = new Date(lundi);
+                vendredi.setDate(lundi.getDate() + 4); // Lundi + 4 jours = Vendredi
+                vendredi.setHours(23, 59, 59, 999);
+
+                // Récupérer toutes les interventions
+                const querySnapshot = await getDocs(collection(db, "interventions"));
+                let observationsParSuperviseur = {};
+
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    let typeIntervention = (data.typeIntervention || '').trim().toLowerCase();
+
+                    // Vérifier si c'est une "Observation"
+                    if (typeintervEstObservation(typeIntervention) && data.date) {
+                        let dateInterv = new Date(data.date + "T00:00:00");
+                        
+                        // Filtrer pour la semaine en cours (Lundi au Vendredi)
+                        if (dateInterv >= lundi && dateInterv <= vendredi) {
+                            let sup = data.superviseurEmail || 'Non assigné';
+                            observationsParSuperviseur[sup] = (observationsParSuperviseur[sup] || 0) + 1;
+                        }
+                    }
+                });
+
+                if (Object.keys(observationsParSuperviseur).length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-muted">Aucune observation enregistrée pour cette semaine (Lundi - Vendredi).</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                for (let [superviseur, total] of Object.entries(observationsParSuperviseur)) {
+                    html += `<tr>
+                        <td><strong>${superviseur}</strong></td>
+                        <td class="fw-bold text-warning fs-5">${total}</td>
+                    </tr>`;
+                }
+                tbody.innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur lors du chargement des observations pour le mode chef :", e);
+                tbody.innerHTML = `<tr><td colspan="2" class="text-danger">Erreur lors du chargement des données.</td></tr>`;
+            }
+        };
+
+        function typeintervEstObservation(type) {
+            return type === 'observation';
+        }
 
         window.reinitialiserFiltreStats = () => {
             document.getElementById('statDateDebut').value = '';
@@ -1431,7 +1499,6 @@
                         if (!retardsParSuperviseur[supEmail]) {
                             retardsParSuperviseur[supEmail] = "";
                         }
-                        // Modification intégrée : ajout de chaque employé et sa date d'échéance dans le texte du courriel[cite: 1]
                         retardsParSuperviseur[supEmail] += `- Employé : ${item.nom} (ID: ${item.idEmploye}, Ancienneté: ${ancienneteTxt}) | Échéance dépassée le : ${item.dateEcheance}%0A`;
                     }
                 });
