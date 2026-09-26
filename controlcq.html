@@ -65,8 +65,35 @@
                 </h3>
             </div>
 
+            <!-- TABLEAU STATISTIQUE PAR SUPERVISEUR (Dernière année) -->
+            <div id="section_stats" class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">
+                        Statistiques - Documents complétés par superviseur (Dernière année)
+                    </h4>
+                    <button type="button" onclick="refreshStatistics()" class="text-[11px] text-sky-600 hover:text-sky-800 font-semibold underline">
+                        Rafraîchir les stats
+                    </button>
+                </div>
+                <div class="overflow-x-auto max-h-44 border border-slate-200 rounded-lg bg-white">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-800 text-white sticky top-0">
+                            <tr>
+                                <th class="p-2 font-semibold">Superviseur</th>
+                                <th class="p-2 font-semibold text-right">Documents complétés (12 derniers mois)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats_tbody" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="2" class="p-3 text-center text-slate-400 text-xs">Chargement des statistiques...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Section 1: Color, Date, PDR -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="form-section grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div class="space-y-2">
                     <label class="block text-xs font-bold text-slate-700 uppercase">
                         Couleur du jour / Color of the day
@@ -114,7 +141,7 @@
             </div>
 
             <!-- Section 2: Sector Type & Route & Substitutes -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="form-section grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                     <h4 class="text-xs font-bold uppercase text-slate-700">Type de Secteur / Sector Types</h4>
                     <div class="grid grid-cols-2 gap-2">
@@ -134,8 +161,7 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <h4 class="text-xs font-bold uppercase text-slate-700">Route & Livraison / Route & Delivery[cite: 1]</h4>
-                    
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Route & Livraison / Route & Delivery</h4>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1" for="route_select">Route (1 à 310)</label>
                         <div class="flex items-center gap-1">
@@ -167,7 +193,6 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                             </button>
                         </div>
-                        <!-- Case à cocher ajoutée sous le champ remplaçant -->
                         <div class="mt-2">
                             <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
                                 <input type="checkbox" id="employe_exterieur_chk" value="Oui" class="accent-emerald-600 w-4 h-4 rounded">
@@ -179,7 +204,7 @@
             </div>
 
             <!-- Section 3: Customer Pickup & Clearances -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="form-section grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div class="space-y-3">
                     <h4 class="text-xs font-bold uppercase text-slate-700">Ramassage Client / Customer Pickup</h4>
                     <div class="flex items-center gap-4">
@@ -220,7 +245,7 @@
             </div>
 
             <!-- Section 4: Anomalies & Color dots -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="form-section grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-2 bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                     <div class="flex items-center justify-between">
                         <h4 class="text-xs font-bold uppercase text-slate-700">Anomalies jour précédent et/ou particularité (Notes)</h4>
@@ -274,8 +299,8 @@
                 </div>
             </div>
 
-            <!-- Section 5: Neighborhood Mail Table (Dynamic Rows with Date inputs) -->
-            <div class="space-y-3">
+            <!-- Section 5: Neighborhood Mail Table -->
+            <div class="form-section space-y-3">
                 <div class="flex items-center justify-between border-b pb-1">
                     <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">Courrier de Quartier à Livrer / Neighborhood Mail to Deliver</h4>
                     <button type="button" onclick="addNeighborhoodRow()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 shadow transition">
@@ -298,15 +323,13 @@
                                 <th class="p-2.5 font-semibold text-center">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="neighborhood_tbody" class="divide-y divide-slate-200">
-                            <!-- Populated via JS -->
-                        </tbody>
+                        <tbody id="neighborhood_tbody" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Section 6: RAMASSAGE / CUSTOMER PICKUP (Dynamic Rows) -->
-            <div class="space-y-3 pt-4 border-t border-slate-200">
+            <!-- Section 6: RAMASSAGE / CUSTOMER PICKUP -->
+            <div class="form-section space-y-3 pt-4 border-t border-slate-200">
                 <div class="flex items-center justify-between border-b pb-1">
                     <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
@@ -328,34 +351,25 @@
                                 <th class="p-2.5 font-semibold text-center">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="pickup_tbody" class="divide-y divide-slate-200">
-                            <!-- Populated via JS -->
-                        </tbody>
+                        <tbody id="pickup_tbody" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-inner space-y-3">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400">
-                    Rappel sur les employés ciblés par cet accueil
-                </h4>
-                <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-300">
-                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Employé Temporaire / Temporary Employee
-                    </li>
-                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Employé relève débutant dans une nouvelle itinéraire
-                    </li>
-                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Nouvel employé arrivant à votre succursale
-                    </li>
-                    <li class="flex items-center gap-2 bg-slate-800 p-2.5 rounded-lg border border-slate-700">
-                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> Employé effectuant une portion de 17.04
-                    </li>
-                </ul>
+            <!-- Champ Superviseur au bas de la feuille -->
+            <div class="form-section bg-slate-50 p-4 rounded-xl border border-slate-200 max-w-md ml-auto space-y-2">
+                <label class="block text-xs font-bold text-slate-700 uppercase" for="superviseur_input">
+                    Nom du superviseur / Supervisor Name
+                </label>
+                <div class="flex items-center gap-1">
+                    <input type="text" id="superviseur_input" name="superviseur_input" placeholder="Nom du superviseur..." class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <button type="button" onclick="startFieldDictation('superviseur_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-2 rounded-lg text-slate-700 transition" title="Dictée vocale">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    </button>
+                </div>
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-4 border-t">
+            <div id="form_actions" class="flex items-center justify-end gap-3 pt-4 border-t">
                 <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow transition flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     Imprimer le Rapport
@@ -365,16 +379,21 @@
                     Enregistrer dans Firebase
                 </button>
             </div>
-
         </form>
     </main>
 
+    <!-- Modale de recherche et chargement -->
     <div id="loadModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
             <div class="flex items-center justify-between border-b pb-3">
                 <h3 class="text-base font-bold text-slate-900">Rapports Enregistrés (Collection 'acceuilcq')[cite: 1]</h3>
                 <button onclick="closeLoadModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
             </div>
+
+            <div>
+                <input type="text" id="reportSearchInput" oninput="filterReportsList()" placeholder="Rechercher par nom, superviseur, ID, date, module..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
             <div id="reportsListContainer" class="flex-1 overflow-y-auto space-y-2 py-2">
                 <p class="text-xs text-slate-500 text-center py-6">Chargement des rapports depuis Firebase...</p>
             </div>
@@ -396,7 +415,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
@@ -414,6 +433,7 @@
 
         let activeTargetFieldId = null;
         let activeRecognition = null;
+        let allReportsCache = [];
 
         function populateRouteSelect() {
             const selectEl = document.getElementById('route_select');
@@ -468,37 +488,23 @@
                 if (final) {
                     const text = final.trim();
                     hudTranscript.innerText = `Reçu : "${text}"`;
-                    
                     if (fieldId === 'route_select') {
                         const digits = text.replace(/\D/g, '');
-                        if (digits) {
-                            field.value = digits;
-                        }
+                        if (digits) field.value = digits;
                     } else {
                         field.value = field.value ? field.value + ' ' + text : text;
                     }
                 }
             };
 
-            activeRecognition.onerror = (event) => {
-                hudTranscript.innerText = `Erreur : ${event.error}`;
-            };
+            activeRecognition.onerror = (event) => { hudTranscript.innerText = `Erreur : ${event.error}`; };
+            activeRecognition.onend = () => { setTimeout(() => { hud.classList.add('hidden'); }, 1200); };
 
-            activeRecognition.onend = () => {
-                setTimeout(() => { hud.classList.add('hidden'); }, 1200);
-            };
-
-            try {
-                activeRecognition.start();
-            } catch(e) {
-                console.error(e);
-            }
+            try { activeRecognition.start(); } catch(e) { console.error(e); }
         };
 
         window.stopFieldDictation = function() {
-            if (activeRecognition) {
-                try { activeRecognition.stop(); } catch(e) {}
-            }
+            if (activeRecognition) { try { activeRecognition.stop(); } catch(e) {} }
             document.getElementById('voiceHUD').classList.add('hidden');
         };
 
@@ -582,7 +588,88 @@
             populateRouteSelect();
             addNeighborhoodRow();
             addPickupRow();
+            
+            // Activation automatique du mode chef si l'URL contient ?mode=chef
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'chef') {
+                activerModeChef();
+            } else {
+                refreshStatistics();
+            }
         });
+
+        function activerModeChef() {
+            // Personnalisation du titre principal
+            const titleEl = document.querySelector('.border-b-2 h2');
+            if (titleEl) {
+                titleEl.textContent = "TABLEAU DE BORD - STATISTIQUES DES SUPERVISEURS";
+            }
+            // Masquage des sections de saisie du formulaire pour ne garder que les statistiques
+            document.querySelectorAll('.form-section').forEach(sec => {
+                sec.style.display = 'none';
+            });
+            const actionsEl = document.getElementById('form_actions');
+            if (actionsEl) {
+                actionsEl.style.display = 'none';
+            }
+            refreshStatistics();
+        }
+
+        window.refreshStatistics = async function() {
+            const statsTbody = document.getElementById('stats_tbody');
+            statsTbody.innerHTML = '<tr><td colspan="2" class="p-3 text-center text-slate-400 text-xs">Calcul des statistiques en cours...</td></tr>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, 'acceuilcq'));[cite: 1]
+                const reports = [];
+                querySnapshot.forEach((docSnap) => {
+                    reports.push(docSnap.data());
+                });
+
+                const dateInputVal = document.getElementById('date_input').value;
+                const refDate = dateInputVal ? new Date(dateInputVal) : new Date();
+                
+                const oneYearAgo = new Date(refDate);
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+                const statsMap = {};
+
+                reports.forEach(item => {
+                    if (!item.date) return;
+                    const itemDate = new Date(item.date);
+
+                    if (itemDate >= oneYearAgo && itemDate <= refDate) {
+                        let supName = (item.superviseur || '').trim();
+                        if (!supName) {
+                            supName = 'Non spécifié';
+                        }
+                        statsMap[supName] = (statsMap[supName] || 0) + 1;
+                    }
+                });
+
+                const keys = Object.keys(statsMap).sort((a, b) => a.localeCompare(b));
+
+                if (keys.length === 0) {
+                    statsTbody.innerHTML = '<tr><td colspan="2" class="p-3 text-center text-slate-500 text-xs">Aucun document complété trouvé sur la dernière année.</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                keys.forEach(sup => {
+                    html += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-2 font-medium text-slate-800">${sup}</td>
+                            <td class="p-2 text-right font-bold text-emerald-600">${statsMap[sup]}</td>
+                        </tr>
+                    `;
+                });
+                statsTbody.innerHTML = html;
+
+            } catch (error) {
+                console.error("Erreur stats:", error);
+                statsTbody.innerHTML = `<tr><td colspan="2" class="p-3 text-center text-rose-600 text-xs">Erreur de chargement des stats : ${error.message}</td></tr>`;
+            }
+        };
 
         function getFormData() {
             const getRadioVal = (name) => {
@@ -634,7 +721,7 @@
                 routeNum: getRadioVal('route_num'),
                 livraisonChecked: document.getElementById('livraison_chk').checked,
                 remplacant: document.getElementById('remplacant_input').value,
-                employeExterieurChecked: document.getElementById('employe_exterieur_chk').checked, // Sauvegarde de la case employé extérieur
+                employeExterieurChecked: document.getElementById('employe_exterieur_chk').checked,
                 ramassageClient: getRadioVal('ramassage_client'),
                 nbRamassage: document.getElementById('nb_ramassage').value,
                 leveeBlp: getRadioVal('levee_blp'),
@@ -645,6 +732,7 @@
                 ptsVerts: document.getElementById('pts_verts').value,
                 surplus: document.getElementById('surplus_input').value,
                 heureLimite: document.getElementById('heure_limite').value,
+                superviseur: document.getElementById('superviseur_input').value,
                 neighborhoodRows,
                 pickupRows,
                 updatedAt: new Date().toISOString()
@@ -664,6 +752,7 @@
                     document.getElementById('report_id').value = docRef.id;
                     alert("Nouveau rapport enregistré avec succès dans Firebase !");
                 }
+                refreshStatistics();
             } catch (error) {
                 console.error("Erreur d'enregistrement Firebase:", error);
                 alert("Erreur lors de la sauvegarde : " + error.message);
@@ -672,60 +761,94 @@
 
         window.openLoadModal = async function() {
             const modal = document.getElementById('loadModal');
-            const container = document.getElementById('reportsListContainer');
+            const searchInput = document.getElementById('reportSearchInput');
+            if (searchInput) searchInput.value = '';
             modal.classList.remove('hidden');
+            
+            const container = document.getElementById('reportsListContainer');
             container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Chargement des rapports...</p>';
 
             try {
                 const querySnapshot = await getDocs(collection(db, 'acceuilcq'));[cite: 1]
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Aucun rapport trouvé dans Firebase.</p>';
-                    return;
-                }
-
-                let html = '';
+                allReportsCache = [];
                 querySnapshot.forEach((docSnap) => {
-                    const item = docSnap.data();
-                    const docId = docSnap.id;
-                    const dateStr = item.date || 'Sans date';
-                    const routeVal = item.routeSelect || item.routeText || item.routeNum || 'Non spécifiée';
-                    const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '';
-
-                    html += `
-                        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-4 hover:border-emerald-500 transition">
-                            <div>
-                                <p class="text-xs font-bold text-slate-900">Rapport Date : ${dateStr} • Route : ${routeVal}</p>
-                                <p class="text-[11px] text-slate-500">Modifié le : ${updated} \vert{} ID:${docId}</p>
-                            </div>
-                            <button type="button" onclick="loadReportData('${docId}',${escapeString(JSON.stringify(item))})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow">
-                                Charger & Modifier
-                            </button>
-                        </div>
-                    `;
+                    allReportsCache.push({ id: docSnap.id, ...docSnap.data() });
                 });
-                container.innerHTML = html;
+
+                renderReportsList(allReportsCache);
             } catch (error) {
                 console.error("Erreur de récupération:", error);
                 container.innerHTML = `<p class="text-xs text-rose-600 text-center py-6">Erreur de chargement : ${error.message}</p>`;
             }
         };
 
-        function escapeString(str) {
-            return encodeURIComponent(str);
+        function renderReportsList(reports) {
+            const container = document.getElementById('reportsListContainer');
+            if (reports.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Aucun rapport trouvé.</p>';
+                return;
+            }
+
+            let html = '';
+            reports.forEach((item) => {
+                const docId = item.id;
+                const dateStr = item.date || 'Sans date';
+                const routeVal = item.routeSelect || item.routeNum || 'Non spécifiée';
+                const remplacant = item.remplacant || 'Non spécifié';
+                const superviseur = item.superviseur || 'Non spécifié';
+                const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '';
+                const jsonEscaped = escapeString(JSON.stringify(item));
+
+                html += `
+                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-4 hover:border-emerald-500 transition">
+                        <div>
+                            <p class="text-xs font-bold text-slate-900">Date : ${dateStr} • Route/Module : ${routeVal} • Remplaçant : ${remplacant} • Sup : ${superviseur}</p>
+                            <p class="text-[11px] text-slate-500">Modifié le : ${updated} | ID : ${docId}</p>
+                        </div>
+                        <button type="button" onclick="loadReportData('${docId}', '${jsonEscaped}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow shrink-0">
+                            Charger & Modifier
+                        </button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         }
 
-        window.closeLoadModal = function() {
-            document.getElementById('loadModal').classList.add('hidden');
+        window.filterReportsList = function() {
+            const query = document.getElementById('reportSearchInput').value.toLowerCase().trim();
+            if (!query) {
+                renderReportsList(allReportsCache);
+                return;
+            }
+
+            const filtered = allReportsCache.filter(item => {
+                const idMatch = item.id.toLowerCase().includes(query);
+                const dateMatch = (item.date || '').toLowerCase().includes(query);
+                const remplacantMatch = (item.remplacant || '').toLowerCase().includes(query);
+                const superviseurMatch = (item.superviseur || '').toLowerCase().includes(query);
+                const routeMatch = (item.routeSelect || '').toLowerCase().includes(query);
+                const routeNumMatch = (item.routeNum || '').toLowerCase().includes(query);
+                const neighborhoodMatch = (item.neighborhoodRows || []).some(r => (r.nom || '').toLowerCase().includes(query));
+                const pickupMatch = (item.pickupRows || []).some(r => (r.nom || '').toLowerCase().includes(query) || (r.adresse || '').toLowerCase().includes(query));
+
+                return idMatch || dateMatch || remplacantMatch || superviseurMatch || routeMatch || routeNumMatch || neighborhoodMatch || pickupMatch;
+            });
+
+            renderReportsList(filtered);
         };
+
+        function escapeString(str) { return encodeURIComponent(str); }
+
+        window.closeLoadModal = function() { document.getElementById('loadModal').classList.add('hidden'); };
 
         window.loadReportData = function(docId, encodedJson) {
             const item = JSON.parse(decodeURIComponent(encodedJson));
             
             document.getElementById('report_id').value = docId;
             document.getElementById('date_input').value = item.date || '';
-            document.getElementById('route_select').value = item.routeSelect || item.routeText || '';
+            document.getElementById('route_select').value = item.routeSelect || '';
             document.getElementById('remplacant_input').value = item.remplacant || '';
-            document.getElementById('employe_exterieur_chk').checked = !!item.employeExterieurChecked; // Chargement de la case
+            document.getElementById('employe_exterieur_chk').checked = !!item.employeExterieurChecked;
             document.getElementById('nb_ramassage').value = item.nbRamassage || '';
             document.getElementById('anomalies_input').value = item.anomalies || '';
             document.getElementById('pts_rouges').value = item.ptsRouges || '';
@@ -733,6 +856,7 @@
             document.getElementById('pts_verts').value = item.ptsVerts || '';
             document.getElementById('surplus_input').value = item.surplus || '';
             document.getElementById('heure_limite').value = item.heureLimite || '';
+            document.getElementById('superviseur_input').value = item.superviseur || '';
 
             if (item.couleurJour) {
                 const r = document.querySelector(`input[name="couleur_jour"][value="${item.couleurJour}"]`);
@@ -784,13 +908,10 @@
             }
 
             closeLoadModal();
+            refreshStatistics();
             alert("Rapport chargé avec succès ! Vous pouvez le modifier et l'enregistrer à nouveau.");
         };
 
-        window.clearForm = function`() {
-            // function syntax correction handled seamlessly
-        };
-        
         window.clearForm = function() {
             if (confirm("Voulez-vous créer un nouveau formulaire (effacer les champs actuels) ?")) {
                 document.getElementById('qualityForm').reset();
@@ -801,6 +922,7 @@
                 pickupRowCounter = 0;
                 addNeighborhoodRow();
                 addPickupRow();
+                refreshStatistics();
             }
         };
     </script>
