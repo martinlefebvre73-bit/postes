@@ -34,11 +34,6 @@
                     </select>
                 </div>
 
-                <button onclick="saveReportToFirebase()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                    <span>Enregistrer</span>
-                </button>
-
                 <button onclick="openLoadModal()" class="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <span>Récupérer / Modifier</span>
@@ -65,7 +60,7 @@
                 </h3>
             </div>
 
-            <!-- TABLEAU STATISTIQUE PAR SUPERVISEUR (Semaine en cours & 12 derniers mois) -->
+            <!-- TABLEAU STATISTIQUE PAR SUPERVISEUR -->
             <div id="section_stats" class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
                 <div class="flex items-center justify-between">
                     <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">
@@ -435,6 +430,7 @@
         let activeTargetFieldId = null;
         let activeRecognition = null;
         let allReportsCache = [];
+        let currentRenderedReports = [];
 
         function populateRouteSelect() {
             const selectEl = document.getElementById('route_select');
@@ -627,12 +623,10 @@
                 const dateInputVal = document.getElementById('date_input').value;
                 const refDate = dateInputVal ? new Date(dateInputVal + 'T00:00:00') : new Date();
                 
-                // Période : 12 derniers mois
                 const oneYearAgo = new Date(refDate);
                 oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-                // Période : Semaine en cours (Lundi au Vendredi)
-                const currentDayOfWeek = refDate.getDay(); // 0 (Dimanche) à 6 (Samedi)
+                const currentDayOfWeek = refDate.getDay(); 
                 const diffToMonday = refDate.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1);
                 
                 const mondayOfWeek = new Date(refDate);
@@ -658,12 +652,10 @@
                         statsMap[supName] = { week: 0, year: 0 };
                     }
 
-                    // Comptage 12 derniers mois
                     if (itemDate >= oneYearAgo && itemDate <= refDate) {
                         statsMap[supName].year += 1;
                     }
 
-                    // Comptage Semaine en cours (Lun-Ven)
                     if (itemDate >= mondayOfWeek && itemDate <= fridayOfWeek) {
                         statsMap[supName].week += 1;
                     }
@@ -806,6 +798,7 @@
         };
 
         function renderReportsList(reports) {
+            currentRenderedReports = reports;
             const container = document.getElementById('reportsListContainer');
             if (reports.length === 0) {
                 container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Aucun rapport trouvé.</p>';
@@ -813,14 +806,13 @@
             }
 
             let html = '';
-            reports.forEach((item) => {
+            reports.forEach((item, index) => {
                 const docId = item.id;
                 const dateStr = item.date || 'Sans date';
                 const routeVal = item.routeSelect || item.routeNum || 'Non spécifiée';
                 const remplacant = item.remplacant || 'Non spécifié';
                 const superviseur = item.superviseur || 'Non spécifié';
                 const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '';
-                const jsonEscaped = escapeString(JSON.stringify(item));
 
                 html += `
                     <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-4 hover:border-emerald-500 transition">
@@ -828,7 +820,7 @@
                             <p class="text-xs font-bold text-slate-900">Date : ${dateStr} • Route/Module : ${routeVal} • Remplaçant : ${remplacant} • Sup : ${superviseur}</p>
                             <p class="text-[11px] text-slate-500">Modifié le : ${updated} | ID : ${docId}</p>
                         </div>
-                        <button type="button" onclick="loadReportData('${docId}', '${jsonEscaped}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow shrink-0">
+                        <button type="button" onclick="loadReportByIndex(${index})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow shrink-0">
                             Charger & Modifier
                         </button>
                     </div>
@@ -860,14 +852,13 @@
             renderReportsList(filtered);
         };
 
-        function escapeString(str) { return encodeURIComponent(str); }
-
         window.closeLoadModal = function() { document.getElementById('loadModal').classList.add('hidden'); };
 
-        window.loadReportData = function(docId, encodedJson) {
-            const item = JSON.parse(decodeURIComponent(encodedJson));
+        window.loadReportByIndex = function(index) {
+            const item = currentRenderedReports[index];
+            if (!item) return;
             
-            document.getElementById('report_id').value = docId;
+            document.getElementById('report_id').value = item.id;
             document.getElementById('date_input').value = item.date || '';
             document.getElementById('route_select').value = item.routeSelect || '';
             document.getElementById('remplacant_input').value = item.remplacant || '';
