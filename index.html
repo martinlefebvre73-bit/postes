@@ -24,8 +24,8 @@
           theme: {
               extend: {
                   colors: {
-                      luxuryBlack: '#0d1b2a', /* Fond bleu foncé professionnel */
-                      luxuryCard: '#1b263b', /* Fond de carte bleu un peu plus clair */
+                      luxuryBlack: '#0d1b2a',
+                      luxuryCard: '#1b263b',
                       gold: '#d4af37',
                       beigeSoft: '#e0e0e0',
                       beigeMuted: '#a5b4fc',
@@ -39,49 +39,29 @@
       }
   </script>
   <style>
-      ::-webkit-scrollbar {
-          width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-          background: #0d1b2a;
-      }
-      ::-webkit-scrollbar-thumb {
-          background: #415a77;
-          border-radius: 4px;
-      }
-      .card-border {
-          border: 1px solid #415a77;
-      }
-
-      /* Style du logo en filigrane en arrière-plan de la carte */
-      .card-watermark {
-        position: relative;
-        overflow: hidden;
-      }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #0d1b2a; }
+      ::-webkit-scrollbar-thumb { background: #415a77; border-radius: 4px; }
+      .card-border { border: 1px solid #415a77; }
+      .card-watermark { position: relative; overflow: hidden; }
       .card-watermark::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0; width: 100%; height: 100%;
         background-image: url('image.png');
         background-repeat: no-repeat;
         background-position: center;
         background-size: 60%;
-        opacity: 0.07; /* Transparence du filigrane */
-        pointer-events: none; /* Permet de cliquer à travers le filigrane */
+        opacity: 0.07;
+        pointer-events: none;
         z-index: 0;
       }
-      .card-watermark > * {
-        position: relative;
-        z-index: 1;
-      }
+      .card-watermark > * { position: relative; z-index: 1; }
   </style>
 </head>
 <body class="bg-luxuryBlack text-beigeSoft font-sans antialiased selection:bg-blue-500 selection:text-white min-h-screen flex flex-col items-center justify-center p-6 relative overflow-x-hidden">
 
-  <!-- ÉCRAN DE CONNEXION (Affiché par défaut) -->
+  <!-- ÉCRAN DE CONNEXION -->
   <div class="w-full max-w-md bg-luxuryCard p-8 rounded-2xl card-border shadow-2xl relative z-10 card-watermark" id="vue-connexion">
     <div class="text-center mb-6">
       <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
@@ -104,7 +84,7 @@
     </form>
   </div>
 
-  <!-- APPLICATION PRINCIPALE / MENU (Masquée par défaut via la classe 'hidden') -->
+  <!-- APPLICATION PRINCIPALE -->
   <div class="w-full max-w-md bg-luxuryCard p-8 rounded-2xl card-border shadow-2xl relative z-10 card-watermark hidden" id="app-container">
     
     <!-- Menu Principal -->
@@ -118,25 +98,12 @@
       </div>
 
       <div class="space-y-4">
-        <!-- 1. Bouton Restructuration (Ambre/Orange) -->
         <button onclick="ouvrirMenuRestructuration()" class="w-full py-4 px-6 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer">Restructuration</button>
-
-        <!-- 2. Bouton Chef (Teal/Cyan) -->
         <button onclick="ouvrirMenuChef()" class="w-full py-4 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer">Chef</button>
-
-        <!-- 3. Bouton Booker (Indigo/Violet) -->
         <button onclick="ouvrirMenuBooker()" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">Booker</button>
-
-        <!-- 4. Bouton Documents (Bleu) -->
         <button onclick="ouvrirMenuDocuments()" class="w-full py-4 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Documents</button>
-        
-        <!-- 5. Bouton Problème de livraison (Rouge) -->
         <button onclick="location.href='Rapport.html'" class="w-full py-4 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-red-600/30 transition-all cursor-pointer">Problème de livraison</button>
-        
-        <!-- 6. Bouton Intervention SST (Vert) -->
         <button onclick="location.href='interventions.html'" class="w-full py-4 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer">Intervention SST</button>
-        
-        <!-- Bouton Déconnexion (Gris foncé) -->
         <button onclick="deconnecterUtilisateur()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Déconnexion</button>
       </div>
     </div>
@@ -151,34 +118,16 @@
         <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Menu Secondaire</h2>
       </div>
 
-      <!-- Grille à 2 colonnes pour les boutons -->
       <div class="grid grid-cols-2 gap-3">
-        <!-- Bouton Directoires (Bleu) -->
         <button onclick="ouvrirDirectoire()" class="w-full py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Directoires</button>
-        
-        <!-- Bouton Verification Casier (Indigo/Violet) -->
         <button onclick="location.href='casier 1.html'" class="w-full py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Verification Casier</button>
-        
-        <!-- Bouton Quotidien (Sky) -->
         <button onclick="location.href='quotidien.html'" class="w-full py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Quotidien</button>
-
-        <!-- Bouton Camion-service (Violet - pointe vers service.html) -->
         <button onclick="location.href='service.html'" class="w-full py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Camion-service</button>
-
-        <!-- Bouton Acceuil CQ (Teal/Cyan) -->
         <button onclick="location.href='controlcq.html'" class="w-full py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
-        
-        <!-- Bouton Volume -->
         <button onclick="location.href='volume.html'" class="w-full py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
-
-        <!-- Bouton Benchmark -->
         <button onclick="location.href='bench.html'" class="w-full py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
-
-        <!-- Bouton Observation CQ (Rose/Fuchsia) -->
         <button onclick="location.href='CQ.html'" class="col-span-2 w-full py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
       </div>
-
-      <!-- Bouton Retour (Gris foncé) -->
       <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
 
@@ -191,17 +140,10 @@
         <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
         <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Restructuration</h2>
       </div>
-
-      <!-- Boutons du menu Restructuration -->
       <div class="space-y-4">
-        <!-- Bouton Suivi pré-préparation -->
         <button onclick="location.href='suivipre.html'" class="w-full py-4 px-6 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer">Suivi pré-préparation</button>
-        
-        <!-- Bouton Formulaires -->
         <button onclick="location.href='formulaires.html'" class="w-full py-4 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Formulaires</button>
       </div>
-
-      <!-- Bouton Retour (Gris foncé) -->
       <button onclick="retourMenuPrincipal()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
 
@@ -214,17 +156,10 @@
         <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
         <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Booker</h2>
       </div>
-
-      <!-- Boutons du menu Booker -->
       <div class="space-y-4">
-        <!-- Bouton Rapport des heures -->
         <button onclick="location.href='rapport-heures.html'" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">Rapport des heures</button>
-        
-        <!-- Bouton 15.08 -->
         <button onclick="location.href='bench.html?mode=booker'" class="w-full py-4 px-6 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer">15.08</button>
       </div>
-
-      <!-- Bouton Retour (Gris foncé) -->
       <button onclick="retourMenuPrincipal()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
 
@@ -238,37 +173,35 @@
         <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Chef</h2>
       </div>
 
-      <!-- Grille à 2 colonnes pour les boutons (Identique à la section Documents) -->
       <div class="grid grid-cols-2 gap-3">
-        <!-- Bouton Directoires (Bleu) -->
+        <!-- Bouton Directoires -->
         <button onclick="ouvrirDirectoire()" class="w-full py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Directoires</button>
         
-        <!-- Bouton Verification Casier (Indigo/Violet) -->
+        <!-- Bouton Verification Casier -->
         <button onclick="location.href='casier 1.html'" class="w-full py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Verification Casier</button>
         
-        <!-- Bouton Quotidien (Sky) -->
+        <!-- Bouton Quotidien -->
         <button onclick="location.href='quotidien.html'" class="w-full py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Quotidien</button>
 
-        <!-- Bouton Camion-service (Violet) -->
+        <!-- Bouton Camion-service -->
         <button onclick="location.href='service.html'" class="w-full py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Camion-service</button>
 
-        <!-- Bouton Acceuil CQ (Teal/Cyan) -->
-        <button onclick="location.href='controlcq.html'" class="w-full py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
+        <!-- Bouton Acceuil CQ avec paramètre mode=chef[cite: 2] -->
+        <button onclick="location.href='controlcq.html?mode=chef'" class="w-full py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
         
         <!-- Bouton Volume -->
         <button onclick="location.href='volume.html'" class="w-full py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
 
-        <!-- Bouton Benchmark (Ouvre bench.html en mode booker) -->
+        <!-- Bouton Benchmark -->
         <button onclick="location.href='bench.html?mode=booker'" class="w-full py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
 
-        <!-- Bouton Intervention SST (Vert - Copie ajoutée) -->
+        <!-- Bouton Intervention SST -->
         <button onclick="location.href='interventions.html'" class="w-full py-4 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Intervention SST</button>
 
-        <!-- Bouton Observation CQ (Rose/Fuchsia - Span sur 2 colonnes pour garder l'alignement) -->
+        <!-- Bouton Observation CQ -->
         <button onclick="location.href='CQ.html'" class="col-span-2 w-full py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
       </div>
 
-      <!-- Bouton Retour (Gris foncé) -->
       <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
 
@@ -291,12 +224,10 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Gestion de la soumission de connexion
     document.getElementById('formConnexion').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('emailConnexion').value;
         const password = document.getElementById('passwordConnexion').value;
-
         try {
             await signInWithEmailAndPassword(auth, email, password);
             document.getElementById('formConnexion').reset();
@@ -306,23 +237,15 @@
         }
     });
 
-    // Gestion de la déconnexion globale
     window.deconnecterUtilisateur = async () => {
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error("Erreur lors de la déconnexion :", error);
-        }
+        try { await signOut(auth); } catch (error) { console.error(error); }
     };
 
-    // Vérification de l'état de l'authentification en temps réel
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Utilisateur connecté : Afficher le menu principal et masquer le formulaire
             document.getElementById('vue-connexion').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
         } else {
-            // Utilisateur déconnecté : Afficher le formulaire et masquer le menu
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('vue-connexion').classList.remove('hidden');
         }
@@ -337,7 +260,6 @@
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'none';
     }
-
     function ouvrirMenuRestructuration() {
       document.getElementById('menuPrincipal').style.display = 'none';
       document.getElementById('menuSecondaire').style.display = 'none';
@@ -345,7 +267,6 @@
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'none';
     }
-
     function ouvrirMenuBooker() {
       document.getElementById('menuPrincipal').style.display = 'none';
       document.getElementById('menuSecondaire').style.display = 'none';
@@ -353,7 +274,6 @@
       document.getElementById('menuBooker').style.display = 'block';
       document.getElementById('menuChef').style.display = 'none';
     }
-
     function ouvrirMenuChef() {
       document.getElementById('menuPrincipal').style.display = 'none';
       document.getElementById('menuSecondaire').style.display = 'none';
@@ -361,7 +281,6 @@
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'block';
     }
-
     function retourMenu() {
       document.getElementById('menuSecondaire').style.display = 'none';
       document.getElementById('menuRestructuration').style.display = 'none';
@@ -369,11 +288,7 @@
       document.getElementById('menuChef').style.display = 'none';
       document.getElementById('menuPrincipal').style.display = 'block';
     }
-
-    function retourMenuPrincipal() {
-      retourMenu();
-    }
-
+    function retourMenuPrincipal() { retourMenu(); }
     function ouvrirDirectoire() {
       const numero = prompt('Entrez le numéro de route :');
       if (numero && numero.trim() !== '') {
@@ -383,6 +298,5 @@
       }
     }
   </script>
-
 </body>
 </html>
