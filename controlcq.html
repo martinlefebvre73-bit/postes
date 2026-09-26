@@ -65,27 +65,28 @@
                 </h3>
             </div>
 
-            <!-- TABLEAU STATISTIQUE PAR SUPERVISEUR (Dernière année) -->
+            <!-- TABLEAU STATISTIQUE PAR SUPERVISEUR (Semaine en cours & 12 derniers mois) -->
             <div id="section_stats" class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
                 <div class="flex items-center justify-between">
                     <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">
-                        Statistiques - Documents complétés par superviseur (Dernière année)
+                        Statistiques - Documents complétés par superviseur
                     </h4>
                     <button type="button" onclick="refreshStatistics()" class="text-[11px] text-sky-600 hover:text-sky-800 font-semibold underline">
                         Rafraîchir les stats
                     </button>
                 </div>
-                <div class="overflow-x-auto max-h-44 border border-slate-200 rounded-lg bg-white">
+                <div class="overflow-x-auto max-h-48 border border-slate-200 rounded-lg bg-white">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead class="bg-slate-800 text-white sticky top-0">
                             <tr>
                                 <th class="p-2 font-semibold">Superviseur</th>
+                                <th class="p-2 font-semibold text-center">Semaine en cours (Lun-Ven)</th>
                                 <th class="p-2 font-semibold text-right">Documents complétés (12 derniers mois)</th>
                             </tr>
                         </thead>
                         <tbody id="stats_tbody" class="divide-y divide-slate-100">
                             <tr>
-                                <td colspan="2" class="p-3 text-center text-slate-400 text-xs">Chargement des statistiques...</td>
+                                <td colspan="3" class="p-3 text-center text-slate-400 text-xs">Chargement des statistiques...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -391,7 +392,7 @@
             </div>
 
             <div>
-                <input type="text" id="reportSearchInput" oninput="filterReportsList()" placeholder="Rechercher par nom, superviseur, ID, date, module..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                <input type="text" id="reportSearchInput" oninput="filterReportsList()" placeholder="Rechercher par nom, superviseur, ID, date..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
             </div>
 
             <div id="reportsListContainer" class="flex-1 overflow-y-auto space-y-2 py-2">
@@ -589,7 +590,6 @@
             addNeighborhoodRow();
             addPickupRow();
             
-            // Activation automatique du mode chef si l'URL contient ?mode=chef
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'chef') {
                 activerModeChef();
@@ -599,12 +599,10 @@
         });
 
         function activerModeChef() {
-            // Personnalisation du titre principal
             const titleEl = document.querySelector('.border-b-2 h2');
             if (titleEl) {
                 titleEl.textContent = "TABLEAU DE BORD - STATISTIQUES DES SUPERVISEURS";
             }
-            // Masquage des sections de saisie du formulaire pour ne garder que les statistiques
             document.querySelectorAll('.form-section').forEach(sec => {
                 sec.style.display = 'none';
             });
@@ -617,7 +615,7 @@
 
         window.refreshStatistics = async function() {
             const statsTbody = document.getElementById('stats_tbody');
-            statsTbody.innerHTML = '<tr><td colspan="2" class="p-3 text-center text-slate-400 text-xs">Calcul des statistiques en cours...</td></tr>';
+            statsTbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Calcul des statistiques en cours...</td></tr>';
 
             try {
                 const querySnapshot = await getDocs(collection(db, 'acceuilcq'));[cite: 1]
@@ -627,30 +625,54 @@
                 });
 
                 const dateInputVal = document.getElementById('date_input').value;
-                const refDate = dateInputVal ? new Date(dateInputVal) : new Date();
+                const refDate = dateInputVal ? new Date(dateInputVal + 'T00:00:00') : new Date();
                 
+                // Période : 12 derniers mois
                 const oneYearAgo = new Date(refDate);
                 oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+                // Période : Semaine en cours (Lundi au Vendredi)
+                const currentDayOfWeek = refDate.getDay(); // 0 (Dimanche) à 6 (Samedi)
+                const diffToMonday = refDate.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1);
+                
+                const mondayOfWeek = new Date(refDate);
+                mondayOfWeek.setDate(diffToMonday);
+                mondayOfWeek.setHours(0, 0, 0, 0);
+
+                const fridayOfWeek = new Date(mondayOfWeek);
+                fridayOfWeek.setDate(mondayOfWeek.getDate() + 4);
+                fridayOfWeek.setHours(23, 59, 59, 999);
 
                 const statsMap = {};
 
                 reports.forEach(item => {
                     if (!item.date) return;
-                    const itemDate = new Date(item.date);
+                    const itemDate = new Date(item.date + 'T00:00:00');
 
+                    let supName = (item.superviseur || '').trim();
+                    if (!supName) {
+                        supName = 'Non spécifié';
+                    }
+
+                    if (!statsMap[supName]) {
+                        statsMap[supName] = { week: 0, year: 0 };
+                    }
+
+                    // Comptage 12 derniers mois
                     if (itemDate >= oneYearAgo && itemDate <= refDate) {
-                        let supName = (item.superviseur || '').trim();
-                        if (!supName) {
-                            supName = 'Non spécifié';
-                        }
-                        statsMap[supName] = (statsMap[supName] || 0) + 1;
+                        statsMap[supName].year += 1;
+                    }
+
+                    // Comptage Semaine en cours (Lun-Ven)
+                    if (itemDate >= mondayOfWeek && itemDate <= fridayOfWeek) {
+                        statsMap[supName].week += 1;
                     }
                 });
 
                 const keys = Object.keys(statsMap).sort((a, b) => a.localeCompare(b));
 
                 if (keys.length === 0) {
-                    statsTbody.innerHTML = '<tr><td colspan="2" class="p-3 text-center text-slate-500 text-xs">Aucun document complété trouvé sur la dernière année.</td></tr>';
+                    statsTbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500 text-xs">Aucun document complété trouvé.</td></tr>';
                     return;
                 }
 
@@ -659,7 +681,8 @@
                     html += `
                         <tr class="hover:bg-slate-50">
                             <td class="p-2 font-medium text-slate-800">${sup}</td>
-                            <td class="p-2 text-right font-bold text-emerald-600">${statsMap[sup]}</td>
+                            <td class="p-2 text-center font-semibold text-sky-600">${statsMap[sup].week}</td>
+                            <td class="p-2 text-right font-bold text-emerald-600">${statsMap[sup].year}</td>
                         </tr>
                     `;
                 });
@@ -667,7 +690,7 @@
 
             } catch (error) {
                 console.error("Erreur stats:", error);
-                statsTbody.innerHTML = `<tr><td colspan="2" class="p-3 text-center text-rose-600 text-xs">Erreur de chargement des stats : ${error.message}</td></tr>`;
+                statsTbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-rose-600 text-xs">Erreur de chargement des stats : ${error.message}</td></tr>`;
             }
         };
 
