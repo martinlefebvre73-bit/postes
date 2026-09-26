@@ -99,8 +99,11 @@
 
       <div class="space-y-4">
         <button onclick="ouvrirMenuRestructuration()" class="w-full py-4 px-6 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer">Restructuration</button>
-        <button onclick="ouvrirMenuChef()" class="w-full py-4 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer">Chef</button>
-        <button onclick="ouvrirMenuBooker()" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">Booker</button>
+        
+        <!-- Boutons Restreints (masqués par défaut via la classe 'hidden') -->
+        <button id="btnChef" onclick="ouvrirMenuChef()" class="w-full py-4 px-6 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer hidden">Chef</button>
+        <button id="btnBooker" onclick="ouvrirMenuBooker()" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer hidden">Booker</button>
+        
         <button onclick="ouvrirMenuDocuments()" class="w-full py-4 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Documents</button>
         <button onclick="location.href='Rapport.html'" class="w-full py-4 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-red-600/30 transition-all cursor-pointer">Problème de livraison</button>
         <button onclick="location.href='interventions.html'" class="w-full py-4 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer">Intervention SST</button>
@@ -182,7 +185,7 @@
         <button onclick="location.href='volume.html'" class="w-full py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
         <button onclick="location.href='bench.html?mode=booker'" class="w-full py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
         
-        <!-- Bouton Intervention SST avec le paramètre mode=chef[cite: 1, 2] -->
+        <!-- Bouton Intervention SST avec le paramètre mode=chef[cite: 1] -->
         <button onclick="location.href='interventions.html?mode=chef'" class="w-full py-4 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Intervention SST</button>
 
         <button onclick="location.href='CQ.html'" class="col-span-2 w-full py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
@@ -228,12 +231,36 @@
     };
 
     onAuthStateChanged(auth, (user) => {
+        const btnChef = document.getElementById('btnChef');
+        const btnBooker = document.getElementById('btnBooker');
+
         if (user) {
             document.getElementById('vue-connexion').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
+
+            // Liste blanche des utilisateurs autorisés à voir 'Chef' et 'Booker'
+            const utilisateursAutorises = [
+                "sandra.dostie@canadapost.ca",
+                "caroline.gauthier@canadapost.ca",
+                "martin.lefebvre@canadapost.ca"
+            ];
+
+            // Vérification si le courriel connecté est autorisé
+            if (user.email && utilisateursAutorises.includes(user.email.toLowerCase().trim())) {
+                btnChef.classList.remove('hidden');
+                btnBooker.classList.remove('hidden');
+            } else {
+                btnChef.classList.add('hidden');
+                btnBooker.classList.add('hidden');
+            }
+
         } else {
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('vue-connexion').classList.remove('hidden');
+            
+            // Masquer par sécurité lors de la déconnexion
+            btnChef.classList.add('hidden');
+            btnBooker.classList.add('hidden');
         }
     });
   </script>
