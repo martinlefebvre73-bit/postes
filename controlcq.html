@@ -3,416 +3,419 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire d'Accueil et Contrôle de la Qualité du Service - Firebase & Dictée par Champ</title>
+    <title>Feuille de Contrôle & Accueil CQ</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 0.4; }
-            100% { transform: scale(0.95); opacity: 0.8; }
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
         }
-        .recording-pulse { animation: pulse-ring 1.5s infinite ease-in-out; }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900 h-full flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-full flex flex-col justify-between">
 
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 px-4 py-3">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-base md:text-lg font-bold tracking-tight">FORMULAIRE D'ACCUEIL ET CONTRÔLE DE LA QUALITÉ</h1>
-                <p class="text-xs text-slate-400">Dictée vocale par champ • Lignes dynamiques • Cloud Firebase</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2.5">
-                <div class="flex items-center bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs gap-2">
-                    <span class="text-slate-400 font-medium">Langue Dictée :</span>
-                    <select id="globalVoiceLang" class="bg-slate-700 text-white rounded px-2 py-1 border border-slate-600 focus:outline-none">
-                        <option value="fr-FR">Français (FR)</option>
-                        <option value="en-US">English (US)</option>
-                    </select>
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 text-white p-2 rounded-xl shadow-inner font-bold text-xl">CQ</div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">Contrôle & Accueil</h1>
+                    <p class="text-xs text-slate-400">Suivi des tournées, ramassages et courrier</p>
                 </div>
-
-                <button onclick="openLoadModal()" class="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    <span>Récupérer / Modifier</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button type="button" id="open-search-modal" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center space-x-1.5 shadow-sm">
+                    <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span>Récupération / Modification</span>
                 </button>
-
-                <button onclick="clearForm()" title="Nouveau" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 transition">
-                    Nouveau
-                </button>
+                <div id="live-clock" class="text-xs font-medium text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 hidden sm:block">
+                    <!-- Horloge dynamique -->
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 overflow-y-auto">
-        <form id="qualityForm" class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 space-y-6 relative" onsubmit="event.preventDefault();">
-            
-            <input type="hidden" id="report_id" value="">
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-6">
 
-            <div class="border-b-2 border-slate-800 pb-4 text-center">
-                <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-wide">
-                    FORMULAIRE D'ACCUEIL ET CONTRÔLE DE LA QUALITÉ DU SERVICE
-                </h2>
-                <h3 class="text-sm md:text-base font-semibold text-slate-600 mt-1">
-                    WELCOME AND SERVICE / QUALITY CONTROL FORM
+        <!-- Tableau Statistiques Mode Chef (Affiché uniquement si ?mode=chef est dans l'URL) -->
+        <div id="chef-stats-container" class="mb-6 bg-slate-900 text-white p-5 rounded-2xl border border-slate-700 shadow-xl hidden">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-teal-400 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
+                    Statistiques Superviseurs (Mode Chef)
                 </h3>
+                <span class="text-xs bg-teal-500/20 text-teal-300 px-2.5 py-1 rounded-lg border border-teal-500/30 font-medium">Vue Administrateur</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-200">
+                    <thead class="bg-slate-800 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                            <th class="p-2.5">Superviseur</th>
+                            <th class="p-2.5 text-center">Total Formulaires</th>
+                            <th class="p-2.5 text-center">Employés Externes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="chef-stats-tbody" class="divide-y divide-slate-800">
+                        <!-- Rempli dynamiquement par JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-xl rounded-2xl border border-slate-100 overflow-hidden">
+            
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 text-white flex justify-between items-center">
+                <h2 class="text-sm font-semibold tracking-wide uppercase text-slate-200">Feuille de Contrôle Journalière</h2>
+                <span id="form-mode-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30">
+                    Mode Création
+                </span>
             </div>
 
-            <!-- TABLEAU STATISTIQUE PAR SUPERVISEUR -->
-            <div id="section_stats" class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
-                <div class="flex items-center justify-between">
-                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">
-                        Statistiques - Documents complétés par superviseur
-                    </h4>
-                    <button type="button" onclick="refreshStatistics()" class="text-[11px] text-sky-600 hover:text-sky-800 font-semibold underline">
-                        Rafraîchir les stats
-                    </button>
-                </div>
-                <div class="overflow-x-auto max-h-48 border border-slate-200 rounded-lg bg-white">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead class="bg-slate-800 text-white sticky top-0">
-                            <tr>
-                                <th class="p-2 font-semibold">Superviseur</th>
-                                <th class="p-2 font-semibold text-center">Semaine en cours (Lun-Ven)</th>
-                                <th class="p-2 font-semibold text-right">Documents complétés (12 derniers mois)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stats_tbody" class="divide-y divide-slate-100">
-                            <tr>
-                                <td colspan="3" class="p-3 text-center text-slate-400 text-xs">Chargement des statistiques...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <form id="cq-form" class="p-6 space-y-6">
+                <input type="hidden" id="firebase-doc-id" value="">
 
-            <!-- Section 1: Color, Date, PDR -->
-            <div class="form-section grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase">
-                        Couleur du jour / Color of the day
-                    </label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="flex items-center justify-center gap-1 bg-orange-100 text-orange-900 px-2 py-2 rounded-lg border border-orange-300 cursor-pointer text-xs font-semibold hover:bg-orange-200">
-                            <input type="radio" name="couleur_jour" value="ORANGE" class="accent-orange-600"> ORANGE 1/3
-                        </label>
-                        <label class="flex items-center justify-center gap-1 bg-pink-100 text-pink-900 px-2 py-2 rounded-lg border border-pink-300 cursor-pointer text-xs font-semibold hover:bg-pink-200">
-                            <input type="radio" name="couleur_jour" value="ROSE" class="accent-pink-600"> ROSE 2/3
-                        </label>
-                        <label class="flex items-center justify-center gap-1 bg-blue-100 text-blue-900 px-2 py-2 rounded-lg border border-blue-300 cursor-pointer text-xs font-semibold hover:bg-blue-200">
-                            <input type="radio" name="couleur_jour" value="BLEU" class="accent-blue-600"> BLEU 3/3
-                        </label>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase" for="date_input">Date</label>
-                    <div class="flex items-center gap-1">
-                        <input type="date" id="date_input" name="date_input" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                        <button type="button" onclick="startFieldDictation('date_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-2 rounded-lg text-slate-700 transition" title="Dictée vocale">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold text-slate-700 uppercase">Nbr PDR à livrer / Number of NM</label>
-                    <div class="grid grid-cols-4 gap-1">
-                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
-                            <input type="radio" name="nb_pdr" value="1/4"> 1/4
-                        </label>
-                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
-                            <input type="radio" name="nb_pdr" value="2/4"> 2/4
-                        </label>
-                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
-                            <input type="radio" name="nb_pdr" value="3/4"> 3/4
-                        </label>
-                        <label class="flex items-center justify-center gap-1 bg-white border border-slate-300 rounded-lg p-2 text-xs font-medium cursor-pointer">
-                            <input type="radio" name="nb_pdr" value="4/4"> 4/4
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 2: Sector Type & Route & Substitutes -->
-            <div class="form-section grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <h4 class="text-xs font-bold uppercase text-slate-700">Type de Secteur / Sector Types</h4>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
-                            <input type="checkbox" name="secteur_type" value="Domicile"> Domicile / House
-                        </label>
-                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
-                            <input type="checkbox" name="secteur_type" value="Appartement"> Appartement
-                        </label>
-                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
-                            <input type="checkbox" name="secteur_type" value="Succursale"> Succursale / Depot
-                        </label>
-                        <label class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium cursor-pointer">
-                            <input type="checkbox" name="secteur_type" value="Commerce"> Commerce / Business
-                        </label>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <h4 class="text-xs font-bold uppercase text-slate-700">Route & Livraison / Route & Delivery</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Date -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1" for="route_select">Route (1 à 310)</label>
-                        <div class="flex items-center gap-1">
-                            <select id="route_select" name="route_select" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                                <option value="">-- Sélectionner une route --</option>
-                            </select>
-                            <button type="button" onclick="startFieldDictation('route_select')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition" title="Dictée vocale">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                            </button>
+                        <label for="date-input" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Date</label>
+                        <input type="date" id="date-input" required
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm">
+                    </div>
+
+                    <!-- Nom de l'employé & case Extérieur -->
+                    <div class="space-y-2">
+                        <label for="nom-employe" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Nom de l'employé</label>
+                        <input type="text" id="nom-employe" placeholder="Ex: Jean Dupont" required
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm">
+                        <div class="flex items-center pt-1">
+                            <input type="checkbox" id="exterieur-checkbox" 
+                                class="w-4 h-4 text-brand-600 bg-slate-100 border-slate-300 rounded focus:ring-brand-500">
+                            <label for="exterieur-checkbox" class="ml-2 text-xs font-medium text-slate-700 cursor-pointer">Extérieur</label>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-4 pt-1">
-                        <label class="flex items-center gap-1.5 text-sm font-semibold">
-                            <input type="radio" name="route_num" value="17.04"> 17.04
-                        </label>
-                        <label class="flex items-center gap-1.5 text-sm font-semibold">
-                            <input type="radio" name="route_num" value="17.06"> 17.06
-                        </label>
-                        <label class="flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold">
-                            <input type="checkbox" id="livraison_chk" value="Oui"> ☑ Livraison
-                        </label>
-                    </div>
+                    <!-- ID Employé -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1" for="remplacant_input">Remplaçant / Substitute</label>
-                        <div class="flex items-center gap-1">
-                            <input type="text" id="remplacant_input" name="remplacant_input" placeholder="Nom du remplaçant..." class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                            <button type="button" onclick="startFieldDictation('remplacant_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition" title="Dictée vocale">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                            </button>
+                        <label for="id-employe" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">ID Employé</label>
+                        <input type="text" id="id-employe" placeholder="Ex: EMP-4029" required
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm">
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-6 space-y-4">
+                    <div>
+                        <label for="route-select" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Route</label>
+                        <select id="route-select" required
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm">
+                            <option value="" disabled selected>-- Sélectionnez une route --</option>
+                            <!-- Rempli dynamiquement par JS -->
+                        </select>
+                    </div>
+
+                    <!-- Quarts de route 1/4 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Quarts de route (1/4)</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="quart_4" value="1/4" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">1/4</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="quart_4" value="2/4" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">2/4</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="quart_4" value="3/4" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">3/4</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="quart_4" value="4/4" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">4/4</span>
+                            </label>
                         </div>
-                        <div class="mt-2">
-                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                                <input type="checkbox" id="employe_exterieur_chk" value="Oui" class="accent-emerald-600 w-4 h-4 rounded">
-                                <span>Employé extérieur</span>
+                    </div>
+
+                    <!-- Fractionnement alternatif 1/3 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Fractionnement alternatif (1/3)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="fraction_3" value="1/3" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">1/3</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="fraction_3" value="2/3" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">2/3</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
+                                <input type="checkbox" name="fraction_3" value="3/3" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="text-xs font-medium text-slate-700">3/3</span>
                             </label>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Section 3: Customer Pickup & Clearances -->
-            <div class="form-section grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div class="space-y-3">
-                    <h4 class="text-xs font-bold uppercase text-slate-700">Ramassage Client / Customer Pickup</h4>
-                    <div class="flex items-center gap-4">
-                        <span class="text-xs font-medium text-slate-600">Actif:</span>
-                        <label class="flex items-center gap-1 text-xs font-semibold"><input type="radio" name="ramassage_client" value="OUI"> OUI</label>
-                        <label class="flex items-center gap-1 text-xs font-semibold"><input type="radio" name="ramassage_client" value="NON"> NON</label>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1" for="nb_ramassage">Nombre de ramassages</label>
-                        <div class="flex items-center gap-1">
-                            <input type="text" id="nb_ramassage" name="nb_ramassage" placeholder="ex: 3" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                            <button type="button" onclick="startFieldDictation('nb_ramassage')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-1.5 rounded-lg text-slate-700 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                            </button>
+                <!-- Tiers du jour CQ -->
+                <div class="border-t border-slate-100 pt-6">
+                    <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Tiers du jour CQ</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Carré orange 1/3 -->
+                        <div class="bg-orange-500 p-4 rounded-xl shadow-md text-white flex items-center justify-between transition transform hover:-translate-y-0.5">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-sm tracking-wide">1/3</span>
+                            </div>
+                            <input type="checkbox" name="tier_jour" value="orange_1/3" 
+                                class="w-5 h-5 text-white bg-orange-600 border-white/40 rounded focus:ring-white accent-orange-700 cursor-pointer">
+                        </div>
+
+                        <!-- Carré rose pâle 2/3 -->
+                        <div class="bg-rose-300 p-4 rounded-xl shadow-md text-rose-950 flex items-center justify-between transition transform hover:-translate-y-0.5">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-sm tracking-wide">2/3</span>
+                            </div>
+                            <input type="checkbox" name="tier_jour" value="rose_2/3" 
+                                class="w-5 h-5 text-rose-900 bg-rose-200 border-rose-400 rounded focus:ring-rose-500 accent-rose-600 cursor-pointer">
+                        </div>
+
+                        <!-- Carré bleu 3/3 -->
+                        <div class="bg-blue-600 p-4 rounded-xl shadow-md text-white flex items-center justify-between transition transform hover:-translate-y-0.5">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-sm tracking-wide">3/3</span>
+                            </div>
+                            <input type="checkbox" name="tier_jour" value="bleu_3/3" 
+                                class="w-5 h-5 text-white bg-blue-700 border-white/40 rounded focus:ring-white accent-blue-800 cursor-pointer">
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <h4 class="text-xs font-bold uppercase text-slate-700">Levées / Clearances (BLP / RPO)</h4>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white p-3 rounded-lg border border-slate-200 space-y-1">
-                            <span class="text-xs font-bold text-slate-700 block">Levée BLP</span>
-                            <div class="flex items-center gap-3 text-xs">
-                                <label><input type="radio" name="levee_blp" value="OUI"> OUI</label>
-                                <label><input type="radio" name="levee_blp" value="NON"> NON</label>
-                            </div>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border border-slate-200 space-y-1">
-                            <span class="text-xs font-bold text-slate-700 block">Levée Comptoir</span>
-                            <div class="flex items-center gap-3 text-xs">
-                                <label><input type="radio" name="levee_comptoir" value="OUI"> OUI</label>
-                                <label><input type="radio" name="levee_comptoir" value="NON"> NON</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 4: Anomalies & Color dots -->
-            <div class="form-section grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="md:col-span-2 bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-bold uppercase text-slate-700">Anomalies jour précédent et/ou particularité (Notes)</h4>
-                        <button type="button" onclick="startFieldDictation('anomalies_input')" class="text-xs flex items-center gap-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-1 rounded font-semibold transition">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                            <span>Dicter notes</span>
+                <!-- Section Courrier de quartier a livrer -->
+                <div class="border-t border-slate-100 pt-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Courrier de quartier à livrer</span>
+                        <button type="button" id="add-cq-row" class="text-xs bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 py-1.5 rounded-lg transition shadow-sm flex items-center space-x-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <span>Ajout de ligne CQ</span>
                         </button>
                     </div>
-                    <textarea id="anomalies_input" name="anomalies_input" rows="3" placeholder="Saisissez ou dictez les anomalies..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                     
-                    <div class="grid grid-cols-3 gap-3 pt-2">
-                        <div class="flex items-center justify-between bg-rose-50 text-rose-800 p-2 rounded-lg border border-rose-200 text-xs font-bold">
-                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Pts Rouges</span>
-                            <div class="flex items-center gap-1">
-                                <input type="text" id="pts_rouges" name="pts_rouges" placeholder="0" class="w-10 bg-white border border-rose-300 rounded text-center py-0.5 text-xs">
-                                <button type="button" onclick="startFieldDictation('pts_rouges')" class="p-1 hover:bg-rose-200 rounded"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                    <div id="cq-rows-container" class="space-y-3">
+                        <!-- Ligne dynamique initiale -->
+                        <div class="cq-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                            <div class="md:col-span-3">
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Nom du CQ</label>
+                                <input type="text" name="cq_nom" placeholder="Nom du CQ" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
                             </div>
-                        </div>
-                        <div class="flex items-center justify-between bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-200 text-xs font-bold">
-                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Pts Jaunes</span>
-                            <div class="flex items-center gap-1">
-                                <input type="text" id="pts_jaunes" name="pts_jaunes" placeholder="0" class="w-10 bg-white border border-amber-300 rounded text-center py-0.5 text-xs">
-                                <button type="button" onclick="startFieldDictation('pts_jaunes')" class="p-1 hover:bg-amber-200 rounded"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Début</label>
+                                <input type="date" name="cq_debut" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
                             </div>
-                        </div>
-                        <div class="flex items-center justify-between bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-200 text-xs font-bold">
-                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Pts Verts</span>
-                            <div class="flex items-center gap-1">
-                                <input type="text" id="pts_verts" name="pts_verts" placeholder="0" class="w-10 bg-white border border-emerald-300 rounded text-center py-0.5 text-xs">
-                                <button type="button" onclick="startFieldDictation('pts_verts')" class="p-1 hover:bg-emerald-200 rounded"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Fin</label>
+                                <input type="date" name="cq_fin" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                            </div>
+                            <div class="md:col-span-4 flex items-center space-x-4 pt-4 md:pt-0">
+                                <span class="text-[10px] font-semibold text-slate-500 uppercase">Livraison:</span>
+                                <label class="flex items-center space-x-1 cursor-pointer">
+                                    <input type="checkbox" name="cq_dom" value="DOM" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                                    <span class="text-xs font-medium text-slate-700">DOM</span>
+                                </label>
+                                <label class="flex items-center space-x-1 cursor-pointer">
+                                    <input type="checkbox" name="cq_apts" value="APTS" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                                    <span class="text-xs font-medium text-slate-700">APTS</span>
+                                </label>
+                                <label class="flex items-center space-x-1 cursor-pointer">
+                                    <input type="checkbox" name="cq_com" value="COM" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                                    <span class="text-xs font-medium text-slate-700">COM</span>
+                                </label>
+                            </div>
+                            <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                                <button type="button" class="remove-row-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
+                <!-- Section Detail -->
+                <div class="border-t border-slate-100 pt-6 space-y-4">
+                    <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Section Détails</span>
+                    
+                    <!-- Checkboxes Ramassage & BLP -->
+                    <div class="flex flex-wrap gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="pickup-checkbox" name="details_type" value="Ramassage"
+                                class="w-4 h-4 text-brand-600 bg-white border-slate-300 rounded focus:ring-brand-500">
+                            <span class="text-sm font-semibold text-slate-800">Ramassage</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="blp-checkbox" name="details_type" value="BLP"
+                                class="w-4 h-4 text-brand-600 bg-white border-slate-300 rounded focus:ring-brand-500">
+                            <span class="text-sm font-semibold text-slate-800">BLP</span>
+                        </label>
+                    </div>
+
+                    <!-- Sous-section dynamique Ramassage -->
+                    <div id="ramassage-section-container" class="hidden space-y-4 pl-4 border-l-2 border-brand-500 bg-brand-50/30 p-4 rounded-r-xl">
+                        <div class="flex justify-between items-center">
+                            <span class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Ramassage (Détails)</span>
+                            <button type="button" id="add-ramassage-row" class="text-xs bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 py-1.5 rounded-lg transition shadow-sm flex items-center space-x-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <span>Ajout ligne client</span>
+                            </button>
+                        </div>
+
+                        <div id="ramassage-rows-container" class="space-y-3">
+                            <!-- Ligne dynamique initiale ramassage -->
+                            <div class="ramassage-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                                <div class="md:col-span-4">
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Client</label>
+                                    <input type="text" name="ram_client" placeholder="Nom du client" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                                </div>
+                                <div class="md:col-span-4">
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Adresse</label>
+                                    <input type="text" name="ram_adresse" placeholder="Adresse complète" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Plage horaire</label>
+                                    <input type="text" name="ram_horaire" placeholder="Ex: 08:00 - 10:00" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                                </div>
+                                <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                                    <button type="button" class="remove-ram-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sous-section dynamique BLP (Multiples emplacements) -->
+                    <div id="blp-section-container" class="hidden space-y-4 pl-4 border-l-2 border-blue-500 bg-blue-50/30 p-4 rounded-r-xl">
+                        <div class="flex justify-between items-center">
+                            <span class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">BLP (Emplacements)</span>
+                            <button type="button" id="add-blp-row" class="text-xs bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 py-1.5 rounded-lg transition shadow-sm flex items-center space-x-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <span>Ajout emplacement</span>
+                            </button>
+                        </div>
+                        <div id="blp-rows-container" class="space-y-3">
+                            <!-- Ligne initiale BLP -->
+                            <div class="blp-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                                <div class="md:col-span-11">
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Emplacement</label>
+                                    <input type="text" name="blp_emplacement" placeholder="Saisir l'emplacement BLP..." class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                                </div>
+                                <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                                    <button type="button" class="remove-blp-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Texte libre -->
                     <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <h4 class="text-xs font-bold uppercase text-slate-700">Procédure des surplus</h4>
-                            <button type="button" onclick="startFieldDictation('surplus_input')" class="text-xs text-emerald-700 font-semibold flex items-center gap-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> Dicter</button>
-                        </div>
-                        <input type="text" id="surplus_input" name="surplus_input" placeholder="Détails..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <h4 class="text-xs font-bold uppercase text-slate-700">Heure limite collection</h4>
-                            <button type="button" onclick="startFieldDictation('heure_limite')" class="text-xs text-emerald-700 font-semibold flex items-center gap-0.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> Dicter</button>
-                        </div>
-                        <input type="text" id="heure_limite" name="heure_limite" placeholder="ex: 16:30" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <label for="observations-textarea" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Observations / Commentaires libres</label>
+                        <textarea id="observations-textarea" rows="3" placeholder="Saisir les remarques particulières, incidents ou détails logistiques..."
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm"></textarea>
                     </div>
                 </div>
-            </div>
 
-            <!-- Section 5: Neighborhood Mail Table -->
-            <div class="form-section space-y-3">
-                <div class="flex items-center justify-between border-b pb-1">
-                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider">Courrier de Quartier à Livrer / Neighborhood Mail to Deliver</h4>
-                    <button type="button" onclick="addNeighborhoodRow()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 shadow transition">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        <span>Ajouter une ligne</span>
+                <!-- Champ Superviseur -->
+                <div class="border-t border-slate-100 pt-6">
+                    <label for="superviseur-select" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Superviseur Responsable</label>
+                    <select id="superviseur-select" required
+                        class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm">
+                        <option value="" disabled selected>-- Sélectionnez le superviseur --</option>
+                        <option value="Martin Lefebvre">Martin Lefebvre</option>
+                        <option value="Arianne Lavigueur">Arianne Lavigueur</option>
+                        <option value="Pierre-Stephane Moreau">Pierre-Stephane Moreau</option>
+                        <option value="Dany Petithomme">Dany Petithomme</option>
+                        <option value="Egar Raigosa">Egar Raigosa</option>
+                        <option value="Jean jr Petit">Jean jr Petit</option>
+                        <option value="Jonathan Foucreault">Jonathan Foucreault</option>
+                        <option value="Yanick Dussault">Yanick Dussault</option>
+                    </select>
+                </div>
+
+                <div class="pt-4 flex items-center justify-between">
+                    <button type="button" id="reset-btn" class="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100 transition shadow-sm">
+                        Réinitialiser / Nouveau
                     </button>
-                </div>
-                
-                <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-800 text-white">
-                                <th class="p-2.5 font-semibold">Nom CQ (No Déclaration)</th>
-                                <th class="p-2.5 font-semibold text-center">Domicile</th>
-                                <th class="p-2.5 font-semibold text-center">Distribution</th>
-                                <th class="p-2.5 font-semibold text-center">Entreprise</th>
-                                <th class="p-2.5 font-semibold">Début (Date)</th>
-                                <th class="p-2.5 font-semibold">Fin (Date)</th>
-                                <th class="p-2.5 font-semibold">Nb Jours</th>
-                                <th class="p-2.5 font-semibold text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="neighborhood_tbody" class="divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Section 6: RAMASSAGE / CUSTOMER PICKUP -->
-            <div class="form-section space-y-3 pt-4 border-t border-slate-200">
-                <div class="flex items-center justify-between border-b pb-1">
-                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
-                        RAMASSAGE / CUSTOMER PICKUP
-                    </h4>
-                    <button type="button" onclick="addPickupRow()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 shadow transition">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        <span>Ajouter une ligne</span>
+                    <button type="submit" id="submit-btn" class="bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-medium px-6 py-3 rounded-xl shadow-lg shadow-brand-500/25 transition transform active:scale-95 text-sm flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span id="submit-btn-text">Enregistrer dans Firebase</span>
                     </button>
                 </div>
 
-                <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-800 text-white">
-                                <th class="p-2.5 font-semibold">Nom Client / Client Name</th>
-                                <th class="p-2.5 font-semibold">Adresse Client / Client Address</th>
-                                <th class="p-2.5 font-semibold">Plage Horaire / Time Frame</th>
-                                <th class="p-2.5 font-semibold text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pickup_tbody" class="divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Champ Superviseur au bas de la feuille -->
-            <div class="form-section bg-slate-50 p-4 rounded-xl border border-slate-200 max-w-md ml-auto space-y-2">
-                <label class="block text-xs font-bold text-slate-700 uppercase" for="superviseur_input">
-                    Nom du superviseur / Supervisor Name
-                </label>
-                <div class="flex items-center gap-1">
-                    <input type="text" id="superviseur_input" name="superviseur_input" placeholder="Nom du superviseur..." class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    <button type="button" onclick="startFieldDictation('superviseur_input')" class="mic-btn bg-slate-200 hover:bg-emerald-600 hover:text-white p-2 rounded-lg text-slate-700 transition" title="Dictée vocale">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                    </button>
-                </div>
-            </div>
-
-            <div id="form_actions" class="flex items-center justify-end gap-3 pt-4 border-t">
-                <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Imprimer le Rapport
-                </button>
-                <button type="button" onclick="saveReportToFirebase()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-semibold shadow transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                    Enregistrer dans Firebase
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </main>
 
-    <!-- Modale de recherche et chargement -->
-    <div id="loadModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div class="flex items-center justify-between border-b pb-3">
-                <h3 class="text-base font-bold text-slate-900">Rapports Enregistrés (Collection 'acceuilcq')[cite: 1]</h3>
-                <button onclick="closeLoadModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+    <!-- Modal de Recherche / Récupération -->
+    <div id="search-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-900">Récupérer un formulaire existant</h3>
+                <button type="button" id="close-search-modal" class="text-slate-400 hover:text-slate-600 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
+            <p class="text-xs text-slate-500">Recherchez par nom d'employé ou ID pour charger le formulaire et le modifier.</p>
+            <div class="flex space-x-2">
+                <input type="text" id="search-query-input" placeholder="Nom d'employé ou ID..." 
+                    class="flex-grow bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-3 focus:ring-brand-500 focus:border-brand-500">
+                <button type="button" id="execute-search-btn" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-3 rounded-xl text-sm font-medium transition shadow-sm">
+                    Rechercher
+                </button>
+            </div>
+            <div id="search-results-container" class="max-h-60 overflow-y-auto space-y-2 pt-2">
+                <!-- Résultats de recherche injectés ici -->
+                <p class="text-xs text-slate-400 text-center py-4">Entrez un terme pour lancer la recherche dans Firebase.</p>
+            </div>
+        </div>
+    </div>
 
+    <!-- Notification Toast -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 transform translate-y-24 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center space-x-3">
+            <div id="toast-dot" class="w-2.5 h-2.5 bg-brand-500 rounded-full animate-ping"></div>
             <div>
-                <input type="text" id="reportSearchInput" oninput="filterReportsList()" placeholder="Rechercher par nom, superviseur, ID, date..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
-            </div>
-
-            <div id="reportsListContainer" class="flex-1 overflow-y-auto space-y-2 py-2">
-                <p class="text-xs text-slate-500 text-center py-6">Chargement des rapports depuis Firebase...</p>
-            </div>
-            <div class="flex justify-end pt-2 border-t">
-                <button onclick="closeLoadModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-semibold">Fermer</button>
+                <p class="text-xs font-bold text-white" id="toast-title">Succès</p>
+                <p class="text-[11px] text-slate-300" id="toast-msg">Opération effectuée avec succès.</p>
             </div>
         </div>
     </div>
 
-    <div id="voiceHUD" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-emerald-500 z-50 hidden flex items-center gap-3">
-        <div class="w-3 h-3 rounded-full bg-emerald-500 recording-pulse"></div>
-        <div class="text-xs">
-            <p class="font-bold text-emerald-400" id="hudFieldName">Écoute en cours...</p>
-            <p class="text-slate-300 italic" id="hudTranscript">Parlez maintenant...</p>
-        </div>
-        <button onclick="stopFieldDictation()" class="ml-3 bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">Arrêter</button>
-    </div>
+    <footer class="bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-500">
+        <p>Contrôle Qualité & Accueil &bull; Dépôt Aéroport & Postes Canada &copy; 2026</p>
+    </footer>
 
+    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Configuration Firebase fournie
         const firebaseConfig = {
             apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
             authDomain: "postes-26884.firebaseapp.com",
@@ -423,522 +426,633 @@
             measurementId: "G-83YPF62ET5"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const db = getFirestore(app);
-        try { getAnalytics(app); } catch(e) {}
+        const COLLECTION_NAME = "acceuilcq";
 
-        let activeTargetFieldId = null;
-        let activeRecognition = null;
-        let allReportsCache = [];
-        let currentRenderedReports = [];
-
-        function populateRouteSelect() {
-            const selectEl = document.getElementById('route_select');
-            if (!selectEl) return;
-            for (let i = 1; i <= 310; i++) {
-                const opt = document.createElement('option');
-                opt.value = i.toString();
-                opt.textContent = `Route ${i}`;
-                selectEl.appendChild(opt);
+        // Détection du Mode Chef via l'URL (?mode=chef)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'chef') {
+            const chefStatsContainer = document.getElementById('chef-stats-container');
+            if (chefStatsContainer) {
+                chefStatsContainer.classList.remove('hidden');
+                chargerStatsChefAcceuilCQ();
             }
         }
 
-        window.startFieldDictation = function(fieldId) {
-            const field = document.getElementById(fieldId);
-            if (!field) return;
-            activeTargetFieldId = fieldId;
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("La reconnaissance vocale n'est pas supportée par ce navigateur. Utilisez Google Chrome.");
-                return;
-            }
-
-            if (activeRecognition) {
-                try { activeRecognition.stop(); } catch(e) {}
-            }
-
-            activeRecognition = new SpeechRecognition();
-            const langSelect = document.getElementById('globalVoiceLang');
-            activeRecognition.lang = langSelect ? langSelect.value : 'fr-FR';
-            activeRecognition.continuous = false;
-            activeRecognition.interimResults = true;
-
-            const hud = document.getElementById('voiceHUD');
-            const hudName = document.getElementById('hudFieldName');
-            const hudTranscript = document.getElementById('hudTranscript');
-            hud.classList.remove('hidden');
-            hudName.innerText = `Dictée pour : ${fieldId}`;
-            hudTranscript.innerText = "Écoute en cours...";
-
-            activeRecognition.onresult = (event) => {
-                let interim = '';
-                let final = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        final += event.results[i][0].transcript;
-                    } else {
-                        interim += event.results[i][0].transcript;
-                    }
-                }
-                if (interim) hudTranscript.innerText = `... ${interim}`;
-                if (final) {
-                    const text = final.trim();
-                    hudTranscript.innerText = `Reçu : "${text}"`;
-                    if (fieldId === 'route_select') {
-                        const digits = text.replace(/\D/g, '');
-                        if (digits) field.value = digits;
-                    } else {
-                        field.value = field.value ? field.value + ' ' + text : text;
-                    }
-                }
-            };
-
-            activeRecognition.onerror = (event) => { hudTranscript.innerText = `Erreur : ${event.error}`; };
-            activeRecognition.onend = () => { setTimeout(() => { hud.classList.add('hidden'); }, 1200); };
-
-            try { activeRecognition.start(); } catch(e) { console.error(e); }
-        };
-
-        window.stopFieldDictation = function() {
-            if (activeRecognition) { try { activeRecognition.stop(); } catch(e) {} }
-            document.getElementById('voiceHUD').classList.add('hidden');
-        };
-
-        let neighborhoodRowCounter = 0;
-        let pickupRowCounter = 0;
-
-        window.addNeighborhoodRow = function(data = {}) {
-            neighborhoodRowCounter++;
-            const id = neighborhoodRowCounter;
-            const tbody = document.getElementById('neighborhood_tbody');
-            const tr = document.createElement('tr');
-            tr.id = `neighborhood_row_${id}`;
-            tr.innerHTML = `
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="text" id="cq_nom_${id}" value="${data.nom || ''}" placeholder="Nom CQ..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
-                        <button type="button" onclick="startFieldDictation('cq_nom_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2 text-center"><input type="checkbox" id="cq_domicile_${id}" ${data.domicile ? 'checked' : ''} class="accent-slate-800"></td>
-                <td class="p-2 text-center"><input type="checkbox" id="cq_dist_${id}" ${data.distribution !== false ? 'checked' : ''} class="accent-slate-800"></td>
-                <td class="p-2 text-center"><input type="checkbox" id="cq_ent_${id}" ${data.entreprise ? 'checked' : ''} class="accent-slate-800"></td>
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="date" id="cq_debut_${id}" value="${data.debut || ''}" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs bg-white">
-                        <button type="button" onclick="startFieldDictation('cq_debut_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="date" id="cq_fin_${id}" value="${data.fin || ''}" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs bg-white">
-                        <button type="button" onclick="startFieldDictation('cq_fin_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="text" id="cq_jours_${id}" value="${data.jours || ''}" placeholder="3" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
-                        <button type="button" onclick="startFieldDictation('cq_jours_${id}')" class="p-1 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2 text-center">
-                    <button type="button" onclick="document.getElementById('neighborhood_row_${id}').remove()" class="text-rose-600 hover:text-rose-800 p-1 font-bold text-sm" title="Supprimer">&times;</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        };
-
-        window.addPickupRow = function(data = {}) {
-            pickupRowCounter++;
-            const id = pickupRowCounter;
-            const tbody = document.getElementById('pickup_tbody');
-            const tr = document.createElement('tr');
-            tr.id = `pickup_row_${id}`;
-            tr.innerHTML = `
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="text" id="p_nom_${id}" value="${data.nom || ''}" placeholder="Nom client..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
-                        <button type="button" onclick="startFieldDictation('p_nom_${id}')" class="p-1 bg-slate-100 hover:bg-sky-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="text" id="p_adresse_${id}" value="${data.adresse || ''}" placeholder="Adresse client..." class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
-                        <button type="button" onclick="startFieldDictation('p_adresse_${id}')" class="p-1 bg-slate-100 hover:bg-sky-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2">
-                    <div class="flex items-center gap-1">
-                        <input type="text" id="p_plage_${id}" value="${data.plage || ''}" placeholder="ex: 10:00 - 12:00" class="flex-1 border border-slate-300 rounded px-2 py-1 text-xs">
-                        <button type="button" onclick="startFieldDictation('p_plage_${id}')" class="p-1 bg-slate-100 hover:bg-sky-600 hover:text-white rounded"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg></button>
-                    </div>
-                </td>
-                <td class="p-2 text-center">
-                    <button type="button" onclick="document.getElementById('pickup_row_${id}').remove()" class="text-rose-600 hover:text-rose-800 p-1 font-bold text-sm" title="Supprimer">&times;</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            populateRouteSelect();
-            addNeighborhoodRow();
-            addPickupRow();
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('mode') === 'chef') {
-                activerModeChef();
-            } else {
-                refreshStatistics();
-            }
-        });
-
-        function activerModeChef() {
-            const titleEl = document.querySelector('.border-b-2 h2');
-            if (titleEl) {
-                titleEl.textContent = "TABLEAU DE BORD - STATISTIQUES DES SUPERVISEURS";
-            }
-            document.querySelectorAll('.form-section').forEach(sec => {
-                sec.style.display = 'none';
-            });
-            const actionsEl = document.getElementById('form_actions');
-            if (actionsEl) {
-                actionsEl.style.display = 'none';
-            }
-            refreshStatistics();
-        }
-
-        window.refreshStatistics = async function() {
-            const statsTbody = document.getElementById('stats_tbody');
-            statsTbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Calcul des statistiques en cours...</td></tr>';
+        async function chargerStatsChefAcceuilCQ() {
+            const tbody = document.getElementById('chef-stats-tbody');
+            tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400">Chargement des statistiques...</td></tr>`;
 
             try {
-                const querySnapshot = await getDocs(collection(db, 'acceuilcq'));[cite: 1]
-                const reports = [];
+                const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+                const stats = {};
+
                 querySnapshot.forEach((docSnap) => {
-                    reports.push(docSnap.data());
-                });
+                    const data = docSnap.data();
+                    const sup = data.superviseur || "Non assigné";
+                    const isExterieur = !!data.exterieur;
 
-                const dateInputVal = document.getElementById('date_input').value;
-                const refDate = dateInputVal ? new Date(dateInputVal + 'T00:00:00') : new Date();
-                
-                const oneYearAgo = new Date(refDate);
-                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-                const currentDayOfWeek = refDate.getDay(); 
-                const diffToMonday = refDate.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1);
-                
-                const mondayOfWeek = new Date(refDate);
-                mondayOfWeek.setDate(diffToMonday);
-                mondayOfWeek.setHours(0, 0, 0, 0);
-
-                const fridayOfWeek = new Date(mondayOfWeek);
-                fridayOfWeek.setDate(mondayOfWeek.getDate() + 4);
-                fridayOfWeek.setHours(23, 59, 59, 999);
-
-                const statsMap = {};
-
-                reports.forEach(item => {
-                    if (!item.date) return;
-                    const itemDate = new Date(item.date + 'T00:00:00');
-
-                    let supName = (item.superviseur || '').trim();
-                    if (!supName) {
-                        supName = 'Non spécifié';
+                    if (!stats[sup]) {
+                        stats[sup] = { total: 0, exterieur: 0 };
                     }
-
-                    if (!statsMap[supName]) {
-                        statsMap[supName] = { week: 0, year: 0 };
-                    }
-
-                    if (itemDate >= oneYearAgo && itemDate <= refDate) {
-                        statsMap[supName].year += 1;
-                    }
-
-                    if (itemDate >= mondayOfWeek && itemDate <= fridayOfWeek) {
-                        statsMap[supName].week += 1;
+                    stats[sup].total += 1;
+                    if (isExterieur) {
+                        stats[sup].exterieur += 1;
                     }
                 });
 
-                const keys = Object.keys(statsMap).sort((a, b) => a.localeCompare(b));
+                tbody.innerHTML = '';
+                const supervisors = Object.keys(stats);
 
-                if (keys.length === 0) {
-                    statsTbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500 text-xs">Aucun document complété trouvé.</td></tr>';
+                if (supervisors.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400">Aucun formulaire trouvé.</td></tr>`;
                     return;
                 }
 
-                let html = '';
-                keys.forEach(sup => {
-                    html += `
-                        <tr class="hover:bg-slate-50">
-                            <td class="p-2 font-medium text-slate-800">${sup}</td>
-                            <td class="p-2 text-center font-semibold text-sky-600">${statsMap[sup].week}</td>
-                            <td class="p-2 text-right font-bold text-emerald-600">${statsMap[sup].year}</td>
-                        </tr>
+                supervisors.forEach(sup => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-800/50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="p-2.5 font-medium text-white">${sup}</td>
+                        <td class="p-2.5 text-center font-bold text-teal-400">${stats[sup].total}</td>
+                        <td class="p-2.5 text-center font-bold text-amber-400">${stats[sup].exterieur}</td>
                     `;
+                    tbody.appendChild(tr);
                 });
-                statsTbody.innerHTML = html;
 
             } catch (error) {
-                console.error("Erreur stats:", error);
-                statsTbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-rose-600 text-xs">Erreur de chargement des stats : ${error.message}</td></tr>`;
+                console.error("Erreur chargement stats chef :", error);
+                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-rose-400">Erreur lors de la récupération des données.</td></tr>`;
             }
-        };
+        }
 
-        function getFormData() {
-            const getRadioVal = (name) => {
-                const el = document.querySelector(`input[name="${name}"]:checked`);
-                return el ? el.value : '';
-            };
-            const getCheckboxes = (name) => {
-                const els = document.querySelectorAll(`input[name="${name}"]:checked`);
-                return Array.from(els).map(e => e.value);
-            };
+        // Gestion de l'affichage dynamique des sections Ramassage et BLP
+        const pickupCheckbox = document.getElementById('pickup-checkbox');
+        const ramassageSectionContainer = document.getElementById('ramassage-section-container');
+        const blpCheckbox = document.getElementById('blp-checkbox');
+        const blpSectionContainer = document.getElementById('blp-section-container');
 
-            const neighborhoodRows = [];
-            document.querySelectorAll('#neighborhood_tbody tr').forEach(tr => {
-                const rowIdMatch = tr.id.match(/neighborhood_row_(\d+)/);
-                if (rowIdMatch) {
-                    const id = rowIdMatch[1];
-                    neighborhoodRows.push({
-                        nom: document.getElementById(`cq_nom_${id}`)?.value || '',
-                        domicile: document.getElementById(`cq_domicile_${id}`)?.checked || false,
-                        distribution: document.getElementById(`cq_dist_${id}`)?.checked || false,
-                        entreprise: document.getElementById(`cq_ent_${id}`)?.checked || false,
-                        debut: document.getElementById(`cq_debut_${id}`)?.value || '',
-                        fin: document.getElementById(`cq_fin_${id}`)?.value || '',
-                        jours: document.getElementById(`cq_jours_${id}`)?.value || ''
-                    });
+        function toggleSections() {
+            if (pickupCheckbox.checked) {
+                ramassageSectionContainer.classList.remove('hidden');
+            } else {
+                ramassageSectionContainer.classList.add('hidden');
+            }
+
+            if (blpCheckbox.checked) {
+                blpSectionContainer.classList.remove('hidden');
+            } else {
+                blpSectionContainer.classList.add('hidden');
+            }
+        }
+
+        pickupCheckbox.addEventListener('change', toggleSections);
+        blpCheckbox.addEventListener('change', toggleSections);
+
+        // Liste personnalisée des numéros de route fournis
+        const routeList = [
+            "001", "002", "003", "004", "005", "006", "007", "008", "009", "010",
+            "011", "012", "013", "014", "015", "016", "017", "018", "019", "020",
+            "021", "022", "023", "024", "025", "026", "027", "028", "029", "030",
+            "031", "032", "033", "034", "035", "036", "037", "038", "040", "042",
+            "044", "046", "048", "050", "052", "054", "056", "058", "060", "062",
+            "064", "066", "068", "070", "072", "074", "076", "078", "080", "082",
+            "084", "088", "090", "201", "202", "203", "204", "205", "206", "207",
+            "208", "209", "210", "211", "212", "213", "214", "215", "216", "217",
+            "218", "219", "220", "221", "222", "223", "224", "225", "226", "227",
+            "228", "230", "232", "234", "236", "238", "240", "242", "244", "246",
+            "248", "250", "252", "254", "256", "258", "260", "262", "264", "266",
+            "268", "270", "272", "274", "278", "282", "286", "290", "310"
+        ];
+
+        const routeSelect = document.getElementById('route-select');
+        routeList.forEach(routeNum => {
+            const option = document.createElement('option');
+            option.value = routeNum;
+            option.textContent = `Route ${routeNum}`;
+            routeSelect.appendChild(option);
+        });
+
+        // Initialisation de la date du jour
+        const dateInput = document.getElementById('date-input');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+
+        // Horloge dynamique
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const clockEl = document.getElementById('live-clock');
+            if(clockEl) clockEl.textContent = now.toLocaleDateString('fr-FR', options);
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Gestion dynamique des lignes de Courrier de Quartier (CQ)
+        document.getElementById('add-cq-row').addEventListener('click', () => {
+            const container = document.getElementById('cq-rows-container');
+            const newRow = document.createElement('div');
+            newRow.className = "cq-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center";
+            newRow.innerHTML = `
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Nom du CQ</label>
+                    <input type="text" name="cq_nom" placeholder="Nom du CQ" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Début</label>
+                    <input type="date" name="cq_debut" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Fin</label>
+                    <input type="date" name="cq_fin" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-4 flex items-center space-x-4 pt-4 md:pt-0">
+                    <span class="text-[10px] font-semibold text-slate-500 uppercase">Livraison:</span>
+                    <label class="flex items-center space-x-1 cursor-pointer">
+                        <input type="checkbox" name="cq_dom" value="DOM" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                        <span class="text-xs font-medium text-slate-700">DOM</span>
+                    </label>
+                    <label class="flex items-center space-x-1 cursor-pointer">
+                        <input type="checkbox" name="cq_apts" value="APTS" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                        <span class="text-xs font-medium text-slate-700">APTS</span>
+                    </label>
+                    <label class="flex items-center space-x-1 cursor-pointer">
+                        <input type="checkbox" name="cq_com" value="COM" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                        <span class="text-xs font-medium text-slate-700">COM</span>
+                    </label>
+                </div>
+                <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                    <button type="button" class="remove-row-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        });
+
+        // Gestion dynamique des lignes de Ramassage
+        document.getElementById('add-ramassage-row').addEventListener('click', () => {
+            const container = document.getElementById('ramassage-rows-container');
+            const newRow = document.createElement('div');
+            newRow.className = "ramassage-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center";
+            newRow.innerHTML = `
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Client</label>
+                    <input type="text" name="ram_client" placeholder="Nom du client" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Adresse</label>
+                    <input type="text" name="ram_adresse" placeholder="Adresse complète" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Plage horaire</label>
+                    <input type="text" name="ram_horaire" placeholder="Ex: 08:00 - 10:00" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                    <button type="button" class="remove-ram-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        });
+
+        // Gestion dynamique des lignes BLP
+        document.getElementById('add-blp-row').addEventListener('click', () => {
+            const container = document.getElementById('blp-rows-container');
+            const newRow = document.createElement('div');
+            newRow.className = "blp-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center";
+            newRow.innerHTML = `
+                <div class="md:col-span-11">
+                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Emplacement</label>
+                    <input type="text" name="blp_emplacement" placeholder="Saisir l'emplacement BLP..." class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+                <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                    <button type="button" class="remove-blp-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        });
+
+        // Suppression de lignes dynamiques (délégation d'événements)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-row-btn')) {
+                const row = e.target.closest('.cq-row');
+                if (document.querySelectorAll('.cq-row').length > 1) {
+                    row.remove();
+                } else {
+                    showToast("Action impossible", "Il doit rester au moins une ligne.", true);
                 }
+            }
+            if (e.target.closest('.remove-ram-btn')) {
+                const row = e.target.closest('.ramassage-row');
+                if (document.querySelectorAll('.ramassage-row').length > 1) {
+                    row.remove();
+                } else {
+                    showToast("Action impossible", "Il doit rester au moins une ligne.", true);
+                }
+            }
+            if (e.target.closest('.remove-blp-btn')) {
+                const row = e.target.closest('.blp-row');
+                if (document.querySelectorAll('.blp-row').length > 1) {
+                    row.remove();
+                } else {
+                    showToast("Action impossible", "Il doit rester au moins une ligne.", true);
+                }
+            }
+        });
+
+        // Modal de recherche
+        const searchModal = document.getElementById('search-modal');
+        document.getElementById('open-search-modal').addEventListener('click', () => {
+            searchModal.classList.remove('hidden');
+        });
+        document.getElementById('close-search-modal').addEventListener('click', () => {
+            searchModal.classList.add('hidden');
+        });
+
+        // Exécution de la recherche dans Firebase
+        document.getElementById('execute-search-btn').addEventListener('click', async () => {
+            const queryVal = document.getElementById('search-query-input').value.trim().toLowerCase();
+            const resultsContainer = document.getElementById('search-results-container');
+            resultsContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Recherche en cours...</p>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+                resultsContainer.innerHTML = '';
+                let count = 0;
+
+                querySnapshot.forEach((documentSnap) => {
+                    const data = documentSnap.data();
+                    const nom = (data.nom || '').toLowerCase();
+                    const idEmp = (data.id || '').toLowerCase();
+
+                    if (!queryVal || nom.includes(queryVal) || idEmp.includes(queryVal)) {
+                        count++;
+                        const item = document.createElement('div');
+                        item.className = "bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-200 cursor-pointer flex justify-between items-center transition";
+                        item.innerHTML = `
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">${data.nom || 'Sans nom'} (ID: ${data.id || 'N/A'})</p>
+                                <p class="text-[11px] text-slate-500">Date: ${data.date} &bull; Route: ${data.route} &bull; Sup: ${data.superviseur || 'N/A'}</p>
+                            </div>
+                            <span class="text-xs bg-brand-500 text-white px-2.5 py-1 rounded-lg font-medium">Charger</span>
+                        `;
+                        item.addEventListener('click', () => {
+                            loadFormDataToUI(documentSnap.id, data);
+                            searchModal.classList.add('hidden');
+                            showToast("Formulaire chargé", `Données de ${data.nom} récupérées.`);
+                        });
+                        resultsContainer.appendChild(item);
+                    }
+                });
+
+                if (count === 0) {
+                    resultsContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Aucun formulaire trouvé.</p>';
+                }
+            } catch (error) {
+                console.error("Erreur de recherche :", error);
+                resultsContainer.innerHTML = '<p class="text-xs text-rose-500 text-center py-4">Erreur lors de la connexion à Firebase.</p>';
+            }
+        });
+
+        // Charger les données d'un document Firestore dans le formulaire
+        function loadFormDataToUI(docId, data) {
+            document.getElementById('firebase-doc-id').value = docId;
+            document.getElementById('date-input').value = data.date || today;
+            document.getElementById('nom-employe').value = data.nom || '';
+            document.getElementById('exterieur-checkbox').checked = !!data.exterieur;
+            document.getElementById('id-employe').value = data.id || '';
+            document.getElementById('route-select').value = data.route || '';
+            document.getElementById('superviseur-select').value = data.superviseur || '';
+            document.getElementById('observations-textarea').value = data.observations || '';
+            
+            pickupCheckbox.checked = !!data.pickup;
+            blpCheckbox.checked = !!data.blp;
+            toggleSections();
+
+            // Quarts 1/4
+            document.querySelectorAll('input[name="quart_4"]').forEach(cb => {
+                cb.checked = data.quarts4 && data.quarts4.includes(cb.value);
+            });
+            // Fractions 1/3
+            document.querySelectorAll('input[name="fraction_3"]').forEach(cb => {
+                cb.checked = data.fractions3 && data.fractions3.includes(cb.value);
+            });
+            // Tiers du jour CQ
+            document.querySelectorAll('input[name="tier_jour"]').forEach(cb => {
+                cb.checked = data.tiersJour && data.tiersJour.includes(cb.value);
             });
 
-            const pickupRows = [];
-            document.querySelectorAll('#pickup_tbody tr').forEach(tr => {
-                const rowIdMatch = tr.id.match(/pickup_row_(\d+)/);
-                if (rowIdMatch) {
-                    const id = rowIdMatch[1];
-                    pickupRows.push({
-                        nom: document.getElementById(`p_nom_${id}`)?.value || '',
-                        adresse: document.getElementById(`p_adresse_${id}`)?.value || '',
-                        plage: document.getElementById(`p_plage_${id}`)?.value || ''
-                    });
-                }
+            // Recharger Courrier de quartier (CQ)
+            const cqContainer = document.getElementById('cq-rows-container');
+            cqContainer.innerHTML = '';
+            if (data.cqRows && data.cqRows.length > 0) {
+                data.cqRows.forEach(row => {
+                    const newRow = document.createElement('div');
+                    newRow.className = "cq-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center";
+                    newRow.innerHTML = `
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Nom du CQ</label>
+                            <input type="text" name="cq_nom" value="${row.nom || ''}" placeholder="Nom du CQ" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Début</label>
+                            <input type="date" name="cq_debut" value="${row.debut || ''}" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Fin</label>
+                            <input type="date" name="cq_fin" value="${row.fin || ''}" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-4 flex items-center space-x-4 pt-4 md:pt-0">
+                            <span class="text-[10px] font-semibold text-slate-500 uppercase">Livraison:</span>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="checkbox" name="cq_dom" value="DOM" ${row.dom ? 'checked' : ''} class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                                <span class="text-xs font-medium text-slate-700">DOM</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="checkbox" name="cq_apts" value="APTS" ${row.apts ? 'checked' : ''} class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                                <span class="text-xs font-medium text-slate-700">APTS</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="checkbox" name="cq_com" value="COM" ${row.com ? 'checked' : ''} class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                                <span class="text-xs font-medium text-slate-700">COM</span>
+                            </label>
+                        </div>
+                        <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                            <button type="button" class="remove-row-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    cqContainer.appendChild(newRow);
+                });
+            }
+
+            // Recharger Ramassage
+            const ramContainer = document.getElementById('ramassage-rows-container');
+            ramContainer.innerHTML = '';
+            if (data.ramassageRows && data.ramassageRows.length > 0) {
+                data.ramassageRows.forEach(row => {
+                    const newRow = document.createElement('div');
+                    newRow.className = "ramassage-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center";
+                    newRow.innerHTML = `
+                        <div class="md:col-span-4">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Client</label>
+                            <input type="text" name="ram_client" value="${row.client || ''}" placeholder="Nom du client" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Adresse</label>
+                            <input type="text" name="ram_adresse" value="${row.adresse || ''}" placeholder="Adresse complète" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Plage horaire</label>
+                            <input type="text" name="ram_horaire" value="${row.horaire || ''}" placeholder="Ex: 08:00 - 10:00" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                            <button type="button" class="remove-ram-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    ramContainer.appendChild(newRow);
+                });
+            }
+
+            // Recharger BLP Emplacements
+            const blpContainer = document.getElementById('blp-rows-container');
+            blpContainer.innerHTML = '';
+            const blpList = data.blpRows || (data.blpEmplacement ? [{ emplacement: data.blpEmplacement }] : []);
+            if (blpList.length > 0) {
+                blpList.forEach(row => {
+                    const newRow = document.createElement('div');
+                    newRow.className = "blp-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center";
+                    newRow.innerHTML = `
+                        <div class="md:col-span-11">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase">Emplacement</label>
+                            <input type="text" name="blp_emplacement" value="${row.emplacement || ''}" placeholder="Saisir l'emplacement BLP..." class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                        </div>
+                        <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                            <button type="button" class="remove-blp-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    blpContainer.appendChild(newRow);
+                });
+            }
+
+            // Basculer l'UI en mode modification
+            document.getElementById('form-mode-badge').textContent = "Mode Modification";
+            document.getElementById('form-mode-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30";
+            document.getElementById('submit-btn-text').textContent = "Mettre à jour dans Firebase";
+        }
+
+        // Soumission du formulaire (Enregistrement ou Mise à jour dans Firebase)
+        const form = document.getElementById('cq-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Collecte des données du formulaire
+            const docId = document.getElementById('firebase-doc-id').value;
+            
+            // Collecte des lignes CQ
+            const cqRows = [];
+            document.querySelectorAll('.cq-row').forEach(row => {
+                cqRows.push({
+                    nom: row.querySelector('input[name="cq_nom"]').value,
+                    debut: row.querySelector('input[name="cq_debut"]').value,
+                    fin: row.querySelector('input[name="cq_fin"]').value,
+                    dom: row.querySelector('input[name="cq_dom"]').checked,
+                    apts: row.querySelector('input[name="cq_apts"]').checked,
+                    com: row.querySelector('input[name="cq_com"]').checked
+                });
             });
 
-            return {
-                reportId: document.getElementById('report_id').value || null,
-                couleurJour: getRadioVal('couleur_jour'),
-                date: document.getElementById('date_input').value,
-                nbPdr: getRadioVal('nb_pdr'),
-                secteurTypes: getCheckboxes('secteur_type'),
-                routeSelect: document.getElementById('route_select').value,
-                routeNum: getRadioVal('route_num'),
-                livraisonChecked: document.getElementById('livraison_chk').checked,
-                remplacant: document.getElementById('remplacant_input').value,
-                employeExterieurChecked: document.getElementById('employe_exterieur_chk').checked,
-                ramassageClient: getRadioVal('ramassage_client'),
-                nbRamassage: document.getElementById('nb_ramassage').value,
-                leveeBlp: getRadioVal('levee_blp'),
-                leveeComptoir: getRadioVal('levee_comptoir'),
-                anomalies: document.getElementById('anomalies_input').value,
-                ptsRouges: document.getElementById('pts_rouges').value,
-                ptsJaunes: document.getElementById('pts_jaunes').value,
-                ptsVerts: document.getElementById('pts_verts').value,
-                surplus: document.getElementById('surplus_input').value,
-                heureLimite: document.getElementById('heure_limite').value,
-                superviseur: document.getElementById('superviseur_input').value,
-                neighborhoodRows,
-                pickupRows,
+            // Collecte des lignes Ramassage
+            const ramassageRows = [];
+            document.querySelectorAll('.ramassage-row').forEach(row => {
+                ramassageRows.push({
+                    client: row.querySelector('input[name="ram_client"]').value,
+                    adresse: row.querySelector('input[name="ram_adresse"]').value,
+                    horaire: row.querySelector('input[name="ram_horaire"]').value
+                });
+            });
+
+            // Collecte des lignes BLP Emplacements
+            const blpRows = [];
+            document.querySelectorAll('.blp-row').forEach(row => {
+                blpRows.push({
+                    emplacement: row.querySelector('input[name="blp_emplacement"]').value
+                });
+            });
+
+            const formData = {
+                date: dateInput.value,
+                nom: document.getElementById('nom-employe').value,
+                exterieur: document.getElementById('exterieur-checkbox').checked,
+                id: document.getElementById('id-employe').value,
+                route: document.getElementById('route-select').value,
+                quarts4: Array.from(document.querySelectorAll('input[name="quart_4"]:checked')).map(el => el.value),
+                fractions3: Array.from(document.querySelectorAll('input[name="fraction_3"]:checked')).map(el => el.value),
+                tiersJour: Array.from(document.querySelectorAll('input[name="tier_jour"]:checked')).map(el => el.value),
+                cqRows: cqRows,
+                ramassageRows: ramassageRows,
+                pickup: pickupCheckbox.checked,
+                blp: blpCheckbox.checked,
+                blpRows: blpRows,
+                observations: document.getElementById('observations-textarea').value,
+                superviseur: document.getElementById('superviseur-select').value,
                 updatedAt: new Date().toISOString()
             };
-        }
 
-        window.saveReportToFirebase = async function() {
-            const data = getFormData();
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50');
+
             try {
-                const colRef = collection(db, 'acceuilcq');[cite: 1]
-                if (data.reportId) {
-                    const docRef = doc(db, 'acceuilcq', data.reportId);[cite: 1]
-                    await updateDoc(docRef, data);
-                    alert("Rapport mis à jour avec succès dans Firebase !");
+                if (docId) {
+                    // Mise à jour d'un enregistrement existant
+                    await updateDoc(doc(db, COLLECTION_NAME, docId), formData);
+                    showToast("Mise à jour réussie", `La fiche de ${formData.nom} a été modifiée dans Firebase.`);
                 } else {
-                    const docRef = await addDoc(colRef, data);
-                    document.getElementById('report_id').value = docRef.id;
-                    alert("Nouveau rapport enregistré avec succès dans Firebase !");
+                    // Création d'un nouvel enregistrement dans collection 'acceuilcq'
+                    formData.createdAt = new Date().toISOString();
+                    const docRef = await addDoc(collection(db, COLLECTION_NAME), formData);
+                    document.getElementById('firebase-doc-id').value = docRef.id;
+                    
+                    // Basculer en mode modification pour le document créé
+                    document.getElementById('form-mode-badge').textContent = "Mode Modification";
+                    document.getElementById('form-mode-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30";
+                    document.getElementById('submit-btn-text').textContent = "Mettre à jour dans Firebase";
+                    
+                    showToast("Enregistrement réussi", `Fiche sauvegardée avec l'ID ${docRef.id}.`);
                 }
-                refreshStatistics();
             } catch (error) {
-                console.error("Erreur d'enregistrement Firebase:", error);
-                alert("Erreur lors de la sauvegarde : " + error.message);
+                console.error("Erreur Firebase :", error);
+                showToast("Erreur", "Impossible d'enregistrer dans Firebase.", true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50');
             }
-        };
+        });
 
-        window.openLoadModal = async function() {
-            const modal = document.getElementById('loadModal');
-            const searchInput = document.getElementById('reportSearchInput');
-            if (searchInput) searchInput.value = '';
-            modal.classList.remove('hidden');
+        // Bouton réinitialiser / nouveau
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            form.reset();
+            document.getElementById('firebase-doc-id').value = '';
+            dateInput.value = today;
+            toggleSections();
             
-            const container = document.getElementById('reportsListContainer');
-            container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Chargement des rapports...</p>';
-
-            try {
-                const querySnapshot = await getDocs(collection(db, 'acceuilcq'));[cite: 1]
-                allReportsCache = [];
-                querySnapshot.forEach((docSnap) => {
-                    allReportsCache.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                renderReportsList(allReportsCache);
-            } catch (error) {
-                console.error("Erreur de récupération:", error);
-                container.innerHTML = `<p class="text-xs text-rose-600 text-center py-6">Erreur de chargement : ${error.message}</p>`;
-            }
-        };
-
-        function renderReportsList(reports) {
-            currentRenderedReports = reports;
-            const container = document.getElementById('reportsListContainer');
-            if (reports.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Aucun rapport trouvé.</p>';
-                return;
-            }
-
-            let html = '';
-            reports.forEach((item, index) => {
-                const docId = item.id;
-                const dateStr = item.date || 'Sans date';
-                const routeVal = item.routeSelect || item.routeNum || 'Non spécifiée';
-                const remplacant = item.remplacant || 'Non spécifié';
-                const superviseur = item.superviseur || 'Non spécifié';
-                const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '';
-
-                html += `
-                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-4 hover:border-emerald-500 transition">
-                        <div>
-                            <p class="text-xs font-bold text-slate-900">Date : ${dateStr} • Route/Module : ${routeVal} • Remplaçant : ${remplacant} • Sup : ${superviseur}</p>
-                            <p class="text-[11px] text-slate-500">Modifié le : ${updated} | ID : ${docId}</p>
-                        </div>
-                        <button type="button" onclick="loadReportByIndex(${index})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow shrink-0">
-                            Charger & Modifier
+            // Réinitialiser les sections dynamiques à 1 seule ligne par défaut
+            document.getElementById('cq-rows-container').innerHTML = `
+                <div class="cq-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="md:col-span-3">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Nom du CQ</label>
+                        <input type="text" name="cq_nom" placeholder="Nom du CQ" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Début</label>
+                        <input type="date" name="cq_debut" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Date Fin</label>
+                        <input type="date" name="cq_fin" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-4 flex items-center space-x-4 pt-4 md:pt-0">
+                        <span class="text-[10px] font-semibold text-slate-500 uppercase">Livraison:</span>
+                        <label class="flex items-center space-x-1 cursor-pointer">
+                            <input type="checkbox" name="cq_dom" value="DOM" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                            <span class="text-xs font-medium text-slate-700">DOM</span>
+                        </label>
+                        <label class="flex items-center space-x-1 cursor-pointer">
+                            <input type="checkbox" name="cq_apts" value="APTS" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                            <span class="text-xs font-medium text-slate-700">APTS</span>
+                        </label>
+                        <label class="flex items-center space-x-1 cursor-pointer">
+                            <input type="checkbox" name="cq_com" value="COM" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300">
+                            <span class="text-xs font-medium text-slate-700">COM</span>
+                        </label>
+                    </div>
+                    <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                        <button type="button" class="remove-row-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
+                </div>
+            `;
 
-        window.filterReportsList = function() {
-            const query = document.getElementById('reportSearchInput').value.toLowerCase().trim();
-            if (!query) {
-                renderReportsList(allReportsCache);
-                return;
-            }
+            document.getElementById('ramassage-rows-container').innerHTML = `
+                <div class="ramassage-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="md:col-span-4">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Client</label>
+                        <input type="text" name="ram_client" placeholder="Nom du client" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Adresse</label>
+                        <input type="text" name="ram_adresse" placeholder="Adresse complète" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Plage horaire</label>
+                        <input type="text" name="ram_horaire" placeholder="Ex: 08:00 - 10:00" class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                        <button type="button" class="remove-ram-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
 
-            const filtered = allReportsCache.filter(item => {
-                const idMatch = item.id.toLowerCase().includes(query);
-                const dateMatch = (item.date || '').toLowerCase().includes(query);
-                const remplacantMatch = (item.remplacant || '').toLowerCase().includes(query);
-                const superviseurMatch = (item.superviseur || '').toLowerCase().includes(query);
-                const routeMatch = (item.routeSelect || '').toLowerCase().includes(query);
-                const routeNumMatch = (item.routeNum || '').toLowerCase().includes(query);
-                const neighborhoodMatch = (item.neighborhoodRows || []).some(r => (r.nom || '').toLowerCase().includes(query));
-                const pickupMatch = (item.pickupRows || []).some(r => (r.nom || '').toLowerCase().includes(query) || (r.adresse || '').toLowerCase().includes(query));
+            document.getElementById('blp-rows-container').innerHTML = `
+                <div class="blp-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="md:col-span-11">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase">Emplacement</label>
+                        <input type="text" name="blp_emplacement" placeholder="Saisir l'emplacement BLP..." class="w-full mt-1 bg-white border border-slate-300 text-slate-900 text-xs rounded-lg p-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="md:col-span-1 flex justify-end pt-4 md:pt-0">
+                        <button type="button" class="remove-blp-btn text-rose-500 hover:text-rose-700 p-1 rounded transition" title="Supprimer cette ligne">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
 
-                return idMatch || dateMatch || remplacantMatch || superviseurMatch || routeMatch || routeNumMatch || neighborhoodMatch || pickupMatch;
-            });
+            // Rétablir le badge mode création
+            document.getElementById('form-mode-badge').textContent = "Mode Création";
+            document.getElementById('form-mode-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30";
+            document.getElementById('submit-btn-text').textContent = "Enregistrer dans Firebase";
 
-            renderReportsList(filtered);
-        };
+            showToast("Nouveau formulaire", "Les champs ont été réinitialisés.", true);
+        });
 
-        window.closeLoadModal = function() { document.getElementById('loadModal').classList.add('hidden'); };
-
-        window.loadReportByIndex = function(index) {
-            const item = currentRenderedReports[index];
-            if (!item) return;
+        // Fonction d'affichage des notifications Toast
+        function showToast(title, message, isError = false) {
+            const toast = document.getElementById('toast-notification');
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-msg').textContent = message;
             
-            document.getElementById('report_id').value = item.id;
-            document.getElementById('date_input').value = item.date || '';
-            document.getElementById('route_select').value = item.routeSelect || '';
-            document.getElementById('remplacant_input').value = item.remplacant || '';
-            document.getElementById('employe_exterieur_chk').checked = !!item.employeExterieurChecked;
-            document.getElementById('nb_ramassage').value = item.nbRamassage || '';
-            document.getElementById('anomalies_input').value = item.anomalies || '';
-            document.getElementById('pts_rouges').value = item.ptsRouges || '';
-            document.getElementById('pts_jaunes').value = item.ptsJaunes || '';
-            document.getElementById('pts_verts').value = item.ptsVerts || '';
-            document.getElementById('surplus_input').value = item.surplus || '';
-            document.getElementById('heure_limite').value = item.heureLimite || '';
-            document.getElementById('superviseur_input').value = item.superviseur || '';
-
-            if (item.couleurJour) {
-                const r = document.querySelector(`input[name="couleur_jour"][value="${item.couleurJour}"]`);
-                if (r) r.checked = true;
-            }
-            if (item.nbPdr) {
-                const r = document.querySelector(`input[name="nb_pdr"][value="${item.nbPdr}"]`);
-                if (r) r.checked = true;
-            }
-            if (item.routeNum) {
-                const r = document.querySelector(`input[name="route_num"][value="${item.routeNum}"]`);
-                if (r) r.checked = true;
-            }
-            if (item.ramassageClient) {
-                const r = document.querySelector(`input[name="ramassage_client"][value="${item.ramassageClient}"]`);
-                if (r) r.checked = true;
-            }
-            if (item.leveeBlp) {
-                const r = document.querySelector(`input[name="levee_blp"][value="${item.leveeBlp}"]`);
-                if (r) r.checked = true;
-            }
-            if (item.leveeComptoir) {
-                const r = document.querySelector(`input[name="levee_comptoir"][value="${item.leveeComptoir}"]`);
-                if (r) r.checked = true;
-            }
-
-            document.getElementById('livraison_chk').checked = !!item.livraisonChecked;
-
-            if (item.secteurTypes && Array.isArray(item.secteurTypes)) {
-                document.querySelectorAll('input[name="secteur_type"]').forEach(chk => {
-                    chk.checked = item.secteurTypes.includes(chk.value);
-                });
-            }
-
-            document.getElementById('neighborhood_tbody').innerHTML = '';
-            neighborhoodRowCounter = 0;
-            if (item.neighborhoodRows && item.neighborhoodRows.length > 0) {
-                item.neighborhoodRows.forEach(row => addNeighborhoodRow(row));
+            const dot = document.getElementById('toast-dot');
+            if (isError) {
+                dot.className = "w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping";
             } else {
-                addNeighborhoodRow();
+                dot.className = "w-2.5 h-2.5 bg-brand-500 rounded-full animate-ping";
             }
 
-            document.getElementById('pickup_tbody').innerHTML = '';
-            pickupRowCounter = 0;
-            if (item.pickupRows && item.pickupRows.length > 0) {
-                item.pickupRows.forEach(row => addPickupRow(row));
-            } else {
-                addPickupRow();
-            }
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
 
-            closeLoadModal();
-            refreshStatistics();
-            alert("Rapport chargé avec succès ! Vous pouvez le modifier et l'enregistrer à nouveau.");
-        };
-
-        window.clearForm = function() {
-            if (confirm("Voulez-vous créer un nouveau formulaire (effacer les champs actuels) ?")) {
-                document.getElementById('qualityForm').reset();
-                document.getElementById('report_id').value = '';
-                document.getElementById('neighborhood_tbody').innerHTML = '';
-                document.getElementById('pickup_tbody').innerHTML = '';
-                neighborhoodRowCounter = 0;
-                pickupRowCounter = 0;
-                addNeighborhoodRow();
-                addPickupRow();
-                refreshStatistics();
-            }
-        };
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 4000);
+        }
     </script>
+
 </body>
 </html>
