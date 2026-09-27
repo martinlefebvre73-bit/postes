@@ -105,10 +105,48 @@
         <button id="btnBooker" onclick="ouvrirMenuBooker()" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer hidden">Booker</button>
         
         <button onclick="ouvrirMenuDocuments()" class="w-full py-4 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Documents</button>
+        
+        <!-- Bouton Liens dans le menu principal -->
+        <button onclick="ouvrirMenuLiens()" class="w-full py-4 px-6 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer">Liens</button>
+
         <button onclick="location.href='Rapport.html'" class="w-full py-4 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-red-600/30 transition-all cursor-pointer">Problème de livraison</button>
         <button onclick="location.href='interventions.html'" class="w-full py-4 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer">Intervention SST</button>
         <button onclick="deconnecterUtilisateur()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Déconnexion</button>
       </div>
+    </div>
+
+    <!-- Menu Secondaire (Section Liens - 9 boutons en 2 colonnes) -->
+    <div class="menu" id="menuLiens" style="display: none;">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
+            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
+        </div>
+        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Liens Utiles</h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="window.open('https://www.canadapost-postescanada.ca/lfe-cap/fr/ouvertur-session?idCreationProfil=pme_mode1,consommateur,lien_commercial,pme_lien&urlSource=https%253A%2F%2Fwww.canadapost-postescanada.ca%2Fshippingtools-outilsexpedition%2Ffr%2Fpanier&urlCible=https%253A%2F%2Fwww.canadapost-postescanada.ca%2Fshippingtools-outilsexpedition%2Ffr%2Fpanier&nivaut=&langue=fr', '_blank')" class="w-full py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Etiquette</button>
+        
+        <button onclick="window.open('https://s1.ariba.com/gb/?realm=canadapost-postescanada-1&locale=fr_CA', '_blank')" class="w-full py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Ariba</button>
+        
+        <button onclick="window.open('https://app.powerbi.com/groups/me/apps/8790bb80-6829-4dfe-8fca-5c23840f5af1/reports/7fd64425-172f-45dc-942b-81c5edb43453/ReportSection?experience=power-bi', '_blank')" class="w-full py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Power BI</button>
+        
+        <button onclick="window.open('http://bmk.cpggpc.ca/AMS/MainSearchPage.aspx', '_blank')" class="w-full py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Main search</button>
+        
+        <button onclick="window.open('https://search-tt.azcpggpc.ca/', '_blank')" class="w-full py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Tracking</button>
+        
+        <button onclick="window.open('https://app.powerbi.com/groups/me/reports/2fedcce6-6e52-4fe8-a464-3589a85b1caa/ReportSectionb3924a5ab9c42ba8ad30?language=fr-ca&disableBranding=1&teamsMobileRedirect=true&teamsMobileRedirectUrl=https:%2F%2Fapp.powerbi.com%2FMobileRedirect.html%3Faction%3DOpenReport%26reportObjectId%3D2fedcce6-6e52-4fe8-a464-3589a85b1caa%26ctid%3D75056d76-b628-4488-82b0-80b08b52d854%26OpenAppFromWindowsPCAndTablet%3Dfalse%26emailSource%3DReportInvitation%26notificationView%3D1%26pbi_source%3DgrantReportAccessTeamsNotificationView&clientSideAuth=0&experience=power-bi', '_blank')" class="w-full py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Daily repport</button>
+        
+        <button onclick="window.open('http://lep-ipcpctx.cpggpc.ca/Citrix/LepineWeb/', '_blank')" class="w-full py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">GIA</button>
+        
+        <button onclick="window.open('https://www.cpcgwmsclaimstatus.ca/account/login/MustAuthLogin', '_blank')" class="w-full py-4 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Suivi médical</button>
+        
+        <!-- 9e bouton : Share Quebec occupant les deux colonnes pour parfaire la grille -->
+        <button onclick="window.open('https://cpggpc.sharepoint.com/sites/SPCPC-Ops-Quebec/SitePages/fr/Home.aspx', '_blank')" class="col-span-2 w-full py-4 px-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-700/30 transition-all cursor-pointer flex items-center justify-center text-center">Share Quebec</button>
+      </div>
+
+      <button onclick="retourMenuPrincipal()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
 
     <!-- Menu Secondaire (Section Documents) -->
@@ -182,7 +220,7 @@
         <button onclick="location.href='quotidien.html'" class="w-full py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Quotidien</button>
         <button onclick="location.href='service.html'" class="w-full py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Camion-service</button>
         
-        <!-- Bouton Acceuil CQ avec le mode chef activé[cite: 1] -->
+        <!-- Bouton Acceuil CQ avec le mode chef activé -->
         <button onclick="location.href='controlcq.html?mode=chef'" class="w-full py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
         
         <button onclick="location.href='volume.html'" class="w-full py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
@@ -269,6 +307,15 @@
       document.getElementById('menuRestructuration').style.display = 'none';
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'none';
+      document.getElementById('menuLiens').style.display = 'none';
+    }
+    function ouvrirMenuLiens() {
+      document.getElementById('menuPrincipal').style.display = 'none';
+      document.getElementById('menuSecondaire').style.display = 'none';
+      document.getElementById('menuRestructuration').style.display = 'none';
+      document.getElementById('menuBooker').style.display = 'none';
+      document.getElementById('menuChef').style.display = 'none';
+      document.getElementById('menuLiens').style.display = 'block';
     }
     function ouvrirMenuRestructuration() {
       document.getElementById('menuPrincipal').style.display = 'none';
@@ -276,6 +323,7 @@
       document.getElementById('menuRestructuration').style.display = 'block';
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'none';
+      document.getElementById('menuLiens').style.display = 'none';
     }
     function ouvrirMenuBooker() {
       document.getElementById('menuPrincipal').style.display = 'none';
@@ -283,6 +331,7 @@
       document.getElementById('menuRestructuration').style.display = 'none';
       document.getElementById('menuBooker').style.display = 'block';
       document.getElementById('menuChef').style.display = 'none';
+      document.getElementById('menuLiens').style.display = 'none';
     }
     function ouvrirMenuChef() {
       document.getElementById('menuPrincipal').style.display = 'none';
@@ -290,12 +339,14 @@
       document.getElementById('menuRestructuration').style.display = 'none';
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'block';
+      document.getElementById('menuLiens').style.display = 'none';
     }
     function retourMenu() {
       document.getElementById('menuSecondaire').style.display = 'none';
       document.getElementById('menuRestructuration').style.display = 'none';
       document.getElementById('menuBooker').style.display = 'none';
       document.getElementById('menuChef').style.display = 'none';
+      document.getElementById('menuLiens').style.display = 'none';
       document.getElementById('menuPrincipal').style.display = 'block';
     }
     function retourMenuPrincipal() { retourMenu(); }
