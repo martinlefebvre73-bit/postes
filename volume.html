@@ -140,11 +140,11 @@
 
                 <!-- Tiers du jour (Global) -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">Tiers du jour (1, 2, 3)</label>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">Tiers du jour (1: rose 2/3, 2: bleu 3/3, 3: orange 1/3)</label>
                     <select id="globalTierSelect" onchange="changeGlobalTier()" class="w-full bg-slate-900 border border-amber-500/60 rounded-lg px-3 py-2 text-amber-300 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        <option value="1">1 (Rose 2/3)</option>
-                        <option value="2">2 (Bleu 3/3)</option>
-                        <option value="3">3 (Orange 1/3)</option>
+                        <option value="1">1 (rose 2/3)</option>
+                        <option value="2">2 (bleu 3/3)</option>
+                        <option value="3">3 (orange 1/3)</option>
                     </select>
                 </div>
 
@@ -377,9 +377,9 @@
             }
 
             let sumResApt = 0;
-            if (globalTier === 1) sumResApt = routeData.o_res + routeData.o_apt;      // 1 = orange 1/3 (ou selon votre table: rose 2/3)
-            else if (globalTier === 2) sumResApt = routeData.r_res + routeData.r_apt;  // 2 = bleu 3/3
-            else if (globalTier === 3) sumResApt = routeData.b_res + routeData.b_apt;  // 3 = orange 1/3
+            if (globalTier === 1) sumResApt = routeData.r_res + routeData.r_apt;  // 1 = rose 2/3
+            else if (globalTier === 2) sumResApt = routeData.b_res + routeData.b_apt;  // 2 = bleu 3/3
+            else if (globalTier === 3) sumResApt = routeData.o_res + routeData.o_apt;  // 3 = orange 1/3
 
             let factor = cqFactors[nbsCQ];
             if (!factor) {
