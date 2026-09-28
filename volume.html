@@ -262,6 +262,11 @@
         let currentModule = "Dany";
         let globalTier = 1;
         let userInputs = {};
+        let allowExitField = false;
+
+        window.addEventListener('mousedown', () => {
+            allowExitField = true;
+        });
 
         async function loadDataFromFirebase() {
             try {
@@ -560,6 +565,23 @@
                     input.className = "w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
                     input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
                     
+                    // Gestion du blocage de focus tant qu'il n'y a pas Tab ou clic souris
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Tab') {
+                            allowExitField = true;
+                        }
+                    });
+
+                    input.addEventListener('blur', (e) => {
+                        if (!allowExitField) {
+                            setTimeout(() => {
+                                input.focus();
+                            }, 10);
+                        } else {
+                            allowExitField = false;
+                        }
+                    });
+
                     input.oninput = (e) => {
                         userInputs[routeKey][key] = e.target.value;
                         
