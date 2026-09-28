@@ -247,7 +247,7 @@
 
         const requiredHeaders = [
             "Module", "Route", "Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", 
-            "Tiers (1, 2, 3)", "Nombre sortes CQ", "Temps Préparation CQ", "Temps Livraison"
+            "Nombre sortes CQ", "Temps Préparation CQ", "Temps Livraison"
         ];
 
         let currentModule = "Dany";
@@ -366,7 +366,6 @@
                 factor = nbsCQ > 12 ? 0.286 + (nbsCQ - 12) * 0.02 : 0.064;
             }
 
-            // Calcul modifié : sans multiplier par nbsCQ
             return sumResApt * factor;
         }
 
@@ -477,7 +476,12 @@
                 
                 let tdMod = document.createElement('td');
                 tdMod.className = "py-3 px-3 text-xs text-slate-300 font-medium border-t border-slate-700/80";
-                tdMod.innerHTML = `<span class="bg-indigo-500/15 text-indigo-300 px-2 py-0.5 rounded">${mod}</span>`;
+                tdMod.innerHTML = `
+                    <div class="space-y-1">
+                        <span class="bg-indigo-500/15 text-indigo-300 px-2 py-0.5 rounded block text-center">${mod}</span>
+                        <div class="text-[10px] text-slate-400">Tiers du jour: <span id="tier_display_${routeKey}" class="text-amber-400 font-bold">${userInputs[routeKey]["Tiers (1, 2, 3)"] || "-"}</span></div>
+                    </div>
+                `;
                 trStandard.appendChild(tdMod);
 
                 let tdRoute = document.createElement('td');
@@ -499,12 +503,10 @@
                     trStandard.appendChild(td);
                 });
 
-                ["Tiers (1, 2, 3)", "Nombre sortes CQ"].forEach(() => {
-                    const td = document.createElement('td');
-                    td.className = "py-3 px-3 text-slate-400 text-xs border-t border-slate-700/80 italic";
-                    td.innerText = "-";
-                    trStandard.appendChild(td);
-                });
+                const tdCQHead = document.createElement('td');
+                tdCQHead.className = "py-3 px-3 text-slate-400 text-xs border-t border-slate-700/80 italic";
+                tdCQHead.innerText = "-";
+                trStandard.appendChild(tdCQHead);
 
                 const prepVal = calculatePrepCQ(rNum, routeKey, true);
                 const tdPrep = document.createElement('td');
@@ -528,7 +530,30 @@
 
                 let tdInputMod = document.createElement('td');
                 tdInputMod.className = "py-3 px-3 text-xs text-slate-500";
-                tdInputMod.innerText = "-";
+                
+                // Champ Saisie du Tiers du jour placé sous le module
+                const inputTier = document.createElement('input');
+                inputTier.type = "number";
+                inputTier.min = "1";
+                inputTier.max = "3";
+                inputTier.placeholder = "Tiers (1-3)";
+                inputTier.className = "w-24 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
+                inputTier.value = userInputs[routeKey]["Tiers (1, 2, 3)"] !== undefined ? userInputs[routeKey]["Tiers (1, 2, 3)"] : "";
+                
+                inputTier.oninput = (e) => {
+                    userInputs[routeKey]["Tiers (1, 2, 3)"] = e.target.value;
+                    document.getElementById(`tier_display_${routeKey}`).innerText = e.target.value || "-";
+                    
+                    const newPrep = calculatePrepCQ(rNum, routeKey, true);
+                    document.getElementById(`prep_${routeKey}`).innerText = newPrep === 0 ? "-" : newPrep.toFixed(2) + " min";
+                    
+                    const newLiv = calculateLivraison(rNum, routeKey, true);
+                    document.getElementById(`liv_${routeKey}`).innerText = newLiv === 0 ? "-" : newLiv.toFixed(2) + " min";
+                    
+                    renderTable();
+                    saveToFirebase();
+                };
+                tdInputMod.appendChild(inputTier);
                 trInput.appendChild(tdInputMod);
 
                 let tdInputLabel = document.createElement('td');
@@ -536,15 +561,15 @@
                 tdInputLabel.innerHTML = `✏️ <span>Saisie</span>`;
                 trInput.appendChild(tdInputLabel);
 
-                const editableKeys = ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", "Tiers (1, 2, 3)", "Nombre sortes CQ"];
+                const editableKeys = ["Courrier Manuel", "Courrier Séquence", "Paquets", "Colis", "Nombre sortes CQ"];
                 editableKeys.forEach(key => {
                     const td = document.createElement('td');
                     td.className = "py-3 px-3";
                     
                     const input = document.createElement('input');
                     input.type = "number";
-                    input.step = key.includes("Tiers") || key.includes("sortes") ? "1" : "0.1";
-                    input.placeholder = key.includes("Tiers") ? "1, 2, 3" : "Saisir...";
+                    input.step = key.includes("sortes") ? "1" : "0.1";
+                    input.placeholder = "Saisir...";
                     input.className = "w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
                     input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
                     
