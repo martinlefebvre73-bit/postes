@@ -27,10 +27,10 @@
             <div class="flex items-center gap-4 flex-wrap">
                 <!-- Boutons d'action Firebase Manuels -->
                 <button onclick="saveDataManual()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-indigo-900/30">
-                    💾 Enregistrer
+                    💾 Enregistrer (Module Actif)
                 </button>
                 <button onclick="toggleLoadModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-sky-900/30">
-                    📂 Récupérer / Modifier
+                    📂 Récupérer / Modifier (Tous Modules)
                 </button>
                 <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
                     🖨️ Imprimer / PDF
@@ -45,12 +45,12 @@
         </div>
     </header>
 
-    <!-- Modal / Zone de chargement par ID -->
+    <!-- Modal / Zone de chargement par Date -->
     <div id="loadModal" class="hidden bg-slate-800 border-b border-slate-700 p-4 no-print">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-4 bg-slate-900 p-4 rounded-xl border border-slate-700">
-            <span class="text-xs text-slate-300 font-semibold uppercase">Charger une saisie existante :</span>
-            <input type="text" id="loadRecordId" placeholder="Entrez l'identifiant (ex: saisie_2026-06-06)..." class="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
-            <button onclick="loadDataFromFirebase()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded text-xs font-semibold transition">Charger</button>
+            <span class="text-xs text-slate-300 font-semibold uppercase">Charger les saisies pour la date sélectionnée :</span>
+            <span class="text-xs text-slate-400">(Utilise la date configurée dans le panneau de contrôle)[cite: 1]</span>
+            <button onclick="loadDataFromFirebase()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded text-xs font-semibold transition">Charger Tout</button>
             <button onclick="toggleLoadModal()" class="text-slate-400 hover:text-white text-xs underline">Fermer</button>
         </div>
     </div>
@@ -293,39 +293,74 @@
             modal.classList.toggle('hidden');
         };
 
+        // Sauvegarde par module spécifique
         window.saveDataManual = async function() {
             const dateStr = document.getElementById('inputDate').value || new Date().toISOString().slice(0,10);
-            const docId = `saisie_${dateStr}`;
+            
+            if (currentModule === "Tous") {
+                alert("Veuillez sélectionner un module spécifique (ex: Dany, Yves...) pour enregistrer ses modifications.");
+                return;
+            }
+
+            const docId = `saisie_${currentModule}_${dateStr}`;
 
             try {
-                userInputs["_globalTier"] = globalTier;
-                await setDoc(doc(db, "volume", docId), userInputs);
-                alert(`Données enregistrées avec succès sous l'identifiant : ${docId}`);
+                let moduleData = {};
+                // Isoler uniquement les données appartenant au module actif
+                if (supervisorRoutes[currentModule]) {
+                    supervisorRoutes[currentModule].forEach(r => {
+                        const key = `${currentModule}_${r}`;
+                        if (userInputs[key]) {
+                            moduleData[key] = userInputs[key];
+                        }
+                    });
+                }
+                moduleData["_globalTier"] = globalTier;
+
+                await setDoc(doc(db, "volume", docId), moduleData);
+                alert(`Données du module ${currentModule} enregistrées avec succès sous l'identifiant : ${docId}`);
             } catch (error) {
                 console.error("Erreur de sauvegarde Firebase:", error);
                 alert("Erreur lors de l'enregistrement dans Firebase.");
             }
         };
 
+        // Chargement simultané de tous les modules pour la date choisie
         window.loadDataFromFirebase = async function() {
-            const customId = document.getElementById('loadRecordId').value.trim();
             const dateStr = document.getElementById('inputDate').value || new Date().toISOString().slice(0,10);
-            const docId = customId || `saisie_${dateStr}`;
-
+            const modulesList = Object.keys(supervisorRoutes);
+            
             try {
-                const docRef = doc(db, "volume", docId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    userInputs = docSnap.data();
-                    if (userInputs["_globalTier"] !== undefined) {
-                        globalTier = parseInt(userInputs["_globalTier"]);
-                        document.getElementById('globalTierSelect').value = globalTier;
+                userInputs = {}; // Réinitialisation locale avant chargement
+                let loadedCount = 0;
+
+                for (const mod of modulesList) {
+                    const docId = `saisie_${mod}_${dateStr}`;
+                    const docRef = doc(db, "volume", docId);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data["_globalTier"] !== undefined) {
+                            globalTier = parseInt(data["_globalTier"]);
+                            document.getElementById('globalTierSelect').value = globalTier;
+                        }
+                        // Fusionner les données du module dans l'objet global
+                        Object.keys(data).forEach(key => {
+                            if (key !== "_globalTier") {
+                                userInputs[key] = data[key];
+                            }
+                        });
+                        loadedCount++;
                     }
+                }
+
+                if (loadedCount > 0) {
                     renderTable();
-                    alert(`Données chargées avec succès (${docId}). Vous pouvez les modifier et réenregistrer.`);
+                    alert(`Données chargées avec succès pour ${loadedCount} module(s) à la date du ${dateStr}.`);
                     toggleLoadModal();
                 } else {
-                    alert(`Aucune donnée trouvée pour l'identifiant : ${docId}`);
+                    alert(`Aucune donnée trouvée pour la date : ${dateStr}`);
                 }
             } catch (error) {
                 console.error("Erreur de chargement Firebase:", error);
@@ -368,7 +403,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userInputs, null, 2));
             const dl = document.createElement('a');
             dl.setAttribute("href", dataStr);
-            dl.setAttribute("download", `saisie_${currentModule}_${new Date().toISOString().slice(0,10)}.json`);
+            dl.setAttribute("download", `saisie_tous_modules_${new Date().toISOString().slice(0,10)}.json`);
             document.body.appendChild(dl);
             dl.click();
             dl.remove();
