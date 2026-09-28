@@ -274,11 +274,6 @@
         let currentModule = "Dany";
         let globalTier = 1;
         let userInputs = {};
-        let allowExitField = false;
-
-        window.addEventListener('mousedown', () => {
-            allowExitField = true;
-        });
 
         window.toggleLoadModal = function() {
             const modal = document.getElementById('loadModal');
@@ -579,6 +574,7 @@
                     input.className = "w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
                     input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
                     
+                    // Mise à jour des valeurs en direct sans recréer le tableau pour ne pas perdre le focus
                     input.addEventListener('input', (e) => {
                         userInputs[routeKey][key] = e.target.value;
                         
@@ -588,24 +584,8 @@
                         const newLiv = calculateLivraison(rNum, routeKey, true);
                         document.getElementById(`liv_${routeKey}`).innerText = newLiv === 0 ? "-" : newLiv.toFixed(2) + " min";
                         
-                        renderTable();
-                    });
-
-                    // Gestion du blocage de focus tant qu'il n'y a pas Tab ou clic souris
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Tab') {
-                            allowExitField = true;
-                        }
-                    });
-
-                    input.addEventListener('blur', (e) => {
-                        if (!allowExitField) {
-                            setTimeout(() => {
-                                input.focus();
-                            }, 10);
-                        } else {
-                            allowExitField = false;
-                        }
+                        // Mise à jour uniquement des totaux en haut sans redessiner les inputs
+                        updateStatsOnly();
                     });
 
                     td.appendChild(input);
@@ -619,6 +599,45 @@
 
                 tbody.appendChild(trInput);
             });
+        }
+
+        // Fonction pour recalculer et afficher uniquement les statistiques en haut sans toucher au focus du tableau
+        function updateStatsOnly() {
+            const activeRoutes = getActiveRoutesList();
+            let stdManuel = 0, reelManuel = 0;
+            let stdSequence = 0, reelSequence = 0;
+            let stdPaquets = 0, reelPaquets = 0;
+            let stdColis = 0, reelColis = 0;
+            let reelTempsTotal = 0;
+
+            activeRoutes.forEach(item => {
+                const routeStr = String(item.rNum);
+                const routeKey = `${item.mod}_${routeStr}`;
+                const routeData = masterVolumeDB[item.rNum] || { cm: 3.0, cs: 2.0, pq: 15.0, col: 5.0 };
+                const userRow = userInputs[routeKey] || {};
+
+                stdManuel += routeData.cm !== undefined ? routeData.cm : 3.0;
+                stdSequence += routeData.cs !== undefined ? routeData.cs : 2.0;
+                stdPaquets += routeData.pq !== undefined ? routeData.pq : 15.0;
+                stdColis += routeData.col !== undefined ? routeData.col : 5.0;
+
+                reelManuel += parseFloat(userRow["Courrier Manuel"] !== undefined && userRow["Courrier Manuel"] !== "" ? userRow["Courrier Manuel"] : 0);
+                reelSequence += parseFloat(userRow["Courrier Séquence"] !== undefined && userRow["Courrier Séquence"] !== "" ? userRow["Courrier Séquence"] : 0);
+                reelPaquets += parseFloat(userRow["Paquets"] !== undefined && userRow["Paquets"] !== "" ? userRow["Paquets"] : 0);
+                reelColis += parseFloat(userRow["Colis"] !== undefined && userRow["Colis"] !== "" ? userRow["Colis"] : 0);
+
+                reelTempsTotal += calculatePrepCQ(item.rNum, routeKey, true) + calculateLivraison(item.rNum, routeKey, true);
+            });
+
+            document.getElementById('statManuelStd').innerText = stdManuel.toFixed(1);
+            document.getElementById('statManuelReel').innerText = reelManuel.toFixed(1);
+            document.getElementById('statSequenceStd').innerText = stdSequence.toFixed(1);
+            document.getElementById('statSequenceReel').innerText = reelSequence.toFixed(1);
+            document.getElementById('statPaquetsStd').innerText = stdPaquets.toFixed(1);
+            document.getElementById('statPaquetsReel').innerText = reelPaquets.toFixed(1);
+            document.getElementById('statColisStd').innerText = stdColis.toFixed(1);
+            document.getElementById('statColisReel').innerText = reelColis.toFixed(1);
+            document.getElementById('statTempsReel').innerText = reelTempsTotal.toFixed(1) + " m";
         }
 
         document.addEventListener("DOMContentLoaded", () => {
