@@ -20,21 +20,23 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-amber-400 flex items-center gap-2">
-                    <span>📋</span> Fiche d'Entrée de Données - Postes Canada
+                    <span>📋</span> Fiche d'Entrée de Données - Postes Canada[cite: 1]
                 </h1>
-                <p class="text-sm text-slate-400">Synchronisation automatique en temps réel (Firebase Firestore)</p>
+                <p class="text-sm text-slate-400">Gestion et Enregistrement Manuel (Firebase Firestore)[cite: 1]</p>
             </div>
             <div class="flex items-center gap-4 flex-wrap">
-                <!-- Indicateur de statut Firebase -->
-                <div id="syncStatus" class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2">
-                    <span id="syncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="syncText" class="text-slate-300">Synchronisé avec Firebase</span>
-                </div>
+                <!-- Boutons d'action Firebase Manuels -->
+                <button onclick="saveDataManual()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-indigo-900/30">
+                    💾 Enregistrer
+                </button>
+                <button onclick="toggleLoadModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-sky-900/30">
+                    📂 Récupérer / Modifier
+                </button>
                 <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
                     🖨️ Imprimer / PDF
                 </button>
                 <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
-                    💾 Exporter (JSON)
+                    📥 Exporter (JSON)
                 </button>
                 <button onclick="resetData()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-rose-900/30">
                     🗑️ Réinitialiser
@@ -43,13 +45,23 @@
         </div>
     </header>
 
+    <!-- Modal / Zone de chargement par ID -->
+    <div id="loadModal" class="hidden bg-slate-800 border-b border-slate-700 p-4 no-print">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-4 bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <span class="text-xs text-slate-300 font-semibold uppercase">Charger une saisie existante :</span>
+            <input type="text" id="loadRecordId" placeholder="Entrez l'identifiant (ex: saisie_2026-06-06)..." class="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <button onclick="loadDataFromFirebase()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded text-xs font-semibold transition">Charger</button>
+            <button onclick="toggleLoadModal()" class="text-slate-400 hover:text-white text-xs underline">Fermer</button>
+        </div>
+    </div>
+
     <!-- Corps de l'application -->
     <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
 
         <!-- Tableau Statistiques en haut (Standard vs Réel) -->
         <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl">
             <h2 class="text-sm font-semibold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-2">
-                <span>📊</span> Tableau Statistiques (Standard vs Réel) - Module <span id="statModuleName" class="text-white font-bold">Dany</span>
+                <span>📊</span> Tableau Statistiques (Standard vs Réel) - Module <span id="statModuleName" class="text-white font-bold">Dany</span>[cite: 1]
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
@@ -142,9 +154,9 @@
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">Tiers du jour (1: rose 2/3, 2: bleu 3/3, 3: orange 1/3)</label>
                     <select id="globalTierSelect" onchange="changeGlobalTier()" class="w-full bg-slate-900 border border-amber-500/60 rounded-lg px-3 py-2 text-amber-300 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        <option value="1">1 (rose 2/3)</option>
-                        <option value="2">2 (bleu 3/3)</option>
-                        <option value="3">3 (orange 1/3)</option>
+                        <option value="1">1 (rose 2/3)[cite: 1]</option>
+                        <option value="2">2 (bleu 3/3)[cite: 1]</option>
+                        <option value="3">3 (orange 1/3)[cite: 1]</option>
                     </select>
                 </div>
 
@@ -268,9 +280,32 @@
             allowExitField = true;
         });
 
-        async function loadDataFromFirebase() {
+        window.toggleLoadModal = function() {
+            const modal = document.getElementById('loadModal');
+            modal.classList.toggle('hidden');
+        };
+
+        window.saveDataManual = async function() {
+            const dateStr = document.getElementById('inputDate').value || new Date().toISOString().slice(0,10);
+            const docId = `saisie_${dateStr}`;
+
             try {
-                const docRef = doc(db, "volume", "saisie_data");
+                userInputs["_globalTier"] = globalTier;
+                await setDoc(doc(db, "volume", docId), userInputs);
+                alert(`Données enregistrées avec succès sous l'identifiant : ${docId}`);
+            } catch (error) {
+                console.error("Erreur de sauvegarde Firebase:", error);
+                alert("Erreur lors de l'enregistrement dans Firebase.");
+            }
+        };
+
+        window.loadDataFromFirebase = async function() {
+            const customId = document.getElementById('loadRecordId').value.trim();
+            const dateStr = document.getElementById('inputDate').value || new Date().toISOString().slice(0,10);
+            const docId = customId || `saisie_${dateStr}`;
+
+            try {
+                const docRef = doc(db, "volume", docId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     userInputs = docSnap.data();
@@ -278,34 +313,17 @@
                         globalTier = parseInt(userInputs["_globalTier"]);
                         document.getElementById('globalTierSelect').value = globalTier;
                     }
+                    renderTable();
+                    alert(`Données chargées avec succès (${docId}). Vous pouvez les modifier et réenregistrer.`);
+                    toggleLoadModal();
                 } else {
-                    userInputs = {};
+                    alert(`Aucune donnée trouvée pour l'identifiant : ${docId}`);
                 }
-                renderTable();
             } catch (error) {
                 console.error("Erreur de chargement Firebase:", error);
-                document.getElementById('syncText').innerText = "Mode hors ligne / Erreur";
-                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-rose-500";
-                renderTable();
+                alert("Erreur lors de la récupération des données.");
             }
-        }
-
-        async function saveToFirebase() {
-            try {
-                document.getElementById('syncText').innerText = "Sauvegarde...";
-                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
-                
-                userInputs["_globalTier"] = globalTier;
-                await setDoc(doc(db, "volume", "saisie_data"), userInputs);
-                
-                document.getElementById('syncText').innerText = "Synchronisé avec Firebase";
-                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-            } catch (error) {
-                console.error("Erreur de sauvegarde Firebase:", error);
-                document.getElementById('syncText').innerText = "Erreur de sync Firebase";
-                document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-rose-500";
-            }
-        }
+        };
 
         window.changeModule = function() {
             currentModule = document.getElementById('moduleSelect').value;
@@ -316,18 +334,16 @@
         window.changeGlobalTier = function() {
             globalTier = parseInt(document.getElementById('globalTierSelect').value);
             renderTable();
-            saveToFirebase();
         };
 
         window.filterRoutes = function() {
             renderTable();
         };
 
-        window.resetData = async function() {
+        window.resetData = function() {
             if (currentModule === "Tous") {
                 if (confirm("Réinitialiser l'ensemble des données de tous les modules ?")) {
                     userInputs = {};
-                    await saveToFirebase();
                     renderTable();
                 }
             } else {
@@ -335,7 +351,6 @@
                     supervisorRoutes[currentModule].forEach(r => {
                         delete userInputs[`${currentModule}_${r}`];
                     });
-                    await saveToFirebase();
                     renderTable();
                 }
             }
@@ -382,9 +397,9 @@
             }
 
             let sumResApt = 0;
-            if (globalTier === 1) sumResApt = routeData.r_res + routeData.r_apt;  // 1 = rose 2/3
-            else if (globalTier === 2) sumResApt = routeData.b_res + routeData.b_apt;  // 2 = bleu 3/3
-            else if (globalTier === 3) sumResApt = routeData.o_res + routeData.o_apt;  // 3 = orange 1/3
+            if (globalTier === 1) sumResApt = routeData.r_res + routeData.r_apt;  // 1 = rose 2/3[cite: 1]
+            else if (globalTier === 2) sumResApt = routeData.b_res + routeData.b_apt;  // 2 = bleu 3/3[cite: 1]
+            else if (globalTier === 3) sumResApt = routeData.o_res + routeData.o_apt;  // 3 = orange 1/3[cite: 1]
 
             let factor = cqFactors[nbsCQ];
             if (!factor) {
@@ -559,12 +574,23 @@
                     td.className = "py-3 px-3";
                     
                     const input = document.createElement('input');
-                    input.type = "number";
-                    input.step = key.includes("sortes") ? "1" : "0.1";
+                    input.type = "text";
                     input.placeholder = "Saisir...";
                     input.className = "w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
                     input.value = userInputs[routeKey][key] !== undefined ? userInputs[routeKey][key] : "";
                     
+                    input.addEventListener('input', (e) => {
+                        userInputs[routeKey][key] = e.target.value;
+                        
+                        const newPrep = calculatePrepCQ(rNum, routeKey, true);
+                        document.getElementById(`prep_${routeKey}`).innerText = newPrep === 0 ? "-" : newPrep.toFixed(2) + " min";
+                        
+                        const newLiv = calculateLivraison(rNum, routeKey, true);
+                        document.getElementById(`liv_${routeKey}`).innerText = newLiv === 0 ? "-" : newLiv.toFixed(2) + " min";
+                        
+                        renderTable();
+                    });
+
                     // Gestion du blocage de focus tant qu'il n'y a pas Tab ou clic souris
                     input.addEventListener('keydown', (e) => {
                         if (e.key === 'Tab') {
@@ -582,19 +608,6 @@
                         }
                     });
 
-                    input.oninput = (e) => {
-                        userInputs[routeKey][key] = e.target.value;
-                        
-                        const newPrep = calculatePrepCQ(rNum, routeKey, true);
-                        document.getElementById(`prep_${routeKey}`).innerText = newPrep === 0 ? "-" : newPrep.toFixed(2) + " min";
-                        
-                        const newLiv = calculateLivraison(rNum, routeKey, true);
-                        document.getElementById(`liv_${routeKey}`).innerText = newLiv === 0 ? "-" : newLiv.toFixed(2) + " min";
-                        
-                        renderTable();
-                        saveToFirebase();
-                    };
-
                     td.appendChild(input);
                     trInput.appendChild(td);
                 });
@@ -610,7 +623,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('inputDate').valueAsDate = new Date();
-            loadDataFromFirebase();
+            renderTable();
         });
     </script>
 </body>
