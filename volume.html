@@ -36,7 +36,6 @@
                 <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
                     💾 Exporter (JSON)
                 </button>
-                <!-- Nouveau bouton de réinitialisation global -->
                 <button onclick="resetData()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-rose-900/30">
                     🗑️ Réinitialiser
                 </button>
@@ -124,7 +123,7 @@
 
         <!-- Barre de contrôle & Sélection des modules -->
         <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg no-print">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
                 
                 <!-- Sélection du Module -->
                 <div>
@@ -136,6 +135,16 @@
                         <option value="Jonathan">Jonathan</option>
                         <option value="Jean">Jean</option>
                         <option value="Tous">Tous (Tous les modules)</option>
+                    </select>
+                </div>
+
+                <!-- Tiers du jour (Global) -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-1">Tiers du jour (1, 2, 3)</label>
+                    <select id="globalTierSelect" onchange="changeGlobalTier()" class="w-full bg-slate-900 border border-amber-500/60 rounded-lg px-3 py-2 text-amber-300 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <option value="1">1 (Rose 2/3)</option>
+                        <option value="2">2 (Bleu 3/3)</option>
+                        <option value="3">3 (Orange 1/3)</option>
                     </select>
                 </div>
 
@@ -157,7 +166,7 @@
                         <span class="text-xs text-slate-400 block">Routes Actives</span>
                         <span id="routeCount" class="text-lg font-bold text-amber-400">0</span>
                     </div>
-                    <button onclick="resetData()" class="text-xs text-rose-400 hover:text-rose-300 underline font-medium">Effacer saisie</button>
+                    <button onclick="resetData()" class="text-xs text-rose-400 hover:text-rose-300 underline font-medium">Effacer</button>
                 </div>
 
             </div>
@@ -251,6 +260,7 @@
         ];
 
         let currentModule = "Dany";
+        let globalTier = 1;
         let userInputs = {};
 
         async function loadDataFromFirebase() {
@@ -259,6 +269,10 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     userInputs = docSnap.data();
+                    if (userInputs["_globalTier"] !== undefined) {
+                        globalTier = parseInt(userInputs["_globalTier"]);
+                        document.getElementById('globalTierSelect').value = globalTier;
+                    }
                 } else {
                     userInputs = {};
                 }
@@ -276,6 +290,7 @@
                 document.getElementById('syncText').innerText = "Sauvegarde...";
                 document.getElementById('syncDot').className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
                 
+                userInputs["_globalTier"] = globalTier;
                 await setDoc(doc(db, "volume", "saisie_data"), userInputs);
                 
                 document.getElementById('syncText').innerText = "Synchronisé avec Firebase";
@@ -291,6 +306,12 @@
             currentModule = document.getElementById('moduleSelect').value;
             document.getElementById('statModuleName').innerText = currentModule;
             renderTable();
+        };
+
+        window.changeGlobalTier = function() {
+            globalTier = parseInt(document.getElementById('globalTierSelect').value);
+            renderTable();
+            saveToFirebase();
         };
 
         window.filterRoutes = function() {
@@ -344,22 +365,21 @@
             const routeData = masterVolumeDB[rNum] || { o_res: 100, o_apt: 20, r_res: 200, r_apt: 30, b_res: 150, b_apt: 40 };
             const userRow = userInputs[routeKey] || {};
             
-            let tiersChoice, nbsCQ;
+            let nbsCQ;
             if (isReel) {
-                tiersChoice = parseInt(userRow["Tiers (1, 2, 3)"]);
                 nbsCQ = parseInt(userRow["Nombre sortes CQ"]);
             } else {
                 return 0;
             }
 
-            if (![1, 2, 3].includes(tiersChoice) || isNaN(nbsCQ) || nbsCQ < 3) {
+            if (![1, 2, 3].includes(globalTier) || isNaN(nbsCQ) || nbsCQ < 3) {
                 return 0;
             }
 
             let sumResApt = 0;
-            if (tiersChoice === 1) sumResApt = routeData.o_res + routeData.o_apt;
-            else if (tiersChoice === 2) sumResApt = routeData.r_res + routeData.r_apt;
-            else if (tiersChoice === 3) sumResApt = routeData.b_res + routeData.b_apt;
+            if (globalTier === 1) sumResApt = routeData.o_res + routeData.o_apt;      // 1 = orange 1/3 (ou selon votre table: rose 2/3)
+            else if (globalTier === 2) sumResApt = routeData.r_res + routeData.r_apt;  // 2 = bleu 3/3
+            else if (globalTier === 3) sumResApt = routeData.b_res + routeData.b_apt;  // 3 = orange 1/3
 
             let factor = cqFactors[nbsCQ];
             if (!factor) {
@@ -373,15 +393,14 @@
             const routeData = masterVolumeDB[rNum] || { t_ext: 300.0 };
             const userRow = userInputs[routeKey] || {};
             
-            let tiersChoice, nbsCQ;
+            let nbsCQ;
             if (isReel) {
-                tiersChoice = parseInt(userRow["Tiers (1, 2, 3)"]);
                 nbsCQ = parseInt(userRow["Nombre sortes CQ"]);
             } else {
                 return 0;
             }
 
-            if (![1, 2, 3].includes(tiersChoice) || isNaN(nbsCQ) || nbsCQ < 3) {
+            if (![1, 2, 3].includes(globalTier) || isNaN(nbsCQ) || nbsCQ < 3) {
                 return 0;
             }
 
@@ -421,13 +440,11 @@
                 const routeData = masterVolumeDB[item.rNum] || { cm: 3.0, cs: 2.0, pq: 15.0, col: 5.0 };
                 const userRow = userInputs[routeKey] || {};
 
-                // Cumul Standard
                 stdManuel += routeData.cm !== undefined ? routeData.cm : 3.0;
                 stdSequence += routeData.cs !== undefined ? routeData.cs : 2.0;
                 stdPaquets += routeData.pq !== undefined ? routeData.pq : 15.0;
                 stdColis += routeData.col !== undefined ? routeData.col : 5.0;
 
-                // Cumul Réel
                 reelManuel += parseFloat(userRow["Courrier Manuel"] !== undefined && userRow["Courrier Manuel"] !== "" ? userRow["Courrier Manuel"] : 0);
                 reelSequence += parseFloat(userRow["Courrier Séquence"] !== undefined && userRow["Courrier Séquence"] !== "" ? userRow["Courrier Séquence"] : 0);
                 reelPaquets += parseFloat(userRow["Paquets"] !== undefined && userRow["Paquets"] !== "" ? userRow["Paquets"] : 0);
@@ -436,7 +453,6 @@
                 reelTempsTotal += calculatePrepCQ(item.rNum, routeKey, true) + calculateLivraison(item.rNum, routeKey, true);
             });
 
-            // Affichage des stats en haut
             document.getElementById('statManuelStd').innerText = stdManuel.toFixed(1);
             document.getElementById('statManuelReel').innerText = reelManuel.toFixed(1);
 
@@ -465,7 +481,6 @@
                         "Courrier Séquence": "",
                         "Paquets": "",
                         "Colis": "",
-                        "Tiers (1, 2, 3)": "",
                         "Nombre sortes CQ": ""
                     };
                 }
@@ -476,12 +491,7 @@
                 
                 let tdMod = document.createElement('td');
                 tdMod.className = "py-3 px-3 text-xs text-slate-300 font-medium border-t border-slate-700/80";
-                tdMod.innerHTML = `
-                    <div class="space-y-1">
-                        <span class="bg-indigo-500/15 text-indigo-300 px-2 py-0.5 rounded block text-center">${mod}</span>
-                        <div class="text-[10px] text-slate-400">Tiers du jour: <span id="tier_display_${routeKey}" class="text-amber-400 font-bold">${userInputs[routeKey]["Tiers (1, 2, 3)"] || "-"}</span></div>
-                    </div>
-                `;
+                tdMod.innerHTML = `<span class="bg-indigo-500/15 text-indigo-300 px-2 py-0.5 rounded">${mod}</span>`;
                 trStandard.appendChild(tdMod);
 
                 let tdRoute = document.createElement('td');
@@ -530,30 +540,7 @@
 
                 let tdInputMod = document.createElement('td');
                 tdInputMod.className = "py-3 px-3 text-xs text-slate-500";
-                
-                // Champ Saisie du Tiers du jour placé sous le module
-                const inputTier = document.createElement('input');
-                inputTier.type = "number";
-                inputTier.min = "1";
-                inputTier.max = "3";
-                inputTier.placeholder = "Tiers (1-3)";
-                inputTier.className = "w-24 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:ring-1 focus:ring-emerald-500 focus:outline-none";
-                inputTier.value = userInputs[routeKey]["Tiers (1, 2, 3)"] !== undefined ? userInputs[routeKey]["Tiers (1, 2, 3)"] : "";
-                
-                inputTier.oninput = (e) => {
-                    userInputs[routeKey]["Tiers (1, 2, 3)"] = e.target.value;
-                    document.getElementById(`tier_display_${routeKey}`).innerText = e.target.value || "-";
-                    
-                    const newPrep = calculatePrepCQ(rNum, routeKey, true);
-                    document.getElementById(`prep_${routeKey}`).innerText = newPrep === 0 ? "-" : newPrep.toFixed(2) + " min";
-                    
-                    const newLiv = calculateLivraison(rNum, routeKey, true);
-                    document.getElementById(`liv_${routeKey}`).innerText = newLiv === 0 ? "-" : newLiv.toFixed(2) + " min";
-                    
-                    renderTable();
-                    saveToFirebase();
-                };
-                tdInputMod.appendChild(inputTier);
+                tdInputMod.innerText = "-";
                 trInput.appendChild(tdInputMod);
 
                 let tdInputLabel = document.createElement('td');
