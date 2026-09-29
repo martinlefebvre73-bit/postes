@@ -111,7 +111,7 @@
             margin-bottom: 4px;
             color: #4b5563;
         }
-        .form-control {
+        .form-control, .form-select {
             padding: 8px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -119,7 +119,7 @@
             background: white;
             transition: all 0.2s;
         }
-        .form-control:focus {
+        .form-control:focus, .form-select:focus {
             outline: none;
             border-color: var(--primary-light);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
@@ -280,10 +280,11 @@
         }
     </style>
 
-    <!-- Firebase SDKs & Logic -->
+    <!-- Firebase SDKs & Logic avec getAuth inclus -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -296,6 +297,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         let listeEmployesMemoire = [];
         let editingIndex = null;
@@ -344,7 +346,19 @@
             supervisorRoutes["FA"] = ["FA1", "FA2"];
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
+        // Vérification de l'authentification avec onAuthStateChanged et initialisation
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('firebaseStatus').textContent = `Connecté (Utilisateur actif). Chargement des données...` + (isBookerMode ? " [Mode Booker Actif]" : "");
+                await initialiserDonnees();
+            } else {
+                // Si vous préférez autoriser l'accès sans redirection bloquante, vous pouvez commenter la ligne de redirection
+                document.getElementById('firebaseStatus').textContent = `Mode invité / Non authentifié. Tentative de chargement...`;
+                await initialiserDonnees();
+            }
+        });
+
+        async function initialiserDonnees() {
             document.getElementById('dateInput').valueAsDate = new Date();
 
             if (isBookerMode) {
@@ -368,14 +382,9 @@
             }
 
             populateAllRoutesDatalist();
-
-            // Chargement des employés depuis Firebase selon la méthode CQ
             await chargerEmployes();
-
-            document.getElementById('firebaseStatus').textContent = `Connecté à Firebase et employés chargés.` + (isBookerMode ? " [Mode Booker Actif]" : "");
-
             saveAndRender();
-        });
+        }
 
         // Méthode CQ : Récupération et tri alphabétique des employés depuis Firestore
         window.chargerEmployes = async () => {
@@ -413,6 +422,7 @@
                 });
             } catch (e) {
                 console.error("Erreur chargement employés: ", e);
+                document.getElementById('firebaseStatus').textContent = "Erreur de chargement des employés depuis Firestore.";
             }
         };
 
@@ -558,12 +568,7 @@
         }
 
         function updateStatsSummary() {
-            let tot1704 = 0;
-            let tot1508 = 0;
-            let totBz = 0;
-            let totGlobal = 0;
-            let totEquiv = 0;
-            let totPaye = 0;
+            let tot1704 = 0, tot1508 = 0, totBz = 0, totGlobal = 0, totEquiv = 0, totPaye = 0;
 
             entries.forEach(e => {
                 tot1704 += (e.heure1704 || 0);
@@ -699,8 +704,7 @@
                 return;
             }
 
-            let totalGlobal = 0;
-            let totalEquiv = 0;
+            let totalGlobal = 0, totalEquiv = 0;
             entries.forEach((item, index) => {
                 totalGlobal += item.totalHeures;
                 totalEquiv += (item.equiv8h || 0);
@@ -795,10 +799,8 @@
             friday.setHours(23,59,59,999);
 
             let week1508 = 0, weekBz = 0;
-            
             let extDays = [new Set(), new Set(), new Set(), new Set(), new Set()];
             let tempDays = [new Set(), new Set(), new Set(), new Set(), new Set()];
-
             let totalWeekExtSet = new Set();
             let totalWeekTempSet = new Set();
 
@@ -809,9 +811,7 @@
                     week1508 += (e.heure1508 || 0);
                     weekBz += (e.heureBz || 0);
 
-                    const dayOfWeek = d.getDay();
-                    const dayIndex = dayOfWeek - 1;
-
+                    const dayIndex = d.getDay() - 1;
                     if (dayIndex >= 0 && dayIndex <= 4) {
                         if (e.employeExterne) {
                             extDays[dayIndex].add(e.id || e.nom);
@@ -829,7 +829,6 @@
             document.getElementById('synWeekBz').textContent = weekBz.toFixed(2) + ' h';
 
             const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
-            
             let extHtml = "";
             for(let i=0; i<5; i++) {
                 extHtml += `${dayNames[i]}: <strong>${extDays[i].size}</strong> | `;
@@ -878,8 +877,7 @@
                 return;
             }
 
-            let reportTotal = 0;
-            let reportEquiv = 0;
+            let reportTotal = 0, reportEquiv = 0;
             filtered.forEach(item => {
                 reportTotal += item.totalHeures;
                 reportEquiv += (item.equiv8h || 0);
@@ -1122,10 +1120,10 @@
                     <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: 12 ou Ach1..." required oninput="updateModuleFromRouteInput()">
                     <datalist id="routesList"></datalist>
                 </div>
-                <!-- Liste déroulante 'nom' alimentée par Firebase (Méthode CQ) -->
+                <!-- Liste déroulante 'nom' alimentée par Firestore (Méthode CQ) -->
                 <div class="form-group">
                     <label for="nomInput">Employé</label>
-                    <select id="nomInput" class="form-control" required onchange="remplirParNom(this)">
+                    <select id="nomInput" class="form-select" required onchange="remplirParNom(this)">
                         <option value="">-- Choisir par nom --</option>
                     </select>
                 </div>
