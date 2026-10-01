@@ -354,14 +354,165 @@
       document.getElementById('menuPrincipal').style.display = 'block';
     }
     function retourMenuPrincipal() { retourMenu(); }
+
+    // Fonction de recherche mise à jour pour isoler uniquement le numéro de route (ignorant les lettres/préfixes)
     function ouvrirDirectoire() {
-      const numero = prompt('Entrez le numéro de route :');
-      if (numero && numero.trim() !== '') {
-        const routeNettoyee = numero.trim();
-        localStorage.setItem('numeroRoute', routeNettoyee);
-        location.href = encodeURIComponent(routeNettoyee) + '.htm';
+      const saisie = prompt('Entrez le numéro de route (ex: 4, 88, 90, 205, 310) :');
+      if (saisie && saisie.trim() !== '') {
+        // Extraction uniquement des chiffres saisis par l'utilisateur
+        const numRecherche = saisie.trim().replace(/\D/g, '');
+        
+        if (!numRecherche) {
+          alert("Veuillez entrer un numéro valide.");
+          return;
+        }
+
+        // Table de correspondance basée sur le fichier AÉROPORT 1 2026.htm[cite: 3]
+        const feuilles = [
+          { name: "Rte 1", file: "AÉROPORT%201%202026_fichiers/sheet001.htm" },
+          { name: "Rte 2", file: "AÉROPORT%201%202026_fichiers/sheet002.htm" },
+          { name: "Rte 3", file: "AÉROPORT%201%202026_fichiers/sheet003.htm" },
+          { name: "ROUTE 4", file: "AÉROPORT%201%202026_fichiers/sheet004.htm" },
+          { name: "Rte 5", file: "AÉROPORT%201%202026_fichiers/sheet005.htm" },
+          { name: "Rte 6", file: "AÉROPORT%201%202026_fichiers/sheet006.htm" },
+          { name: "Rte 7", file: "AÉROPORT%201%202026_fichiers/sheet007.htm" },
+          { name: "Rte 8", file: "AÉROPORT%201%202026_fichiers/sheet008.htm" },
+          { name: "ROUTE 9", file: "AÉROPORT%201%202026_fichiers/sheet009.htm" },
+          { name: "Rte 10", file: "AÉROPORT%201%202026_fichiers/sheet010.htm" },
+          { name: "ROUTE 11", file: "AÉROPORT%201%202026_fichiers/sheet011.htm" },
+          { name: "ROUTE 12", file: "AÉROPORT%201%202026_fichiers/sheet012.htm" },
+          { name: "ROUTE 13", file: "AÉROPORT%201%202026_fichiers/sheet013.htm" },
+          { name: "Rte 14", file: "AÉROPORT%201%202026_fichiers/sheet014.htm" },
+          { name: "Rte 15", file: "AÉROPORT%201%202026_fichiers/sheet015.htm" },
+          { name: "Rte 16", file: "AÉROPORT%201%202026_fichiers/sheet016.htm" },
+          { name: "Rte 17", file: "AÉROPORT%201%202026_fichiers/sheet017.htm" },
+          { name: "ROUTE 18", file: "AÉROPORT%201%202026_fichiers/sheet018.htm" },
+          { name: "Rte 19", file: "AÉROPORT%201%202026_fichiers/sheet019.htm" },
+          { name: "Rte 20", file: "AÉROPORT%201%202026_fichiers/sheet020.htm" },
+          { name: "route 21", file: "AÉROPORT%201%202026_fichiers/sheet021.htm" },
+          { name: "Rte 22", file: "AÉROPORT%201%202026_fichiers/sheet022.htm" },
+          { name: "Rte 23", file: "AÉROPORT%201%202026_fichiers/sheet023.htm" },
+          { name: "Rte 24", file: "AÉROPORT%201%202026_fichiers/sheet024.htm" },
+          { name: "ROUTE 25", file: "AÉROPORT%201%202026_fichiers/sheet025.htm" },
+          { name: "ROUTE 26", file: "AÉROPORT%201%202026_fichiers/sheet026.htm" },
+          { name: "Rte 27", file: "AÉROPORT%201%202026_fichiers/sheet027.htm" },
+          { name: "ROUTE 28", file: "AÉROPORT%201%202026_fichiers/sheet028.htm" },
+          { name: "Rte 29", file: "AÉROPORT%201%202026_fichiers/sheet029.htm" },
+          { name: "ROUTE 30", file: "AÉROPORT%201%202026_fichiers/sheet030.htm" },
+          { name: "ROUTE 31", file: "AÉROPORT%201%202026_fichiers/sheet031.htm" },
+          { name: "ROUTE 32", file: "AÉROPORT%201%202026_fichiers/sheet032.htm" },
+          { name: "Rte 33", file: "AÉROPORT%201%202026_fichiers/sheet033.htm" },
+          { name: "ROUTE 34", file: "AÉROPORT%201%202026_fichiers/sheet034.htm" },
+          { name: "ROUTE 35", file: "AÉROPORT%201%202026_fichiers/sheet035.htm" },
+          { name: "ROUTE 36", file: "AÉROPORT%201%202026_fichiers/sheet036.htm" },
+          { name: "ROUTE 37", file: "AÉROPORT%201%202026_fichiers/sheet037.htm" },
+          { name: "ROUTE 38", file: "AÉROPORT%201%202026_fichiers/sheet038.htm" },
+          { name: "Rte 40", file: "AÉROPORT%201%202026_fichiers/sheet039.htm" },
+          { name: "ROUTE 42", file: "AÉROPORT%201%202026_fichiers/sheet040.htm" },
+          { name: "ROUTE 44", file: "AÉROPORT%201%202026_fichiers/sheet041.htm" },
+          { name: "ROUTE 46", file: "AÉROPORT%201%202026_fichiers/sheet042.htm" },
+          { name: "Rte 48", file: "AÉROPORT%201%202026_fichiers/sheet043.htm" },
+          { name: "ROUTE 50", file: "AÉROPORT%201%202026_fichiers/sheet044.htm" },
+          { name: "ROUTE 52", file: "AÉROPORT%201%202026_fichiers/sheet045.htm" },
+          { name: "Rte 54", file: "AÉROPORT%201%202026_fichiers/sheet046.htm" },
+          { name: "ROUTE 56", file: "AÉROPORT%201%202026_fichiers/sheet047.htm" },
+          { name: "Rte 58", file: "AÉROPORT%201%202026_fichiers/sheet048.htm" },
+          { name: "ROUTE 60", file: "AÉROPORT%201%202026_fichiers/sheet049.htm" },
+          { name: "ROUTE 62", file: "AÉROPORT%201%202026_fichiers/sheet050.htm" },
+          { name: "ROUTE 64", file: "AÉROPORT%201%202026_fichiers/sheet051.htm" },
+          { name: "ROUTE 66", file: "AÉROPORT%201%202026_fichiers/sheet052.htm" },
+          { name: "Rte 68", file: "AÉROPORT%201%202026_fichiers/sheet053.htm" },
+          { name: "Rte 70", file: "AÉROPORT%201%202026_fichiers/sheet054.htm" },
+          { name: "ROUTE 72", file: "AÉROPORT%201%202026_fichiers/sheet055.htm" },
+          { name: "ROUTE 74", file: "AÉROPORT%201%202026_fichiers/sheet056.htm" },
+          { name: "ROUTE 76", file: "AÉROPORT%201%202026_fichiers/sheet057.htm" },
+          { name: "ROUTE 78", file: "AÉROPORT%201%202026_fichiers/sheet058.htm" },
+          { name: "Rte 80", file: "AÉROPORT%201%202026_fichiers/sheet059.htm" },
+          { name: "Rte 82", file: "AÉROPORT%201%202026_fichiers/sheet060.htm" },
+          { name: "ROUTE 84", file: "AÉROPORT%201%202026_fichiers/sheet061.htm" },
+          { name: "Rte 88", file: "AÉROPORT%201%202026_fichiers/sheet062.htm" },
+          { name: "ROUTE 90TP", file: "AÉROPORT%201%202026_fichiers/sheet063.htm" },
+          { name: "SS192", file: "AÉROPORT%201%202026_fichiers/sheet064.htm" },
+          { name: "SS193", file: "AÉROPORT%201%202026_fichiers/sheet065.htm" },
+          { name: "SS195", file: "AÉROPORT%201%202026_fichiers/sheet066.htm" },
+          { name: "secteur 1", file: "AÉROPORT%201%202026_fichiers/sheet067.htm" },
+          { name: "secteur 2", file: "AÉROPORT%201%202026_fichiers/sheet068.htm" },
+          { name: "201", file: "AÉROPORT%201%202026_fichiers/sheet069.htm" },
+          { name: "202", file: "AÉROPORT%201%202026_fichiers/sheet070.htm" },
+          { name: "203", file: "AÉROPORT%201%202026_fichiers/sheet071.htm" },
+          { name: "204", file: "AÉROPORT%201%202026_fichiers/sheet072.htm" },
+          { name: "205", file: "AÉROPORT%201%202026_fichiers/sheet073.htm" },
+          { name: "map 205", file: "AÉROPORT%201%202026_fichiers/sheet074.htm" },
+          { name: "206", file: "AÉROPORT%201%202026_fichiers/sheet075.htm" },
+          { name: "info 207", file: "AÉROPORT%201%202026_fichiers/sheet076.htm" },
+          { name: "207", file: "AÉROPORT%201%202026_fichiers/sheet077.htm" },
+          { name: "208", file: "AÉROPORT%201%202026_fichiers/sheet078.htm" },
+          { name: "209", file: "AÉROPORT%201%202026_fichiers/sheet079.htm" },
+          { name: "210", file: "AÉROPORT%201%202026_fichiers/sheet080.htm" },
+          { name: "211", file: "AÉROPORT%201%202026_fichiers/sheet081.htm" },
+          { name: "212", file: "AÉROPORT%201%202026_fichiers/sheet082.htm" },
+          { name: "213", file: "AÉROPORT%201%202026_fichiers/sheet083.htm" },
+          { name: "214", file: "AÉROPORT%201%202026_fichiers/sheet084.htm" },
+          { name: "215", file: "AÉROPORT%201%202026_fichiers/sheet085.htm" },
+          { name: "216", file: "AÉROPORT%201%202026_fichiers/sheet086.htm" },
+          { name: "217", file: "AÉROPORT%201%202026_fichiers/sheet087.htm" },
+          { name: "MAP 218", file: "AÉROPORT%201%202026_fichiers/sheet088.htm" },
+          { name: "218", file: "AÉROPORT%201%202026_fichiers/sheet089.htm" },
+          { name: "219", file: "AÉROPORT%201%202026_fichiers/sheet090.htm" },
+          { name: "220", file: "AÉROPORT%201%202026_fichiers/sheet091.htm" },
+          { name: "221", file: "AÉROPORT%201%202026_fichiers/sheet092.htm" },
+          { name: "222", file: "AÉROPORT%201%202026_fichiers/sheet093.htm" },
+          { name: "223", file: "AÉROPORT%201%202026_fichiers/sheet094.htm" },
+          { name: "224", file: "AÉROPORT%201%202026_fichiers/sheet095.htm" },
+          { name: "225", file: "AÉROPORT%201%202026_fichiers/sheet096.htm" },
+          { name: "226", file: "AÉROPORT%201%202026_fichiers/sheet097.htm" },
+          { name: "227", file: "AÉROPORT%201%202026_fichiers/sheet098.htm" },
+          { name: "228", file: "AÉROPORT%201%202026_fichiers/sheet099.htm" },
+          { name: "230", file: "AÉROPORT%201%202026_fichiers/sheet100.htm" },
+          { name: "232", file: "AÉROPORT%201%202026_fichiers/sheet101.htm" },
+          { name: "234", file: "AÉROPORT%201%202026_fichiers/sheet102.htm" },
+          { name: "236", file: "AÉROPORT%201%202026_fichiers/sheet103.htm" },
+          { name: "238", file: "AÉROPORT%201%202026_fichiers/sheet104.htm" },
+          { name: "240", file: "AÉROPORT%201%202026_fichiers/sheet105.htm" },
+          { name: "242", file: "AÉROPORT%201%202026_fichiers/sheet106.htm" },
+          { name: "244", file: "AÉROPORT%201%202026_fichiers/sheet107.htm" },
+          { name: "246", file: "AÉROPORT%201%202026_fichiers/sheet108.htm" },
+          { name: "248", file: "AÉROPORT%201%202026_fichiers/sheet109.htm" },
+          { name: "250", file: "AÉROPORT%201%202026_fichiers/sheet110.htm" },
+          { name: "252", file: "AÉROPORT%201%202026_fichiers/sheet111.htm" },
+          { name: "254", file: "AÉROPORT%201%202026_fichiers/sheet112.htm" },
+          { name: "256", file: "AÉROPORT%201%202026_fichiers/sheet113.htm" },
+          { name: "258", file: "AÉROPORT%201%202026_fichiers/sheet114.htm" },
+          { name: "260", file: "AÉROPORT%201%202026_fichiers/sheet115.htm" },
+          { name: "262", file: "AÉROPORT%201%202026_fichiers/sheet116.htm" },
+          { name: "264", file: "AÉROPORT%201%202026_fichiers/sheet117.htm" },
+          { name: "266", file: "AÉROPORT%201%202026_fichiers/sheet118.htm" },
+          { name: "268", file: "AÉROPORT%201%202026_fichiers/sheet119.htm" },
+          { name: "270", file: "AÉROPORT%201%202026_fichiers/sheet120.htm" },
+          { name: "272", file: "AÉROPORT%201%202026_fichiers/sheet121.htm" },
+          { name: "274", file: "AÉROPORT%201%202026_fichiers/sheet122.htm" },
+          { name: "278", file: "AÉROPORT%201%202026_fichiers/sheet123.htm" },
+          { name: "282", file: "AÉROPORT%201%202026_fichiers/sheet124.htm" },
+          { name: "286", file: "AÉROPORT%201%202026_fichiers/sheet125.htm" },
+          { name: "Rte 24 (2)", file: "AÉROPORT%201%202026_fichiers/sheet126.htm" },
+          { name: "290", file: "AÉROPORT%201%202026_fichiers/sheet127.htm" },
+          { name: "310TP", file: "AÉROPORT%201%202026_fichiers/sheet128.htm" }
+        ];
+
+        // Recherche par correspondance exacte des chiffres extraits du nom de la feuille
+        const trouve = feuilles.find(f => {
+          const chiffresFeuille = f.name.replace(/\D/g, '');
+          return chiffresFeuille === numRecherche;
+        });
+
+        if (trouve) {
+          location.href = trouve.file;
+        } else {
+          alert("Aucune route trouvée pour le numéro : " + numRecherche);
+        }
       }
     }
   </script>
 </body>
 </html>
+```[cite: 3]
