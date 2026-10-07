@@ -79,7 +79,7 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuration Firebase unifiée
+        // Configuration Firebase fournie
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
             authDomain: "postesst.firebaseapp.com",
@@ -89,6 +89,7 @@
             appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -112,16 +113,14 @@
                     alert("Accès refusé : Vous n'avez pas les autorisations nécessaires.");
                     window.location.href = 'index.html';
                 } else {
-                    // Utilisateur authentifié et autorisé, chargement des données
                     loadEmployees();
                 }
             } else {
-                // Redirection vers l'index si non connectée
                 window.location.href = 'index.html';
             }
         });
 
-        // Fonction pour charger et afficher la liste des employés
+        // Fonction pour charger et afficher la collection 'employes'
         async function loadEmployees() {
             employeeListEl.innerHTML = "Chargement...";
             try {
@@ -129,7 +128,7 @@
                 employeeListEl.innerHTML = "";
 
                 if (querySnapshot.empty) {
-                    employeeListEl.innerHTML = "<p>Aucun employé trouvé.</p>";
+                    employeeListEl.innerHTML = "<p>Aucun employé trouvé dans la collection.</p>";
                     return;
                 }
 
@@ -155,7 +154,7 @@
                 });
             } catch (e) {
                 console.error("Erreur de chargement :", e);
-                employeeListEl.innerHTML = "<p>Erreur lors du chargement des données.</p>";
+                employeeListEl.innerHTML = "<p>Erreur lors du chargement des données depuis Firestore.</p>";
             }
         }
 
@@ -185,11 +184,10 @@
                 loadEmployees();
             } catch (err) {
                 console.error("Erreur lors de l'enregistrement :", err);
-                alert("Une erreur est survenue.");
+                alert("Une erreur est survenue lors de l'écriture dans Firestore.");
             }
         });
 
-        // Fonction globale pour remplir le formulaire en vue d'une modification
         window.prepareEdit = function(id, prenom, nom, poste, email, quitteDepot) {
             document.getElementById("employeeId").value = id;
             document.getElementById("prenom").value = prenom;
@@ -204,7 +202,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Réinitialisation du formulaire
         window.resetForm = function() {
             form.reset();
             document.getElementById("employeeId").value = "";
@@ -213,7 +210,6 @@
             cancelBtn.style.display = "none";
         }
 
-        // Échappement pour les attributs HTML
         function escapeHtml(str) {
             return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
