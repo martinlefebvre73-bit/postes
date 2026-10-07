@@ -171,7 +171,9 @@
         <button onclick="location.href='controlcq.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
         <button onclick="location.href='volume.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
         <button onclick="location.href='bench.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
-        <button onclick="location.href='CQ.html'" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
+        <!-- Bouton TDP ajouté dans le menu secondaire -->
+        <button onclick="location.href='tdpInventaire.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center">TDP</button>
+        <button onclick="window.open('https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=dm0FdSi2iESCsICwi1LYVKNcQqQ-IChFlm8qXfDbDbRUNUQ0N0JXREhGWkJaQlZJSzAwNTBZTlpPWS4u', '_blank')" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
       </div>
       <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
     </div>
@@ -230,7 +232,7 @@
         <button onclick="location.href='volume.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
         <button onclick="location.href='bench.html?mode=booker'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
         <button onclick="location.href='interventions.html?mode=chef'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Intervention SST</button>
-        <button onclick="location.href='CQ.html'" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
+        <button onclick="window.open('https://forms.cloud.microsoft/Pages/DesignPageV2.aspx?prevorigin=shell&origin=NeoPortalPage&subpage=design&id=dm0FdSi2iESCsICwi1LYVKNcQqQ-IChFlm8qXfDbDbRUNUQ0N0JXREhGWkJaQlZJSzAwNTBZTlpPWS4u', '_blank')" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
       </div>
 
       <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
@@ -367,7 +369,7 @@
           return;
         }
 
-        // Table de correspondance basée sur le fichier AÉROPORT 1 2026.htm[cite: 3]
+        // Table de correspondance basée sur le fichier AÉROPORT 1 2026.htm
         const feuilles = [
           { name: "Rte 1", file: "AÉROPORT%201%202026_fichiers/sheet001.htm" },
           { name: "Rte 2", file: "AÉROPORT%201%202026_fichiers/sheet002.htm" },
@@ -515,4 +517,3 @@
   </script>
 </body>
 </html>
-```[cite: 3]
