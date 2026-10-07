@@ -7,10 +7,10 @@
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f4f4f9; }
         h1, h2 { color: #333; }
-        form { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        form, .search-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="email"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"], input[type="email"], input[type="tel"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         .checkbox-group { display: flex; align-items: center; gap: 10px; }
         .checkbox-group input { width: 20px; height: 20px; }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
@@ -37,8 +37,13 @@
     <!-- Formulaire d'ajout / modification -->
     <form id="employeeForm">
         <h2 id="formTitle">Ajouter un employé</h2>
-        <input type="hidden" id="employeeId">
+        <input type="hidden" id="docId">
         
+        <div class="form-group">
+            <label for="idEmploye">ID Employé :</label>
+            <input type="text" id="idEmploye" required>
+        </div>
+
         <div class="form-group">
             <label for="prenom">Prénom :</label>
             <input type="text" id="prenom" required>
@@ -50,8 +55,18 @@
         </div>
         
         <div class="form-group">
-            <label for="poste">Poste :</label>
-            <input type="text" id="poste" required>
+            <label for="route">Route :</label>
+            <input type="text" id="route" required placeholder="Ex: Route 4, 205...">
+        </div>
+
+        <div class="form-group">
+            <label for="anciennete">Ancienneté :</label>
+            <input type="text" id="anciennete" required placeholder="Ex: 5 ans, 2020...">
+        </div>
+
+        <div class="form-group">
+            <label for="telephone">Téléphone :</label>
+            <input type="tel" id="telephone" placeholder="Ex: 514-000-0000">
         </div>
         
         <div class="form-group">
@@ -69,6 +84,14 @@
         <button type="button" id="cancelBtn" class="btn-cancel" style="display:none;" onclick="resetForm()">Annuler</button>
     </form>
 
+    <!-- Section de recherche -->
+    <div class="search-container">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="searchInput">Rechercher un employé :</label>
+            <input type="text" id="searchInput" placeholder="Filtrer par nom ou par ID employé..." oninput="filterEmployees()">
+        </div>
+    </div>
+
     <!-- Liste des employés -->
     <h2>Liste des employés</h2>
     <div id="employeeList">Vérification de l'authentification...</div>
@@ -79,7 +102,7 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuration Firebase fournie
+        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
             authDomain: "postesst.firebaseapp.com",
@@ -89,7 +112,6 @@
             appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -99,6 +121,8 @@
         const formTitle = document.getElementById("formTitle");
         const submitBtn = document.getElementById("submitBtn");
         const cancelBtn = document.getElementById("cancelBtn");
+
+        let allEmployees = []; // Tableau pour stocker les employés et faciliter la recherche locale
 
         const utilisateursAutorises = [
             "sandra.dostie@canadapost.ca",
@@ -120,63 +144,95 @@
             }
         });
 
-        // Fonction pour charger et afficher la collection 'employes'
+        // Fonction pour charger la collection 'employes'
         async function loadEmployees() {
             employeeListEl.innerHTML = "Chargement...";
             try {
                 const querySnapshot = await getDocs(collection(db, "employes"));
-                employeeListEl.innerHTML = "";
-
-                if (querySnapshot.empty) {
-                    employeeListEl.innerHTML = "<p>Aucun employé trouvé dans la collection.</p>";
-                    return;
-                }
+                allEmployees = [];
 
                 querySnapshot.forEach((docSnap) => {
-                    const emp = docSnap.data();
-                    const id = docSnap.id;
-                    const hasLeft = emp.quitteDepot || false;
-
-                    const card = document.createElement("div");
-                    card.className = "employee-card";
-                    card.innerHTML = `
-                        <div class="employee-info">
-                            <h3>${emp.prenom} ${emp.nom}</h3>
-                            <p><strong>Poste :</strong> ${emp.poste}</p>
-                            <p><strong>Email :</strong> ${emp.email}</p>
-                            ${hasLeft ? '<p class="left-status">⚠️ A quitté le dépôt</p>' : ''}
-                        </div>
-                        <div class="actions">
-                            <button onclick="prepareEdit('${id}', '${escapeHtml(emp.prenom)}', '${escapeHtml(emp.nom)}', '${escapeHtml(emp.poste)}', '${escapeHtml(emp.email)}', ${hasLeft})">Modifier</button>
-                        </div>
-                    `;
-                    employeeListEl.appendChild(card);
+                    allEmployees.push({
+                        docId: docSnap.id,
+                        ...docSnap.data()
+                    });
                 });
+
+                displayEmployees(allEmployees);
             } catch (e) {
                 console.error("Erreur de chargement :", e);
                 employeeListEl.innerHTML = "<p>Erreur lors du chargement des données depuis Firestore.</p>";
             }
         }
 
+        // Fonction pour afficher une liste d'employés sous forme de cartes
+        window.displayEmployees = function(employees) {
+            employeeListEl.innerHTML = "";
+
+            if (employees.length === 0) {
+                employeeListEl.innerHTML = "<p>Aucun employé trouvé.</p>";
+                return;
+            }
+
+            employees.forEach((emp) => {
+                const hasLeft = emp.quitteDepot || false;
+
+                const card = document.createElement("div");
+                card.className = "employee-card";
+                card.innerHTML = `
+                    <div class="employee-info">
+                        <h3>${emp.prenom || ''} ${emp.nom || ''}</h3>
+                        <p><strong>ID :</strong> ${emp.idEmploye || 'N/A'}</p>
+                        <p><strong>Route :</strong> ${emp.route || 'N/A'}</p>
+                        <p><strong>Ancienneté :</strong> ${emp.anciennete || 'N/A'}</p>
+                        <p><strong>Téléphone :</strong> ${emp.telephone || 'N/A'}</p>
+                        <p><strong>Email :</strong> ${emp.email || ''}</p>
+                        ${hasLeft ? '<p class="left-status">⚠️ A quitté le dépôt</p>' : ''}
+                    </div>
+                    <div class="actions">
+                        <button onclick="prepareEdit('${emp.docId}', '${escapeHtml(emp.idEmploye || '')}', '${escapeHtml(emp.prenom || '')}', '${escapeHtml(emp.nom || '')}', '${escapeHtml(emp.route || '')}', '${escapeHtml(emp.anciennete || '')}', '${escapeHtml(emp.telephone || '')}', '${escapeHtml(emp.email || '')}', ${hasLeft})">Modifier</button>
+                    </div>
+                `;
+                employeeListEl.appendChild(card);
+            });
+        }
+
+        // Fonction de filtrage en temps réel par Nom ou ID
+        window.filterEmployees = function() {
+            const query = document.getElementById("searchInput").value.toLowerCase().trim();
+            
+            const filtered = allEmployees.filter(emp => {
+                const nomMatch = (emp.nom || "").toLowerCase().includes(query);
+                const idMatch = (emp.idEmploye || "").toLowerCase().includes(query);
+                const prenomMatch = (emp.prenom || "").toLowerCase().includes(query); // Optionnel pour plus de confort
+                return nomMatch || idMatch || prenomMatch;
+            });
+
+            displayEmployees(filtered);
+        }
+
         // Événement Soumission du formulaire (Ajout ou Modification)
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             
-            const id = document.getElementById("employeeId").value;
+            const docId = document.getElementById("docId").value;
+            const idEmploye = document.getElementById("idEmploye").value;
             const prenom = document.getElementById("prenom").value;
             const nom = document.getElementById("nom").value;
-            const poste = document.getElementById("poste").value;
+            const route = document.getElementById("route").value;
+            const anciennete = document.getElementById("anciennete").value;
+            const telephone = document.getElementById("telephone").value;
             const email = document.getElementById("email").value;
             const quitteDepot = document.getElementById("quitteDepot").checked;
 
             try {
-                if (id) {
-                    const empRef = doc(db, "employes", id);
-                    await updateDoc(empRef, { prenom, nom, poste, email, quitteDepot });
+                if (docId) {
+                    const empRef = doc(db, "employes", docId);
+                    await updateDoc(empRef, { idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot });
                     alert("Employé mis à jour avec succès !");
                 } else {
                     await addDoc(collection(db, "employes"), {
-                        prenom, nom, poste, email, quitteDepot, dateAjout: new Date()
+                        idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot, dateAjout: new Date()
                     });
                     alert("Employé ajouté avec succès !");
                 }
@@ -188,11 +244,14 @@
             }
         });
 
-        window.prepareEdit = function(id, prenom, nom, poste, email, quitteDepot) {
-            document.getElementById("employeeId").value = id;
+        window.prepareEdit = function(docId, idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot) {
+            document.getElementById("docId").value = docId;
+            document.getElementById("idEmploye").value = idEmploye;
             document.getElementById("prenom").value = prenom;
             document.getElementById("nom").value = nom;
-            document.getElementById("poste").value = poste;
+            document.getElementById("route").value = route;
+            document.getElementById("anciennete").value = anciennete;
+            document.getElementById("telephone").value = telephone;
             document.getElementById("email").value = email;
             document.getElementById("quitteDepot").checked = quitteDepot;
 
@@ -204,14 +263,14 @@
 
         window.resetForm = function() {
             form.reset();
-            document.getElementById("employeeId").value = "";
+            document.getElementById("docId").value = "";
             formTitle.textContent = "Ajouter un employé";
             submitBtn.textContent = "Ajouter l'employé";
             cancelBtn.style.display = "none";
         }
 
         function escapeHtml(str) {
-            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
     </script>
 </body>
