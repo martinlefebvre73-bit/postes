@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Employés - PostesST</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f4f4f9; }
+        h1, h2 { color: #333; }
+        form { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="email"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .checkbox-group input { width: 20px; height: 20px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        button.btn-cancel { background-color: #f44336; margin-left: 10px; }
+        button.btn-cancel:hover { background-color: #d32f2f; }
+        .employee-card { background: #fff; padding: 15px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .employee-info h3 { margin: 0 0 5px 0; }
+        .employee-info p { margin: 3px 0; color: #666; }
+        .actions button { padding: 5px 10px; font-size: 14px; }
+        .left-status { color: #d9534f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Gestion des Fiches Employés</h1>
+
+    <!-- Formulaire d'ajout / modification -->
+    <form id="employeeForm">
+        <h2 id="formTitle">Ajouter un employé</h2>
+        <input type="hidden" id="employeeId">
+        
+        <div class="form-group">
+            <label for="prenom">Prénom :</label>
+            <input type="text" id="prenom" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="nom">Nom :</label>
+            <input type="text" id="nom" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="poste">Poste :</label>
+            <input type="text" id="poste" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email :</label>
+            <input type="email" id="email" required>
+        </div>
+
+        <!-- Champ Case à cocher : Quitté le dépôt -->
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="quitteDepot">
+            <label for="quitteDepot" style="margin-bottom:0; cursor:pointer;">A quitté le dépôt</label>
+        </div>
+
+        <button type="submit" id="submitBtn">Ajouter l'employé</button>
+        <button type="button" id="cancelBtn" class="btn-cancel" style="display:none;" onclick="resetForm()">Annuler</button>
+    </form>
+
+    <!-- Liste des employés -->
+    <h2>Liste des employés</h2>
+    <div id="employeeList">Chargement...</div>
+
+    <!-- Script Firebase et logique applicative -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Configuration Firebase fournie
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById("employeeForm");
+        const employeeListEl = document.getElementById("employeeList");
+        const formTitle = document.getElementById("formTitle");
+        const submitBtn = document.getElementById("submitBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+
+        // Fonction pour charger et afficher la liste des employés
+        async function loadEmployees() {
+            employeeListEl.innerHTML = "Chargement...";
+            try {
+                const querySnapshot = await getDocs(collection(db, "employes"));
+                employeeListEl.innerHTML = "";
+
+                if (querySnapshot.empty) {
+                    employeeListEl.innerHTML = "<p>Aucun employé trouvé.</p>";
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const emp = docSnap.data();
+                    const id = docSnap.id;
+                    const hasLeft = emp.quitteDepot || false;
+
+                    const card = document.createElement("div");
+                    card.className = "employee-card";
+                    card.innerHTML = `
+                        <div class="employee-info">
+                            <h3>${emp.prenom} ${emp.nom}</h3>
+                            <p><strong>Poste :</strong> ${emp.poste}</p>
+                            <p><strong>Email :</strong> ${emp.email}</p>
+                            ${hasLeft ? '<p class="left-status">⚠️ A quitté le dépôt</p>' : ''}
+                        </div>
+                        <div class="actions">
+                            <button onclick="prepareEdit('${id}', '${escapeHtml(emp.prenom)}', '${escapeHtml(emp.nom)}', '${escapeHtml(emp.poste)}', '${escapeHtml(emp.email)}', ${hasLeft})">Modifier</button>
+                        </div>
+                    `;
+                    employeeListEl.appendChild(card);
+                });
+            } catch (e) {
+                console.error("Erreur de chargement :", e);
+                employeeListEl.innerHTML = "<p>Erreur lors du chargement des données.</p>";
+            }
+        }
+
+        // Événement Soumission du formulaire (Ajout ou Modification)
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById("employeeId").value;
+            const prenom = document.getElementById("prenom").value;
+            const nom = document.getElementById("nom").value;
+            const poste = document.getElementById("poste").value;
+            const email = document.getElementById("email").value;
+            const quitteDepot = document.getElementById("quitteDepot").checked;
+
+            try {
+                if (id) {
+                    // Modification d'un employé existant
+                    const empRef = doc(db, "employes", id);
+                    await updateDoc(empRef, { prenom, nom, poste, email, quitteDepot });
+                    alert("Employé mis à jour avec succès !");
+                } else {
+                    // Ajout d'un nouvel employé
+                    await addDoc(collection(db, "employes"), {
+                        prenom, nom, poste, email, quitteDepot, dateAjout: new Date()
+                    });
+                    alert("Employé ajouté avec succès !");
+                }
+                resetForm();
+                loadEmployees();
+            } catch (err) {
+                console.error("Erreur lors de l'enregistrement :", err);
+                alert("Une erreur est survenue.");
+            }
+        });
+
+        // Fonction globale pour remplir le formulaire avec les données existantes en vue d'une modification
+        window.prepareEdit = function(id, prenom, nom, poste, email, quitteDepot) {
+            document.getElementById("employeeId").value = id;
+            document.getElementById("prenom").value = prenom;
+            document.getElementById("nom").value = nom;
+            document.getElementById("poste").value = poste;
+            document.getElementById("email").value = email;
+            document.getElementById("quitteDepot").checked = quitteDepot;
+
+            formTitle.textContent = "Modifier l'employé";
+            submitBtn.textContent = "Mettre à jour";
+            cancelBtn.style.display = "inline-block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Réinitialisation du formulaire
+        window.resetForm = function() {
+            form.reset();
+            document.getElementById("employeeId").value = "";
+            formTitle.textContent = "Ajouter un employé";
+            submitBtn.textContent = "Ajouter l'employé";
+            cancelBtn.style.display = "none";
+        }
+
+        // Échappement basique pour les attributs HTML
+        function escapeHtml(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // Charger les employés au démarrage
+        loadEmployees();
+    </script>
+</body>
+</html>
