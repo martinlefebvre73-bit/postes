@@ -1,519 +1,849 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Postes Canada — Menu Principal</title>
-  
-  <!-- Configuration PWA / Application Mobile -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0d1b2a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="image.png">
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts : Cinzel & Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <!-- Configuration Tailwind personnalisée -->
-  <script>
-      tailwind.config = {
-          theme: {
-              extend: {
-                  colors: {
-                      luxuryBlack: '#0d1b2a',
-                      luxuryCard: '#1b263b',
-                      gold: '#d4af37',
-                      beigeSoft: '#e0e0e0',
-                      beigeMuted: '#a5b4fc',
-                  },
-                  fontFamily: {
-                      serif: ['Cinzel', 'serif'],
-                      sans: ['Plus Jakarta Sans', 'sans-serif'],
-                  }
-              }
-          }
-      }
-  </script>
-  <style>
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #0d1b2a; }
-      ::-webkit-scrollbar-thumb { background: #415a77; border-radius: 4px; }
-      .card-border { border: 1px solid #415a77; }
-      .card-watermark { position: relative; overflow: hidden; }
-      .card-watermark::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-image: url('image.png');
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: 60%;
-        opacity: 0.07;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .card-watermark > * { position: relative; z-index: 1; }
-  </style>
-</head>
-<body class="bg-luxuryBlack text-beigeSoft font-sans antialiased selection:bg-blue-500 selection:text-white min-h-screen flex flex-col items-center justify-center p-6 relative overflow-x-hidden">
-
-  <!-- ÉCRAN DE CONNEXION -->
-  <div class="w-full max-w-md bg-luxuryCard p-8 rounded-2xl card-border shadow-2xl relative z-10 card-watermark" id="vue-connexion">
-    <div class="text-center mb-6">
-      <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-          <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-      </div>
-      <h3 class="font-serif text-2xl font-bold text-white">Connexion Superviseur</h3>
-      <span class="text-[10px] tracking-[0.25em] text-beigeMuted uppercase">Postes Canada • Dépôt Aéroport</span>
-    </div>
-
-    <form id="formConnexion">
-      <div class="mb-4 text-start">
-        <label class="block text-xs uppercase tracking-wider text-beigeMuted mb-2">Courriel</label>
-        <input type="email" class="w-full px-4 py-3 rounded-xl bg-luxuryBlack text-white card-border focus:outline-none focus:border-blue-500 transition-colors text-sm" id="emailConnexion" required placeholder="nom@entreprise.com">
-      </div>
-      <div class="mb-6 text-start">
-        <label class="block text-xs uppercase tracking-wider text-beigeMuted mb-2">Mot de passe</label>
-        <input type="password" class="w-full px-4 py-3 rounded-xl bg-luxuryBlack text-white card-border focus:outline-none focus:border-blue-500 transition-colors text-sm" id="passwordConnexion" required placeholder="Mot de passe">
-      </div>
-      <button type="submit" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Se connecter</button>
-    </form>
-  </div>
-
-  <!-- APPLICATION PRINCIPALE -->
-  <div class="w-full max-w-md bg-luxuryCard p-8 rounded-2xl card-border shadow-2xl relative z-10 card-watermark hidden" id="app-container">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion d'Inventaire - TDP (Postes Canada)</title>
+    <!-- Tailwind CSS pour un design moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts : Cinzel & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Menu Principal -->
-    <div class="menu" id="menuPrincipal">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
-        <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Menu Principal</h1>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="ouvrirMenuRestructuration()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Restructuration</button>
-        
-        <!-- Boutons Restreints (masqués par défaut via la classe 'hidden') -->
-        <button id="btnChef" onclick="ouvrirMenuChef()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center hidden">Chef</button>
-        <button id="btnBooker" onclick="ouvrirMenuBooker()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center hidden">Booker</button>
-        
-        <button onclick="ouvrirMenuDocuments()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Documents</button>
-        
-        <!-- Bouton Liens dans le menu principal -->
-        <button onclick="ouvrirMenuLiens()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Liens</button>
-
-        <button onclick="location.href='Rapport.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-red-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Problème de livraison</button>
-        
-        <!-- Bouton Intervention SST sur toute la largeur (col-span-2) -->
-        <button onclick="location.href='interventions.html'" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Intervention SST</button>
-        
-        <button onclick="deconnecterUtilisateur()" class="col-span-2 w-full min-h-[52px] py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-4 cursor-pointer flex items-center justify-center text-center">Déconnexion</button>
-      </div>
-    </div>
-
-    <!-- Menu Secondaire (Section Liens) -->
-    <div class="menu" id="menuLiens" style="display: none;">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
-        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Liens Utiles</h2>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="window.open('https://www.canadapost-postescanada.ca/lfe-cap/fr/ouvertur-session?idCreationProfil=pme_mode1,consommateur,lien_commercial,pme_lien&urlSource=https%253A%2F%2Fwww.canadapost-postescanada.ca%2Fshippingtools-outilsexpedition%2Ffr%2Fpanier&urlCible=https%253A%2F%2Fwww.canadapost-postescanada.ca%2Fshippingtools-outilsexpedition%2Ffr%2Fpanier&nivaut=&langue=fr', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Etiquette</button>
-        
-        <button onclick="window.open('https://s1.ariba.com/gb/?realm=canadapost-postescanada-1&locale=fr_CA', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Ariba</button>
-        
-        <button onclick="window.open('https://app.powerbi.com/groups/me/apps/8790bb80-6829-4dfe-8fca-5c23840f5af1/reports/7fd64425-172f-45dc-942b-81c5edb43453/ReportSection?experience=power-bi', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Power BI</button>
-        
-        <button onclick="window.open('http://bmk.cpggpc.ca/AMS/MainSearchPage.aspx', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Main search</button>
-        
-        <button onclick="window.open('https://search-tt.azcpggpc.ca/', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Tracking</button>
-        
-        <button onclick="window.open('https://app.powerbi.com/groups/me/reports/2fedcce6-6e52-4fe8-a464-3589a85b1caa/ReportSectionb3924a5ab9c42ba8ad30?language=fr-ca&disableBranding=1&teamsMobileRedirect=true&teamsMobileRedirectUrl=https:%2F%2Fapp.powerbi.com%2FMobileRedirect.html%3Faction%3DOpenReport%26reportObjectId%3D2fedcce6-6e52-4fe8-a464-3589a85b1caa%26ctid%3D75056d76-b628-4488-82b0-80b08b52d854%26OpenAppFromWindowsPCAndTablet%3Dfalse%26emailSource%3DReportInvitation%26notificationView%3D1%26pbi_source%3DgrantReportAccessTeamsNotificationView&clientSideAuth=0&experience=power-bi', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Daily repport</button>
-        
-        <button onclick="window.open('http://lep-ipcpctx.cpggpc.ca/Citrix/LepineWeb/', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">GIA</button>
-        
-        <button onclick="window.open('https://www.cpcgwmsclaimstatus.ca/account/login/MustAuthLogin', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Suivi médical</button>
-        
-        <button onclick="window.open('https://cpggpc.sharepoint.com/sites/SPCPC-Ops-Quebec/SitePages/fr/Home.aspx', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-700/30 transition-all cursor-pointer flex items-center justify-center text-center">Share Quebec</button>
-        
-        <button onclick="window.open('http://cpgboprd.cpggpc.ca/BOE/BI/', '_blank')" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Rapports Crystal</button>
-      </div>
-
-      <button onclick="retourMenuPrincipal()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
-    </div>
-
-    <!-- Menu Secondaire (Section Documents) -->
-    <div class="menu" id="menuSecondaire" style="display: none;">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
-        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Menu Secondaire</h2>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="ouvrirDirectoire()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Directoires</button>
-        <button onclick="location.href='casier 1.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Verification Casier</button>
-        <button onclick="location.href='quotidien.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Quotidien</button>
-        <button onclick="location.href='service.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Camion-service</button>
-        <button onclick="location.href='controlcq.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
-        <button onclick="location.href='volume.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
-        <button onclick="location.href='bench.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
-        <!-- Bouton TDP ajouté dans le menu secondaire -->
-        <button onclick="location.href='tdpInventaire.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer flex items-center justify-center text-center">TDP</button>
-        <button onclick="window.open('https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=dm0FdSi2iESCsICwi1LYVKNcQqQ-IChFlm8qXfDbDbRUNUQ0N0JXREhGWkJaQlZJSzAwNTBZTlpPWS4u', '_blank')" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
-      </div>
-      <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
-    </div>
-
-    <!-- Menu Secondaire (Section Restructuration) -->
-    <div class="menu" id="menuRestructuration" style="display: none;">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
-        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Restructuration</h2>
-      </div>
-      <div class="space-y-4">
-        <button onclick="location.href='suivipre.html'" class="w-full py-4 px-6 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-amber-600/30 transition-all cursor-pointer">Suivi pré-préparation</button>
-        <button onclick="location.href='formulaires.html'" class="w-full py-4 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Formulaires</button>
-      </div>
-      <button onclick="retourMenuPrincipal()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
-    </div>
-
-    <!-- Menu Secondaire (Section Booker) -->
-    <div class="menu" id="menuBooker" style="display: none;">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
-        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Booker</h2>
-      </div>
-      <div class="space-y-4">
-        <button onclick="location.href='rapport-heures.html'" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">Rapport des heures</button>
-        <button onclick="location.href='bench.html?mode=booker'" class="w-full py-4 px-6 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer">15.08</button>
-      </div>
-      <button onclick="retourMenuPrincipal()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
-    </div>
-
-    <!-- Menu Secondaire (Section Chef) -->
-    <div class="menu" id="menuChef" style="display: none;">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
-            <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
-        </div>
-        <span class="text-[10px] tracking-[0.25em] text-blue-400 uppercase font-semibold">Postes Canada</span>
-        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Chef</h2>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="ouvrirDirectoire()" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Directoires</button>
-        <button onclick="location.href='casier 1.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Verification Casier</button>
-        <button onclick="location.href='quotidien.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-sky-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Quotidien</button>
-        <button onclick="location.href='service.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Camion-service</button>
-        
-        <!-- Bouton Acceuil CQ avec le mode chef activé -->
-        <button onclick="location.href='controlcq.html?mode=chef'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Acceuil CQ</button>
-        
-        <button onclick="location.href='volume.html'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-cyan-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Volume</button>
-        <button onclick="location.href='bench.html?mode=booker'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Benchmark</button>
-        <button onclick="location.href='interventions.html?mode=chef'" class="w-full min-h-[64px] py-4 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Intervention SST</button>
-        <button onclick="window.open('https://forms.cloud.microsoft/Pages/DesignPageV2.aspx?prevorigin=shell&origin=NeoPortalPage&subpage=design&id=dm0FdSi2iESCsICwi1LYVKNcQqQ-IChFlm8qXfDbDbRUNUQ0N0JXREhGWkJaQlZJSzAwNTBZTlpPWS4u', '_blank')" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-fuchsia-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Observation CQ</button>
-      </div>
-
-      <button onclick="retourMenu()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Retour</button>
-    </div>
-
-  </div>
-
-  <!-- SCRIPTS FIREBASE -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
-        authDomain: "postesst.firebaseapp.com",
-        projectId: "postesst",
-        storageBucket: "postesst.firebasestorage.app",
-        messagingSenderId: "39362155503",
-        appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    document.getElementById('formConnexion').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('emailConnexion').value;
-        const password = document.getElementById('passwordConnexion').value;
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            document.getElementById('formConnexion').reset();
-        } catch (error) {
-            alert("Erreur de connexion : Identifiants incorrects.");
-            console.error(error);
-        }
-    });
-
-    window.deconnecterUtilisateur = async () => {
-        try { await signOut(auth); } catch (error) { console.error(error); }
-    };
-
-    onAuthStateChanged(auth, (user) => {
-        const btnChef = document.getElementById('btnChef');
-        const btnBooker = document.getElementById('btnBooker');
-
-        if (user) {
-            document.getElementById('vue-connexion').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-
-            const utilisateursAutorises = [
-                "sandra.dostie@canadapost.ca",
-                "caroline.gauthier@canadapost.ca",
-                "martin.lefebvre@canadapost.ca"
-            ];
-
-            if (user.email && utilisateursAutorises.includes(user.email.toLowerCase().trim())) {
-                btnChef.classList.remove('hidden');
-                btnBooker.classList.remove('hidden');
-            } else {
-                btnChef.classList.add('hidden');
-                btnBooker.classList.add('hidden');
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        luxuryBlack: '#0d1b2a',
+                        luxuryCard: '#1b263b',
+                        gold: '#d4af37',
+                        beigeSoft: '#e0e0e0',
+                        beigeMuted: '#a5b4fc',
+                    },
+                    fontFamily: {
+                        serif: ['Cinzel', 'serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
             }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1b2a; }
+        ::-webkit-scrollbar-thumb { background: #415a77; border-radius: 4px; }
+        .card-border { border: 1px solid #415a77; }
+        input::-webkit-calendar-picker-indicator {
+            opacity: 0.8;
+            cursor: pointer;
+            filter: invert(1);
+        }
+        @media print {
+            body { background: white !important; color: black !important; }
+            header, form, button, .no-print { display: none !important; }
+            .bg-luxuryCard, .bg-luxuryBlack { background: white !important; color: black !important; border: none !important; box-shadow: none !important; }
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid #ddd !important; color: black !important; padding: 8px !important; }
+        }
+    </style>
+</head>
+<body class="bg-luxuryBlack text-beigeSoft font-sans antialiased selection:bg-blue-500 selection:text-white min-h-screen flex flex-col p-4 sm:p-6">
 
-        } else {
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('vue-connexion').classList.remove('hidden');
+    <!-- En-tête -->
+    <header class="bg-luxuryCard border border-blue-400/30 text-white shadow-md py-4 px-6 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 max-w-7xl mx-auto w-full">
+        <div class="flex items-center gap-3">
+            <button onclick="location.href='index.html'" class="bg-slate-700 hover:bg-slate-800 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold uppercase transition cursor-pointer flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Menu
+            </button>
+            <h1 class="font-serif text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-boxes-stacked text-blue-400"></i> Gestion d'Inventaire TDP
+            </h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="firebase-status" class="text-xs bg-luxuryBlack px-3 py-1.5 rounded-full flex items-center gap-2 border border-blue-600/50">
+                <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" id="status-dot"></span>
+                <span id="status-text">Connexion à Firebase...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Colonne Formulaire & Enregistrement -->
+        <section class="bg-luxuryCard p-6 rounded-xl card-border lg:col-span-1 shadow-xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
+                <h2 id="form-title" class="text-lg font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-400"></i> Nouveau Scan / Mouvement
+                </h2>
+                <button type="button" id="cancel-edit-btn" class="hidden text-xs text-red-400 hover:underline flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i> Annuler modif
+                </button>
+            </div>
+
+            <form id="inventory-form" class="space-y-4">
+                <input type="hidden" id="editing-doc-id" value="">
+
+                <!-- Numéro de série -->
+                <div>
+                    <label class="block text-sm font-medium text-beigeMuted mb-1">Numéro de Série de l'Appareil</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="serial-input" list="serial-list" placeholder="Choisir ou taper..." class="w-full border border-gray-600 bg-luxuryBlack text-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required autocomplete="off">
+                        <button type="button" id="toggle-new-serial-btn" title="Ajouter un nouveau numéro" class="bg-slate-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg hover:bg-slate-600 transition cursor-pointer">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <datalist id="serial-list"></datalist>
+                    </div>
+                    <div id="new-serial-container" class="hidden mt-2">
+                        <input type="text" id="new-serial-input" placeholder="Entrer le nouveau numéro de série" class="w-full border border-blue-400 bg-blue-900/20 text-white rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <p class="text-xs text-blue-400 mt-1">Ce numéro sera ajouté à la base de données.</p>
+                    </div>
+                </div>
+
+                <!-- Route -->
+                <div>
+                    <label class="block text-sm font-medium text-beigeMuted mb-1">Route</label>
+                    <input type="text" id="route-input" list="route-list" placeholder="Choisir ou taper..." class="w-full border border-gray-600 bg-luxuryBlack text-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required autocomplete="off">
+                    <datalist id="route-list"></datalist>
+                </div>
+
+                <!-- Date de mise en fonction -->
+                <div>
+                    <label class="block text-sm font-medium text-beigeMuted mb-1">Date de mise en fonction</label>
+                    <input type="date" id="mise-en-fonction-input" class="w-full border border-gray-600 bg-luxuryBlack text-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Date de retrait -->
+                <div>
+                    <label class="block text-sm font-medium text-beigeMuted mb-1">Date de retrait</label>
+                    <input type="date" id="date-retrait-input" class="w-full border border-gray-600 bg-luxuryBlack text-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Case à cocher : Départ en réparation -->
+                <div class="bg-amber-950/40 border border-amber-600/40 p-3.5 rounded-lg space-y-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="reparation-checkbox" class="w-4 h-4 text-amber-600 border-gray-600 rounded focus:ring-amber-500 bg-luxuryBlack">
+                        <span class="text-sm font-medium text-amber-200">Départ en réparation</span>
+                    </label>
+
+                    <div id="reparation-fields" class="hidden space-y-3 pt-2 border-t border-amber-600/30">
+                        <div>
+                            <label class="block text-xs font-semibold text-amber-300 mb-1">Numéro de série de l'appareil remplaçant</label>
+                            <input type="text" id="remplacant-serial-input" list="serial-list" placeholder="Scanner/Entrer le n° du remplaçant" class="w-full border border-amber-500 bg-luxuryBlack text-white rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" autocomplete="off">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-amber-300 mb-1">Expédition (N° de suivi / Bon d'envoi)</label>
+                            <input type="text" id="expedition-input" placeholder="Ex: Numéro de suivi / Transporteur" class="w-full border border-amber-500 bg-luxuryBlack text-white rounded-lg p-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" autocomplete="off">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-300 mb-1">Date de départ</label>
+                                <input type="date" id="date-depart-reparation-input" class="w-full border border-amber-500 bg-luxuryBlack text-white rounded-lg p-2 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-300 mb-1">Date de retour</label>
+                                <input type="date" id="date-retour-reparation-input" class="w-full border border-amber-500 bg-luxuryBlack text-white rounded-lg p-2 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div id="route-retour-container" class="hidden">
+                            <label class="block text-xs font-semibold text-emerald-300 mb-1">Route au retour de réparation</label>
+                            <input type="text" id="route-retour-input" list="route-list" placeholder="Route attribuée au retour" class="w-full border border-emerald-500 bg-luxuryBlack text-white rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bouton d'enregistrement / mise à jour -->
+                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-floppy-disk"></i> Enregistrer dans la base (TDP)
+                </button>
+            </form>
+        </section>
+
+        <!-- Colonne Historiques & Vues Avancées -->
+        <section class="bg-luxuryCard p-6 rounded-xl card-border lg:col-span-2 flex flex-col shadow-xl">
             
-            btnChef.classList.add('hidden');
-            btnBooker.classList.add('hidden');
-        }
-    });
-  </script>
+            <!-- En-tête des onglets avec Bouton Imprimer -->
+            <div class="flex flex-col sm:flex-row justify-between items-center border-b border-gray-700 mb-4 gap-3">
+                <!-- Onglets de navigation -->
+                <div class="flex overflow-x-auto w-full sm:w-auto">
+                    <button onclick="window.switchTab('global')" id="tab-global" class="tab-btn px-4 py-2 font-medium text-sm border-b-2 border-blue-500 text-blue-400 whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-table-list mr-1"></i> Journal Global
+                    </button>
+                    <button onclick="window.switchTab('by-route')" id="tab-by-route" class="tab-btn px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-400 hover:text-white whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-route mr-1"></i> Historique par Route
+                    </button>
+                    <button onclick="window.switchTab('by-scan')" id="tab-by-scan" class="tab-btn px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-400 hover:text-white whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-barcode mr-1"></i> Historique par Scan (N° Série)
+                    </button>
+                </div>
+                <!-- Bouton Imprimer -->
+                <button type="button" onclick="window.printReport()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition cursor-pointer mb-2 sm:mb-0">
+                    <i class="fa-solid fa-print"></i> Imprimer le rapport
+                </button>
+            </div>
 
-  <script>
-    function ouvrirMenuDocuments() {
-      document.getElementById('menuPrincipal').style.display = 'none';
-      document.getElementById('menuSecondaire').style.display = 'block';
-      document.getElementById('menuRestructuration').style.display = 'none';
-      document.getElementById('menuBooker').style.display = 'none';
-      document.getElementById('menuChef').style.display = 'none';
-      document.getElementById('menuLiens').style.display = 'none';
-    }
-    function ouvrirMenuLiens() {
-      document.getElementById('menuPrincipal').style.display = 'none';
-      document.getElementById('menuSecondaire').style.display = 'none';
-      document.getElementById('menuRestructuration').style.display = 'none';
-      document.getElementById('menuBooker').style.display = 'none';
-      document.getElementById('menuChef').style.display = 'none';
-      document.getElementById('menuLiens').style.display = 'block';
-    }
-    function ouvrirMenuRestructuration() {
-      document.getElementById('menuPrincipal').style.display = 'none';
-      document.getElementById('menuSecondaire').style.display = 'none';
-      document.getElementById('menuRestructuration').style.display = 'block';
-      document.getElementById('menuBooker').style.display = 'none';
-      document.getElementById('menuChef').style.display = 'none';
-      document.getElementById('menuLiens').style.display = 'none';
-    }
-    function ouvrirMenuBooker() {
-      document.getElementById('menuPrincipal').style.display = 'none';
-      document.getElementById('menuSecondaire').style.display = 'none';
-      document.getElementById('menuRestructuration').style.display = 'none';
-      document.getElementById('menuBooker').style.display = 'block';
-      document.getElementById('menuChef').style.display = 'none';
-      document.getElementById('menuLiens').style.display = 'none';
-    }
-    function ouvrirMenuChef() {
-      document.getElementById('menuPrincipal').style.display = 'none';
-      document.getElementById('menuSecondaire').style.display = 'none';
-      document.getElementById('menuRestructuration').style.display = 'none';
-      document.getElementById('menuBooker').style.display = 'none';
-      document.getElementById('menuChef').style.display = 'block';
-      document.getElementById('menuLiens').style.display = 'none';
-    }
-    function retourMenu() {
-      document.getElementById('menuSecondaire').style.display = 'none';
-      document.getElementById('menuRestructuration').style.display = 'none';
-      document.getElementById('menuBooker').style.display = 'none';
-      document.getElementById('menuChef').style.display = 'none';
-      document.getElementById('menuLiens').style.display = 'none';
-      document.getElementById('menuPrincipal').style.display = 'block';
-    }
-    function retourMenuPrincipal() { retourMenu(); }
+            <!-- Contenu Onglet Global -->
+            <div id="content-global" class="tab-content flex flex-col flex-1">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold text-white">Tous les enregistrements</h3>
+                    <input type="text" id="search-input" placeholder="Filtrer..." class="border border-gray-600 bg-luxuryBlack text-white rounded-lg px-3 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div class="overflow-x-auto flex-1 max-h-[500px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-luxuryBlack text-beigeMuted text-xs uppercase tracking-wider sticky top-0">
+                                <th class="p-2.5 font-semibold cursor-pointer hover:text-white" onclick="window.sortTable('timestamp')">Date / Heure <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th class="p-2.5 font-semibold cursor-pointer hover:text-white" onclick="window.sortTable('serialNumber')">N° Série <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th class="p-2.5 font-semibold cursor-pointer hover:text-white" onclick="window.sortTable('route')">Route <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th class="p-2.5 font-semibold cursor-pointer hover:text-white" onclick="window.sortTable('miseEnFonction')">Mise en fonction <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th class="p-2.5 font-semibold cursor-pointer hover:text-white" onclick="window.sortTable('dateRetrait')">Retrait <i class="fa-solid fa-sort ml-1"></i></th>
+                                <th class="p-2.5 font-semibold">Statut</th>
+                                <th class="p-2.5 font-semibold text-center no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-global" class="divide-y divide-gray-700 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
 
-    // Fonction de recherche mise à jour pour isoler uniquement le numéro de route (ignorant les lettres/préfixes)
-    function ouvrirDirectoire() {
-      const saisie = prompt('Entrez le numéro de route (ex: 4, 88, 90, 205, 310) :');
-      if (saisie && saisie.trim() !== '') {
-        // Extraction uniquement des chiffres saisis par l'utilisateur
-        const numRecherche = saisie.trim().replace(/\D/g, '');
-        
-        if (!numRecherche) {
-          alert("Veuillez entrer un numéro valide.");
-          return;
-        }
+            <!-- Contenu Onglet Par Route -->
+            <div id="content-by-route" class="tab-content hidden flex flex-col flex-1">
+                <div class="mb-4 bg-blue-950/30 border border-blue-800/40 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <label class="text-sm font-medium text-blue-200">Sélectionner une Route :</label>
+                    <select id="filter-route-select" class="border border-blue-500 bg-luxuryBlack text-white rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64">
+                        <option value="">-- Choisir une route --</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto flex-1 max-h-[500px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-luxuryBlack text-beigeMuted text-xs uppercase tracking-wider sticky top-0">
+                                <th class="p-2.5 font-semibold">Date d'arrivée (Enreg.)</th>
+                                <th class="p-2.5 font-semibold">N° Série Attribué</th>
+                                <th class="p-2.5 font-semibold">Mise en fonction</th>
+                                <th class="p-2.5 font-semibold">Retrait</th>
+                                <th class="p-2.5 font-semibold">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-by-route" class="divide-y divide-gray-700 text-sm">
+                            <tr><td colspan="5" class="p-4 text-center text-gray-400">Veuillez sélectionner une route ci-dessus.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-        // Table de correspondance basée sur le fichier AÉROPORT 1 2026.htm
-        const feuilles = [
-          { name: "Rte 1", file: "AÉROPORT%201%202026_fichiers/sheet001.htm" },
-          { name: "Rte 2", file: "AÉROPORT%201%202026_fichiers/sheet002.htm" },
-          { name: "Rte 3", file: "AÉROPORT%201%202026_fichiers/sheet003.htm" },
-          { name: "ROUTE 4", file: "AÉROPORT%201%202026_fichiers/sheet004.htm" },
-          { name: "Rte 5", file: "AÉROPORT%201%202026_fichiers/sheet005.htm" },
-          { name: "Rte 6", file: "AÉROPORT%201%202026_fichiers/sheet006.htm" },
-          { name: "Rte 7", file: "AÉROPORT%201%202026_fichiers/sheet007.htm" },
-          { name: "Rte 8", file: "AÉROPORT%201%202026_fichiers/sheet008.htm" },
-          { name: "ROUTE 9", file: "AÉROPORT%201%202026_fichiers/sheet009.htm" },
-          { name: "Rte 10", file: "AÉROPORT%201%202026_fichiers/sheet010.htm" },
-          { name: "ROUTE 11", file: "AÉROPORT%201%202026_fichiers/sheet011.htm" },
-          { name: "ROUTE 12", file: "AÉROPORT%201%202026_fichiers/sheet012.htm" },
-          { name: "ROUTE 13", file: "AÉROPORT%201%202026_fichiers/sheet013.htm" },
-          { name: "Rte 14", file: "AÉROPORT%201%202026_fichiers/sheet014.htm" },
-          { name: "Rte 15", file: "AÉROPORT%201%202026_fichiers/sheet015.htm" },
-          { name: "Rte 16", file: "AÉROPORT%201%202026_fichiers/sheet016.htm" },
-          { name: "Rte 17", file: "AÉROPORT%201%202026_fichiers/sheet017.htm" },
-          { name: "ROUTE 18", file: "AÉROPORT%201%202026_fichiers/sheet018.htm" },
-          { name: "Rte 19", file: "AÉROPORT%201%202026_fichiers/sheet019.htm" },
-          { name: "Rte 20", file: "AÉROPORT%201%202026_fichiers/sheet020.htm" },
-          { name: "route 21", file: "AÉROPORT%201%202026_fichiers/sheet021.htm" },
-          { name: "Rte 22", file: "AÉROPORT%201%202026_fichiers/sheet022.htm" },
-          { name: "Rte 23", file: "AÉROPORT%201%202026_fichiers/sheet023.htm" },
-          { name: "Rte 24", file: "AÉROPORT%201%202026_fichiers/sheet024.htm" },
-          { name: "ROUTE 25", file: "AÉROPORT%201%202026_fichiers/sheet025.htm" },
-          { name: "ROUTE 26", file: "AÉROPORT%201%202026_fichiers/sheet026.htm" },
-          { name: "Rte 27", file: "AÉROPORT%201%202026_fichiers/sheet027.htm" },
-          { name: "ROUTE 28", file: "AÉROPORT%201%202026_fichiers/sheet028.htm" },
-          { name: "Rte 29", file: "AÉROPORT%201%202026_fichiers/sheet029.htm" },
-          { name: "ROUTE 30", file: "AÉROPORT%201%202026_fichiers/sheet030.htm" },
-          { name: "ROUTE 31", file: "AÉROPORT%201%202026_fichiers/sheet031.htm" },
-          { name: "ROUTE 32", file: "AÉROPORT%201%202026_fichiers/sheet032.htm" },
-          { name: "Rte 33", file: "AÉROPORT%201%202026_fichiers/sheet033.htm" },
-          { name: "ROUTE 34", file: "AÉROPORT%201%202026_fichiers/sheet034.htm" },
-          { name: "ROUTE 35", file: "AÉROPORT%201%202026_fichiers/sheet035.htm" },
-          { name: "ROUTE 36", file: "AÉROPORT%201%202026_fichiers/sheet036.htm" },
-          { name: "ROUTE 37", file: "AÉROPORT%201%202026_fichiers/sheet037.htm" },
-          { name: "ROUTE 38", file: "AÉROPORT%201%202026_fichiers/sheet038.htm" },
-          { name: "Rte 40", file: "AÉROPORT%201%202026_fichiers/sheet039.htm" },
-          { name: "ROUTE 42", file: "AÉROPORT%201%202026_fichiers/sheet040.htm" },
-          { name: "ROUTE 44", file: "AÉROPORT%201%202026_fichiers/sheet041.htm" },
-          { name: "ROUTE 46", file: "AÉROPORT%201%202026_fichiers/sheet042.htm" },
-          { name: "Rte 48", file: "AÉROPORT%201%202026_fichiers/sheet043.htm" },
-          { name: "ROUTE 50", file: "AÉROPORT%201%202026_fichiers/sheet044.htm" },
-          { name: "ROUTE 52", file: "AÉROPORT%201%202026_fichiers/sheet045.htm" },
-          { name: "Rte 54", file: "AÉROPORT%201%202026_fichiers/sheet046.htm" },
-          { name: "ROUTE 56", file: "AÉROPORT%201%202026_fichiers/sheet047.htm" },
-          { name: "Rte 58", file: "AÉROPORT%201%202026_fichiers/sheet048.htm" },
-          { name: "ROUTE 60", file: "AÉROPORT%201%202026_fichiers/sheet049.htm" },
-          { name: "ROUTE 62", file: "AÉROPORT%201%202026_fichiers/sheet050.htm" },
-          { name: "ROUTE 64", file: "AÉROPORT%201%202026_fichiers/sheet051.htm" },
-          { name: "ROUTE 66", file: "AÉROPORT%201%202026_fichiers/sheet052.htm" },
-          { name: "Rte 68", file: "AÉROPORT%201%202026_fichiers/sheet053.htm" },
-          { name: "Rte 70", file: "AÉROPORT%201%202026_fichiers/sheet054.htm" },
-          { name: "ROUTE 72", file: "AÉROPORT%201%202026_fichiers/sheet055.htm" },
-          { name: "ROUTE 74", file: "AÉROPORT%201%202026_fichiers/sheet056.htm" },
-          { name: "ROUTE 76", file: "AÉROPORT%201%202026_fichiers/sheet057.htm" },
-          { name: "ROUTE 78", file: "AÉROPORT%201%202026_fichiers/sheet058.htm" },
-          { name: "Rte 80", file: "AÉROPORT%201%202026_fichiers/sheet059.htm" },
-          { name: "Rte 82", file: "AÉROPORT%201%202026_fichiers/sheet060.htm" },
-          { name: "ROUTE 84", file: "AÉROPORT%201%202026_fichiers/sheet061.htm" },
-          { name: "Rte 88", file: "AÉROPORT%201%202026_fichiers/sheet062.htm" },
-          { name: "ROUTE 90TP", file: "AÉROPORT%201%202026_fichiers/sheet063.htm" },
-          { name: "SS192", file: "AÉROPORT%201%202026_fichiers/sheet064.htm" },
-          { name: "SS193", file: "AÉROPORT%201%202026_fichiers/sheet065.htm" },
-          { name: "SS195", file: "AÉROPORT%201%202026_fichiers/sheet066.htm" },
-          { name: "secteur 1", file: "AÉROPORT%201%202026_fichiers/sheet067.htm" },
-          { name: "secteur 2", file: "AÉROPORT%201%202026_fichiers/sheet068.htm" },
-          { name: "201", file: "AÉROPORT%201%202026_fichiers/sheet069.htm" },
-          { name: "202", file: "AÉROPORT%201%202026_fichiers/sheet070.htm" },
-          { name: "203", file: "AÉROPORT%201%202026_fichiers/sheet071.htm" },
-          { name: "204", file: "AÉROPORT%201%202026_fichiers/sheet072.htm" },
-          { name: "205", file: "AÉROPORT%201%202026_fichiers/sheet073.htm" },
-          { name: "map 205", file: "AÉROPORT%201%202026_fichiers/sheet074.htm" },
-          { name: "206", file: "AÉROPORT%201%202026_fichiers/sheet075.htm" },
-          { name: "info 207", file: "AÉROPORT%201%202026_fichiers/sheet076.htm" },
-          { name: "207", file: "AÉROPORT%201%202026_fichiers/sheet077.htm" },
-          { name: "208", file: "AÉROPORT%201%202026_fichiers/sheet078.htm" },
-          { name: "209", file: "AÉROPORT%201%202026_fichiers/sheet079.htm" },
-          { name: "210", file: "AÉROPORT%201%202026_fichiers/sheet080.htm" },
-          { name: "211", file: "AÉROPORT%201%202026_fichiers/sheet081.htm" },
-          { name: "212", file: "AÉROPORT%201%202026_fichiers/sheet082.htm" },
-          { name: "213", file: "AÉROPORT%201%202026_fichiers/sheet083.htm" },
-          { name: "214", file: "AÉROPORT%201%202026_fichiers/sheet084.htm" },
-          { name: "215", file: "AÉROPORT%201%202026_fichiers/sheet085.htm" },
-          { name: "216", file: "AÉROPORT%201%202026_fichiers/sheet086.htm" },
-          { name: "217", file: "AÉROPORT%201%202026_fichiers/sheet087.htm" },
-          { name: "MAP 218", file: "AÉROPORT%201%202026_fichiers/sheet088.htm" },
-          { name: "218", file: "AÉROPORT%201%202026_fichiers/sheet089.htm" },
-          { name: "219", file: "AÉROPORT%201%202026_fichiers/sheet090.htm" },
-          { name: "220", file: "AÉROPORT%201%202026_fichiers/sheet091.htm" },
-          { name: "221", file: "AÉROPORT%201%202026_fichiers/sheet092.htm" },
-          { name: "222", file: "AÉROPORT%201%202026_fichiers/sheet093.htm" },
-          { name: "223", file: "AÉROPORT%201%202026_fichiers/sheet094.htm" },
-          { name: "224", file: "AÉROPORT%201%202026_fichiers/sheet095.htm" },
-          { name: "225", file: "AÉROPORT%201%202026_fichiers/sheet096.htm" },
-          { name: "226", file: "AÉROPORT%201%202026_fichiers/sheet097.htm" },
-          { name: "227", file: "AÉROPORT%201%202026_fichiers/sheet098.htm" },
-          { name: "228", file: "AÉROPORT%201%202026_fichiers/sheet099.htm" },
-          { name: "230", file: "AÉROPORT%201%202026_fichiers/sheet100.htm" },
-          { name: "232", file: "AÉROPORT%201%202026_fichiers/sheet101.htm" },
-          { name: "234", file: "AÉROPORT%201%202026_fichiers/sheet102.htm" },
-          { name: "236", file: "AÉROPORT%201%202026_fichiers/sheet103.htm" },
-          { name: "238", file: "AÉROPORT%201%202026_fichiers/sheet104.htm" },
-          { name: "240", file: "AÉROPORT%201%202026_fichiers/sheet105.htm" },
-          { name: "242", file: "AÉROPORT%201%202026_fichiers/sheet106.htm" },
-          { name: "244", file: "AÉROPORT%201%202026_fichiers/sheet107.htm" },
-          { name: "246", file: "AÉROPORT%201%202026_fichiers/sheet108.htm" },
-          { name: "248", file: "AÉROPORT%201%202026_fichiers/sheet109.htm" },
-          { name: "250", file: "AÉROPORT%201%202026_fichiers/sheet110.htm" },
-          { name: "252", file: "AÉROPORT%201%202026_fichiers/sheet111.htm" },
-          { name: "254", file: "AÉROPORT%201%202026_fichiers/sheet112.htm" },
-          { name: "256", file: "AÉROPORT%201%202026_fichiers/sheet113.htm" },
-          { name: "258", file: "AÉROPORT%201%202026_fichiers/sheet114.htm" },
-          { name: "260", file: "AÉROPORT%201%202026_fichiers/sheet115.htm" },
-          { name: "262", file: "AÉROPORT%201%202026_fichiers/sheet116.htm" },
-          { name: "264", file: "AÉROPORT%201%202026_fichiers/sheet117.htm" },
-          { name: "266", file: "AÉROPORT%201%202026_fichiers/sheet118.htm" },
-          { name: "268", file: "AÉROPORT%201%202026_fichiers/sheet119.htm" },
-          { name: "270", file: "AÉROPORT%201%202026_fichiers/sheet120.htm" },
-          { name: "272", file: "AÉROPORT%201%202026_fichiers/sheet121.htm" },
-          { name: "274", file: "AÉROPORT%201%202026_fichiers/sheet122.htm" },
-          { name: "278", file: "AÉROPORT%201%202026_fichiers/sheet123.htm" },
-          { name: "282", file: "AÉROPORT%201%202026_fichiers/sheet124.htm" },
-          { name: "286", file: "AÉROPORT%201%202026_fichiers/sheet125.htm" },
-          { name: "Rte 24 (2)", file: "AÉROPORT%201%202026_fichiers/sheet126.htm" },
-          { name: "290", file: "AÉROPORT%201%202026_fichiers/sheet127.htm" },
-          { name: "310TP", file: "AÉROPORT%201%202026_fichiers/sheet128.htm" }
-        ];
+            <!-- Contenu Onglet Par Scan / N° de Série -->
+            <div id="content-by-scan" class="tab-content hidden flex flex-col flex-1">
+                <div class="mb-4 bg-emerald-950/30 border border-emerald-800/40 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <label class="text-sm font-medium text-emerald-200">Sélectionner un Appareil (N° Série) :</label>
+                    <select id="filter-serial-select" class="border border-emerald-500 bg-luxuryBlack text-white rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none w-full sm:w-64">
+                        <option value="">-- Choisir un numéro de série --</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto flex-1 max-h-[500px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-luxuryBlack text-beigeMuted text-xs uppercase tracking-wider sticky top-0">
+                                <th class="p-2.5 font-semibold">Date Enreg.</th>
+                                <th class="p-2.5 font-semibold">Route</th>
+                                <th class="p-2.5 font-semibold">Mise en fonction / Retrait</th>
+                                <th class="p-2.5 font-semibold">Réparation (Départ / Retour)</th>
+                                <th class="p-2.5 font-semibold">Statut / Rôle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-by-scan" class="divide-y divide-gray-700 text-sm">
+                            <tr><td colspan="5" class="p-4 text-center text-gray-400">Veuillez sélectionner un numéro de série ci-dessus.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-        // Recherche par correspondance exacte des chiffres extraits du nom de la feuille
-        const trouve = feuilles.find(f => {
-          const chiffresFeuille = f.name.replace(/\D/g, '');
-          return chiffresFeuille === numRecherche;
+        </section>
+
+    </main>
+
+    <!-- Script Firebase & Application -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, deleteDoc, getDocs, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                loadLogs();
+            }
         });
 
-        if (trouve) {
-          location.href = trouve.file;
-        } else {
-          alert("Aucune route trouvée pour le numéro : " + numRecherche);
+        let serialNumbersList = [
+            '26083Y0522', '26083Y04D2', '26083Y04B1', '26083Y0495', '26083Y0472', '26083Y0392', '26082Y023C', '26082Y0238', '26082Y0090', '26082Y007D',
+            '26082Y0019', '26082Y0016', '26082Y000C', '26080Y06FC', '26066Y004C', '26065Y01A4', '26065Y0197', '26065Y0040', '26065Y0033', '26063Y00D1',
+            '26063Y00C7', '26063Y00B3', '26063Y00A2', '26063Y009E', '26063Y0099', '26063Y007D', '26063Y007A', '26063Y0069', '26063Y0068', '26063Y0057',
+            '26063Y004D', '26063Y004C', '26063Y003C', '26063Y002A', '26063Y0029', '26063Y0005', '26062Y02A7', '26062Y02A5', '26062Y029D', '26062Y0288',
+            '26062Y024E', '26062Y0238', '26062Y021E', '26062Y01EE', '26062Y01C2', '26062Y01AA', '26062Y01A3', '26062Y018B', '26062Y0185', '26062Y016F',
+            '26062Y016C', '26062Y015E', '26062Y0157', '26062Y0149', '26062Y0142', '26062Y012C', '26062Y0129', '26062Y0118', '26062Y0113', '26062Y00FE',
+            '26062Y00EE', '26062Y00ED', '26062Y00D8', '26062Y00D6', '26062Y00C9', '26062Y00B8', '26062Y00A8', '26062Y0095', '26062Y0088', '26062Y0073',
+            '26062Y006B', '26062Y0061', '26062Y005B', '26062Y0058', '26062Y0053', '26062Y004E', '26062Y0038', '26062Y002D', '26062Y002C', '26062Y0024',
+            '26062Y001E', '26062Y001A', '26061Y01DC', '26061Y01CD', '26061Y01C7', '26061Y01C1', '26061Y01BD', '26061Y01AC', '26061Y01AB', '26061Y01A2',
+            '26061Y019C', '26061Y0197', '26061Y017A', '26061Y0164', '26061Y0154', '26061Y014C', '26061Y014A', '26061Y013E', '26061Y013B', '26061Y0135',
+            '26061Y012C', '26061Y0128', '26061Y011B', '26061Y0119', '26061Y00FC', '26061Y00F8', '26061Y00E4', '26061Y00DE', '26061Y00DA', '26061Y00D8',
+            '26061Y00D3', '26061Y00CC', '26061Y00B8', '26061Y00AF', '26061Y00A3', '26061Y009E', '26061Y009A', '26061Y0098', '26061Y0093', '26061Y008F',
+            '26061Y008A', '26061Y0086', '26061Y007C', '26061Y0074', '26061Y006E', '26061Y005C', '26061Y005A', '26061Y0057', '26061Y0052', '26061Y004E',
+            '26061Y0043', '26061Y0039', '26061Y0037', '26061Y0034', '26061Y0029'
+        ];
+
+        const routesList = [
+            "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+            "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+            "31", "32", "33", "34", "35", "36", "37", "38", "40", "42", "44", "46", "48", "50",
+            "52", "54", "56", "58", "60", "62", "64", "66", "68", "70", "72", "74", "76", "78",
+            "80", "82", "84", "88", "90", "94", "96", "201", "202", "203", "204", "205", "206",
+            "207", "208", "209", "210", "211", "212", "213", "214", "215", "216", "217", "218",
+            "219", "220", "221", "222", "223", "224", "225", "226", "227", "228", "230", "232",
+            "234", "236", "238", "240", "242", "244", "246", "248", "250", "252", "254", "256",
+            "258", "260", "262", "264", "266", "268", "270", "272", "274", "278", "280", "282",
+            "286", "290", "302", "306", "310"
+        ];
+
+        let cachedLogs = [];
+        let currentSortColumn = 'timestamp';
+        let currentSortDirection = 'desc';
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-blue-400');
+                el.classList.add('border-transparent', 'text-gray-400');
+            });
+
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('border-blue-500', 'text-blue-400');
+            activeBtn.classList.remove('border-transparent', 'text-gray-400');
+        };
+
+        window.printReport = function() {
+            window.print();
+        };
+
+        function populateDatalists() {
+            const serialDatalist = document.getElementById('serial-list');
+            serialDatalist.innerHTML = '';
+            const sortedSerials = [...new Set(serialNumbersList)].sort();
+            sortedSerials.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                serialDatalist.appendChild(opt);
+            });
+
+            const routeDatalist = document.getElementById('route-list');
+            routeDatalist.innerHTML = '';
+            routesList.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                routeDatalist.appendChild(opt);
+            });
+
+            const filterRouteSelect = document.getElementById('filter-route-select');
+            const currentFilterRoute = filterRouteSelect.value;
+            filterRouteSelect.innerHTML = '<option value="">-- Choisir une route --</option>';
+            routesList.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r; opt.textContent = `Route ${r}`;
+                if (r === currentFilterRoute) opt.selected = true;
+                filterRouteSelect.appendChild(opt);
+            });
+
+            const filterSerialSelect = document.getElementById('filter-serial-select');
+            const currentFilterSerial = filterSerialSelect.value;
+            filterSerialSelect.innerHTML = '<option value="">-- Choisir un numéro de série --</option>';
+            sortedSerials.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s; opt.textContent = s;
+                if (s === currentFilterSerial) opt.selected = true;
+                filterSerialSelect.appendChild(opt);
+            });
         }
-      }
-    }
-  </script>
+
+        const toggleNewBtn = document.getElementById('toggle-new-serial-btn');
+        const newSerialContainer = document.getElementById('new-serial-container');
+        const newSerialInput = document.getElementById('new-serial-input');
+        const serialInput = document.getElementById('serial-input');
+
+        toggleNewBtn.addEventListener('click', () => {
+            if (newSerialContainer.classList.contains('hidden')) {
+                newSerialContainer.classList.remove('hidden');
+                serialInput.value = "";
+                serialInput.disabled = true;
+                toggleNewBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                newSerialInput.focus();
+            } else {
+                newSerialContainer.classList.add('hidden');
+                newSerialInput.value = "";
+                serialInput.disabled = false;
+                toggleNewBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            }
+        });
+
+        const routeInput = document.getElementById('route-input');
+        const reparationCheckbox = document.getElementById('reparation-checkbox');
+        const reparationFields = document.getElementById('reparation-fields');
+        const dateRetourInput = document.getElementById('date-retour-reparation-input');
+        const routeRetourContainer = document.getElementById('route-retour-container');
+
+        reparationCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                reparationFields.classList.remove('hidden');
+            } else {
+                reparationFields.classList.add('hidden');
+                document.getElementById('remplacant-serial-input').value = '';
+                document.getElementById('expedition-input').value = '';
+                document.getElementById('date-depart-reparation-input').value = '';
+                dateRetourInput.value = '';
+                document.getElementById('route-retour-input').value = '';
+                routeRetourContainer.classList.add('hidden');
+            }
+        });
+
+        dateRetourInput.addEventListener('input', (e) => {
+            if (e.target.value.trim() !== '') {
+                routeRetourContainer.classList.remove('hidden');
+            } else {
+                routeRetourContainer.classList.add('hidden');
+                document.getElementById('route-retour-input').value = '';
+            }
+        });
+
+        async function loadLogs() {
+            try {
+                const q = query(collection(db, "TDP"));
+                const querySnapshot = await getDocs(q);
+                cachedLogs = [];
+                querySnapshot.forEach((doc) => {
+                    cachedLogs.push({ id: doc.id, ...doc.data() });
+                });
+
+                sortAndRenderLogs();
+
+                cachedLogs.forEach(l => {
+                    if (l.serialNumber && !serialNumbersList.includes(l.serialNumber)) {
+                        serialNumbersList.push(l.serialNumber);
+                    }
+                    if (l.remplacantSerial && !serialNumbersList.includes(l.remplacantSerial)) {
+                        serialNumbersList.push(l.remplacantSerial);
+                    }
+                });
+
+                populateDatalists();
+                updateRouteHistoryView();
+                updateSerialHistoryView();
+
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-green-500";
+                statusText.textContent = "Connecté à Firebase (TDP)";
+            } catch (error) {
+                console.error("Erreur de chargement Firestore :", error);
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+                statusText.textContent = "Erreur de connexion Firebase";
+            }
+        }
+
+        window.sortTable = function(column) {
+            if (currentSortColumn === column) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortDirection = 'asc';
+            }
+            sortAndRenderLogs();
+        };
+
+        function sortAndRenderLogs() {
+            cachedLogs.sort((a, b) => {
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
+
+                if (currentSortColumn === 'timestamp') {
+                    valA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+                    valB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+                } else if (currentSortColumn === 'route') {
+                    valA = parseInt(a.route) || a.route || '';
+                    valB = parseInt(b.route) || b.route || '';
+                } else {
+                    valA = (valA || '').toString().toLowerCase();
+                    valB = (valB || '').toString().toLowerCase();
+                }
+
+                if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            renderGlobalTable(cachedLogs);
+        }
+
+        function renderGlobalTable(logs) {
+            const tbody = document.getElementById('table-body-global');
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Aucun enregistrement trouvé.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-luxuryBlack/40 transition border-b border-gray-700/50";
+
+                let dateStr = "Date inconnue";
+                if (log.timestamp && log.timestamp.toDate) {
+                    dateStr = log.timestamp.toDate().toLocaleString('fr-FR');
+                }
+
+                let statusBadge = `<span class="bg-green-950 text-green-300 border border-green-700 text-xs px-2.5 py-1 rounded-full font-medium">Actif</span>`;
+                if (log.enReparation) {
+                    let repDetails = `Départ : ${log.dateDepartReparation || '-'}`;
+                    if (log.expedition) {
+                        repDetails += `<br>Expédition : ${log.expedition}`;
+                    }
+                    if (log.dateRetourReparation) {
+                        repDetails += `<br>Retour : ${log.dateRetourReparation} (Route ${log.routeRetour || '-'})`;
+                    }
+                    statusBadge = `
+                        <div class="space-y-1">
+                            <span class="bg-amber-950 text-amber-300 border border-amber-700 text-xs px-2.5 py-1 rounded-full font-medium inline-block">${log.dateRetourReparation ? 'Réparé / Retourné' : 'En réparation'}</span>
+                            <div class="text-xs text-gray-400">${repDetails}</div>
+                            ${log.remplacantSerial ? `<div class="text-xs text-gray-400">Remplaçant : <strong class="text-blue-400">${log.remplacantSerial}</strong></div>` : ''}
+                        </div>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-2.5 text-xs text-gray-400 whitespace-nowrap">${dateStr}</td>
+                    <td class="p-2.5 font-semibold text-white">${log.serialNumber}</td>
+                    <td class="p-2.5 text-blue-400 font-medium">Route ${log.route}</td>
+                    <td class="p-2.5 text-gray-300 text-xs">${log.miseEnFonction || '-'}</td>
+                    <td class="p-2.5 text-gray-300 text-xs">${log.dateRetrait || '-'}</td>
+                    <td class="p-2.5">${statusBadge}</td>
+                    <td class="p-2.5 text-center space-x-1 no-print">
+                        <button onclick="window.editLog('${log.id}')" title="Modifier" class="text-blue-400 hover:text-white bg-blue-950 hover:bg-blue-900 p-1.5 rounded-lg transition cursor-pointer">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="window.deleteLog('${log.id}')" title="Supprimer" class="text-red-400 hover:text-white bg-red-950 hover:bg-red-900 p-1.5 rounded-lg transition cursor-pointer">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('filter-route-select').addEventListener('change', updateRouteHistoryView);
+
+        function updateRouteHistoryView() {
+            const selectedRoute = document.getElementById('filter-route-select').value;
+            const tbody = document.getElementById('table-body-by-route');
+
+            if (!selectedRoute) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Veuillez sélectionner une route ci-dessus.</td></tr>`;
+                return;
+            }
+
+            let routeEvents = [];
+            cachedLogs.forEach(log => {
+                if (log.route === selectedRoute) {
+                    let arrivalDate = log.timestamp?.toMillis ? log.timestamp.toMillis() : 0;
+                    routeEvents.push({
+                        timestamp: arrivalDate,
+                        dateStr: log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('fr-FR') : 'Date inconnue',
+                        serialNumber: log.serialNumber,
+                        miseEnFonction: log.miseEnFonction || '-',
+                        dateRetrait: log.dateRetrait || '-',
+                        status: log.enReparation ? 'Réparation' : 'Actif'
+                    });
+                }
+                if (log.routeRetour === selectedRoute && log.dateRetourReparation) {
+                    let returnArrivalDate = new Date(log.dateRetourReparation).getTime() || 0;
+                    routeEvents.push({
+                        timestamp: returnArrivalDate,
+                        dateStr: `Retour rép. (${log.dateRetourReparation})`,
+                        serialNumber: log.serialNumber,
+                        miseEnFonction: log.dateRetourReparation,
+                        dateRetrait: '-',
+                        status: 'Retour Réparation'
+                    });
+                }
+            });
+
+            routeEvents.sort((a, b) => b.timestamp - a.timestamp);
+
+            if (routeEvents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Aucun appareil enregistré pour la Route ${selectedRoute}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            routeEvents.forEach(ev => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-luxuryBlack/40 transition border-b border-gray-700/50";
+
+                let badgeColor = "bg-green-950 text-green-300 border-green-700";
+                if(ev.status === 'Réparation') badgeColor = "bg-amber-950 text-amber-300 border-amber-700";
+                if(ev.status === 'Retour Réparation') badgeColor = "bg-blue-950 text-blue-300 border-blue-700";
+
+                let statusBadge = `<span class="${badgeColor} border text-xs px-2 py-0.5 rounded-full font-medium">${ev.status}</span>`;
+
+                tr.innerHTML = `
+                    <td class="p-2.5 text-xs text-gray-400 whitespace-nowrap">${ev.dateStr}</td>
+                    <td class="p-2.5 font-semibold text-white">${ev.serialNumber}</td>
+                    <td class="p-2.5 text-gray-300 text-xs">${ev.miseEnFonction}</td>
+                    <td class="p-2.5 text-gray-300 text-xs">${ev.dateRetrait}</td>
+                    <td class="p-2.5">${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('filter-serial-select').addEventListener('change', updateSerialHistoryView);
+
+        function updateSerialHistoryView() {
+            const selectedSerial = document.getElementById('filter-serial-select').value;
+            const tbody = document.getElementById('table-body-by-scan');
+
+            if (!selectedSerial) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Veuillez sélectionner un numéro de série ci-dessus.</td></tr>`;
+                return;
+            }
+
+            const serialLogs = cachedLogs.filter(l => l.serialNumber === selectedSerial || l.remplacantSerial === selectedSerial);
+
+            if (serialLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Aucun historique trouvé pour l'appareil ${selectedSerial}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            serialLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-luxuryBlack/40 transition border-b border-gray-700/50";
+
+                let dateStr = "Date inconnue";
+                if (log.timestamp && log.timestamp.toDate) {
+                    dateStr = log.timestamp.toDate().toLocaleString('fr-FR');
+                }
+
+                let roleText = `<strong class="text-white">${log.serialNumber}</strong>`;
+                if (log.remplacantSerial === selectedSerial) {
+                    roleText = `<strong class="text-amber-300">${log.remplacantSerial}</strong> <span class="text-xs text-gray-400">(Remplaçant)</span>`;
+                }
+
+                let repInfo = '<span class="text-gray-500">-</span>';
+                if (log.enReparation) {
+                    repInfo = `<div class="text-xs text-amber-300">Départ : ${log.dateDepartReparation || 'N/C'}<br>${log.expedition ? `Expédition : ${log.expedition}<br>` : ''}Retour : ${log.dateRetourReparation || 'En cours'}<br>Route retour : ${log.routeRetour || '-'}</div>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-2.5 text-xs text-gray-400 whitespace-nowrap">${dateStr}</td>
+                    <td class="p-2.5 text-blue-400 font-medium">Route ${log.route} ${log.routeRetour ? `<br><span class="text-xs text-emerald-400">-> Route ${log.routeRetour} (Retour)</span>` : ''}</td>
+                    <td class="p-2.5 text-gray-300 text-xs">Mise en fct: ${log.miseEnFonction || '-'}<br>Retrait: ${log.dateRetrait || '-'}</td>
+                    <td class="p-2.5 text-xs">${repInfo}</td>
+                    <td class="p-2.5 text-xs">${roleText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.editLog = function(id) {
+            const log = cachedLogs.find(l => l.id === id);
+            if (!log) return;
+
+            document.getElementById('editing-doc-id').value = log.id;
+            
+            if (serialNumbersList.includes(log.serialNumber)) {
+                serialInput.value = log.serialNumber;
+                newSerialContainer.classList.add('hidden');
+                serialInput.disabled = false;
+                toggleNewBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            } else {
+                newSerialContainer.classList.remove('hidden');
+                newSerialInput.value = log.serialNumber;
+                serialInput.value = "";
+                serialInput.disabled = true;
+                toggleNewBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            }
+
+            routeInput.value = log.route || '';
+            document.getElementById('mise-en-fonction-input').value = log.miseEnFonction || '';
+            document.getElementById('date-retrait-input').value = log.dateRetrait || '';
+
+            reparationCheckbox.checked = !!log.enReparation;
+            if (log.enReparation) {
+                reparationFields.classList.remove('hidden');
+                document.getElementById('remplacant-serial-input').value = log.remplacantSerial || '';
+                document.getElementById('expedition-input').value = log.expedition || '';
+                document.getElementById('date-depart-reparation-input').value = log.dateDepartReparation || '';
+                dateRetourInput.value = log.dateRetourReparation || '';
+                if (log.dateRetourReparation) {
+                    routeRetourContainer.classList.remove('hidden');
+                    document.getElementById('route-retour-input').value = log.routeRetour || '';
+                } else {
+                    routeRetourContainer.classList.add('hidden');
+                    document.getElementById('route-retour-input').value = '';
+                }
+            } else {
+                reparationFields.classList.add('hidden');
+                document.getElementById('remplacant-serial-input').value = '';
+                document.getElementById('expedition-input').value = '';
+                document.getElementById('date-depart-reparation-input').value = '';
+                dateRetourInput.value = '';
+                routeRetourContainer.classList.add('hidden');
+                document.getElementById('route-retour-input').value = '';
+            }
+
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-400"></i> Modifier Fiche`;
+            document.getElementById('submit-btn').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Mettre à jour la fiche`;
+            document.getElementById('submit-btn').className = "w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 rounded-lg transition shadow-sm flex items-center justify-center gap-2 cursor-pointer";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.deleteLog = async function(id) {
+            if (confirm("Voulez-vous vraiment supprimer cet enregistrement ?")) {
+                try {
+                    await deleteDoc(doc(db, "TDP", id));
+                    loadLogs();
+                    alert("Enregistrement supprimé avec succès.");
+                } catch (error) {
+                    console.error("Erreur lors de la suppression :", error);
+                    alert("Erreur lors de la suppression.");
+                }
+            }
+        };
+
+        document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+            resetForm();
+        });
+
+        function resetForm() {
+            document.getElementById('inventory-form').reset();
+            document.getElementById('editing-doc-id').value = '';
+            newSerialContainer.classList.add('hidden');
+            serialInput.disabled = false;
+            toggleNewBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            reparationFields.classList.add('hidden');
+            routeRetourContainer.classList.add('hidden');
+            populateDatalists();
+
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-400"></i> Nouveau Scan / Mouvement`;
+            document.getElementById('submit-btn').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Enregistrer dans la base (TDP)`;
+            document.getElementById('submit-btn').className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition shadow-sm flex items-center justify-center gap-2 cursor-pointer";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+        }
+
+        const searchInput = document.getElementById('search-input');
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            const filtered = cachedLogs.filter(log => 
+                (log.serialNumber && log.serialNumber.toLowerCase().includes(term)) ||
+                (log.route && log.route.toLowerCase().includes(term)) ||
+                (log.remplacantSerial && log.remplacantSerial.toLowerCase().includes(term)) ||
+                (log.expedition && log.expedition.toLowerCase().includes(term))
+            );
+            renderGlobalTable(filtered);
+        });
+
+        const form = document.getElementById('inventory-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const editingId = document.getElementById('editing-doc-id').value;
+            let serialNumber = serialInput.value.trim();
+            const newSerialVal = newSerialInput.value.trim();
+
+            if (!newSerialContainer.classList.contains('hidden') && newSerialVal) {
+                serialNumber = newSerialVal;
+                if (!serialNumbersList.includes(serialNumber)) {
+                    serialNumbersList.push(serialNumber);
+                }
+            }
+
+            if (!serialNumber) {
+                alert("Veuillez sélectionner ou saisir un numéro de série.");
+                return;
+            }
+
+            const route = routeInput.value.trim();
+            if (!route) {
+                alert("Veuillez sélectionner ou saisir une route.");
+                return;
+            }
+
+            const miseEnFonction = document.getElementById('mise-en-fonction-input').value;
+            const dateRetrait = document.getElementById('date-retrait-input').value;
+            const enReparation = reparationCheckbox.checked;
+            const remplacantSerial = document.getElementById('remplacant-serial-input').value.trim();
+            const expedition = document.getElementById('expedition-input').value.trim();
+            const dateDepartReparation = document.getElementById('date-depart-reparation-input').value;
+            const dateRetourReparation = dateRetourInput.value;
+            const routeRetour = document.getElementById('route-retour-input'].value.trim();
+
+            if (enReparation && dateRetourReparation && !routeRetour) {
+                alert("Veuillez indiquer la route associée lors du retour de réparation.");
+                return;
+            }
+
+            const entryData = {
+                serialNumber,
+                route,
+                miseEnFonction,
+                dateRetrait,
+                enReparation,
+                remplacantSerial: enReparation ? remplacantSerial : "",
+                expedition: enReparation ? expedition : "",
+                dateDepartReparation: enReparation ? dateDepartReparation : "",
+                dateRetourReparation: enReparation ? dateRetourReparation : "",
+                routeRetour: (enReparation && dateRetourReparation) ? routeRetour : ""
+            };
+
+            if (enReparation && remplacantSerial && !serialNumbersList.includes(remplacantSerial)) {
+                serialNumbersList.push(remplacantSerial);
+            }
+
+            try {
+                if (editingId) {
+                    await updateDoc(doc(db, "TDP", editingId), entryData);
+                    alert("Fiche mise à jour avec succès !");
+                } else {
+                    entryData.timestamp = serverTimestamp();
+                    await addDoc(collection(db, "TDP"), entryData);
+                    alert("Scan / Mouvement enregistré avec succès dans Firestore (TDP) !");
+                }
+                
+                resetForm();
+                loadLogs();
+            } catch (error) {
+                console.error("Erreur lors de l'enregistrement :", error);
+                alert("Erreur lors de l'enregistrement dans Firebase.");
+            }
+        });
+    </script>
 </body>
 </html>
