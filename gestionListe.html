@@ -22,11 +22,17 @@
         .employee-info p { margin: 3px 0; color: #666; }
         .actions button { padding: 5px 10px; font-size: 14px; }
         .left-status { color: #d9534f; font-weight: bold; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-retour { background-color: #607d8b; text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px; font-size: 14px; }
+        .btn-retour:hover { background-color: #455a64; }
     </style>
 </head>
 <body>
 
-    <h1>Gestion des Fiches Employés</h1>
+    <div class="top-bar">
+        <h1>Gestion des Fiches Employés</h1>
+        <a href="index.html" class="btn-retour">Retour au menu</a>
+    </div>
 
     <!-- Formulaire d'ajout / modification -->
     <form id="employeeForm">
@@ -65,14 +71,15 @@
 
     <!-- Liste des employés -->
     <h2>Liste des employés</h2>
-    <div id="employeeList">Chargement...</div>
+    <div id="employeeList">Vérification de l'authentification...</div>
 
-    <!-- Script Firebase et logique applicative -->
+    <!-- Script Firebase, Authentification et logique applicative -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuration Firebase fournie
+        // Configuration Firebase unifiée
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
             authDomain: "postesst.firebaseapp.com",
@@ -83,6 +90,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
         const form = document.getElementById("employeeForm");
@@ -90,6 +98,28 @@
         const formTitle = document.getElementById("formTitle");
         const submitBtn = document.getElementById("submitBtn");
         const cancelBtn = document.getElementById("cancelBtn");
+
+        const utilisateursAutorises = [
+            "sandra.dostie@canadapost.ca",
+            "caroline.gauthier@canadapost.ca",
+            "martin.lefebvre@canadapost.ca"
+        ];
+
+        // Vérification de la session et des autorisations au chargement
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                if (!user.email || !utilisateursAutorises.includes(user.email.toLowerCase().trim())) {
+                    alert("Accès refusé : Vous n'avez pas les autorisations nécessaires.");
+                    window.location.href = 'index.html';
+                } else {
+                    // Utilisateur authentifié et autorisé, chargement des données
+                    loadEmployees();
+                }
+            } else {
+                // Redirection vers l'index si non connectée
+                window.location.href = 'index.html';
+            }
+        });
 
         // Fonction pour charger et afficher la liste des employés
         async function loadEmployees() {
@@ -142,12 +172,10 @@
 
             try {
                 if (id) {
-                    // Modification d'un employé existant
                     const empRef = doc(db, "employes", id);
                     await updateDoc(empRef, { prenom, nom, poste, email, quitteDepot });
                     alert("Employé mis à jour avec succès !");
                 } else {
-                    // Ajout d'un nouvel employé
                     await addDoc(collection(db, "employes"), {
                         prenom, nom, poste, email, quitteDepot, dateAjout: new Date()
                     });
@@ -161,7 +189,7 @@
             }
         });
 
-        // Fonction globale pour remplir le formulaire avec les données existantes en vue d'une modification
+        // Fonction globale pour remplir le formulaire en vue d'une modification
         window.prepareEdit = function(id, prenom, nom, poste, email, quitteDepot) {
             document.getElementById("employeeId").value = id;
             document.getElementById("prenom").value = prenom;
@@ -185,13 +213,10 @@
             cancelBtn.style.display = "none";
         }
 
-        // Échappement basique pour les attributs HTML
+        // Échappement pour les attributs HTML
         function escapeHtml(str) {
             return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
-
-        // Charger les employés au démarrage
-        loadEmployees();
     </script>
 </body>
 </html>
