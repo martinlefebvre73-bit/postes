@@ -65,7 +65,7 @@
         }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 15px;
         }
         .stat-card {
@@ -78,6 +78,7 @@
         .stat-card.green { border-left-color: #10b981; }
         .stat-card.orange { border-left-color: #d97706; }
         .stat-card.blue { border-left-color: #0369a1; }
+        .stat-card.purple { border-left-color: #7c3aed; }
         .stat-card .stat-label {
             font-size: 0.75rem;
             color: #64748b;
@@ -302,7 +303,7 @@
         let listeEmployesMemoire = [];
         let editingIndex = null;
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
-        let isManualEntry = false; // État pour basculer entre liste et saisie manuelle
+        let isManualEntry = false;
 
         const urlParams = new URLSearchParams(window.location.search);
         const isBookerMode = urlParams.get('mode') === 'booker';
@@ -311,7 +312,12 @@
             const match = routeStr ? routeStr.match(/\d+/) : null;
             const num = match ? parseInt(match[0], 10) : 0;
             const exceptions = { 90: 5.97, 94: 4.17, 96: 4.28, 302: 3.65, 306: 3.68, 310: 5.55 };
-            const benchmark = exceptions[num] !== undefined ? exceptions[num] : 8.0;
+            
+            const valeurRoute = exceptions[num] !== undefined ? exceptions[num] : 8.0;
+            
+            // Formule : (heure 17.04 + heure 15.08 + heure BZ + valeur de la route) / valeur de la route
+            const benchmark = valeurRoute !== 0 ? ((heure1704 + heure1508 + heureBz + valeurRoute) / valeurRoute) : 8.0;
+
             const equiv8h = (heure1508 + heureBz) * (benchmark / 8.0);
             
             let benchmarkPaye = 0;
@@ -359,6 +365,10 @@
 
         async function initialiserDonnees() {
             document.getElementById('dateInput').valueAsDate = new Date();
+            const filterDateEl = document.getElementById('filterDate');
+            if(filterDateEl) {
+                filterDateEl.valueAsDate = new Date();
+            }
 
             if (isBookerMode) {
                 const syntheseBtn = document.getElementById('syntheseBtn');
@@ -412,7 +422,6 @@
             }
         };
 
-        // Fonction pour basculer dynamiquement entre le Select et l'Input texte manuel
         window.toggleManualEntry = function() {
             isManualEntry = !isManualEntry;
             renderNomField();
@@ -429,7 +438,7 @@
             } else {
                 btnToggle.textContent = "✍️ Manuel";
                 btnToggle.title = "Permettre la saisie manuelle";
-                document.getElementById('idInput').readOnly = false; // ou true selon préférence
+                document.getElementById('idInput').readOnly = false;
                 document.getElementById('idInput').style.background = "white";
                 document.getElementById('ancienneteInput').readOnly = true;
                 document.getElementById('ancienneteInput').style.background = "#e2e8f0";
@@ -441,7 +450,6 @@
             container.innerHTML = '';
 
             if (!isManualEntry) {
-                // Mode Liste Déroulante
                 const select = document.createElement('select');
                 select.id = 'nomInput';
                 select.className = 'form-select';
@@ -467,7 +475,6 @@
                 });
                 container.appendChild(select);
             } else {
-                // Mode Saisie Manuelle Texte Libre
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.id = 'nomInput';
@@ -496,7 +503,7 @@
         };
 
         window.remplirParId = (inputElement) => {
-            if (isManualEntry) return; // Ne rien faire en mode manuel
+            if (isManualEntry) return;
             const saisieId = inputElement.value.trim().toLowerCase();
             const selectEmp = document.getElementById('nomInput');
             const checkboxesGroup = document.getElementById('externalCheckboxesGroup');
@@ -619,7 +626,7 @@
         }
 
         function updateStatsSummary() {
-            let tot1704 = 0, tot1508 = 0, totBz = 0, totGlobal = 0, totEquiv = 0, totPaye = 0;
+            let tot1704 = 0, tot1508 = 0, totBz = 0, totGlobal = 0, totEquiv = 0, totPaye = 0, tot1704Bz = 0;
 
             entries.forEach(e => {
                 tot1704 += (e.heure1704 || 0);
@@ -630,9 +637,12 @@
                 totPaye += (e.benchmarkPaye || 0);
             });
 
+            tot1704Bz = tot1704 + totBz;
+
             document.getElementById('stat1704').textContent = tot1704.toFixed(2) + ' h';
             document.getElementById('stat1508').textContent = tot1508.toFixed(2) + ' h';
             document.getElementById('statBz').textContent = totBz.toFixed(2) + ' h';
+            document.getElementById('stat1704Bz').textContent = tot1704Bz.toFixed(2) + ' h';
             document.getElementById('statGlobal').textContent = totGlobal.toFixed(2) + ' h';
             document.getElementById('statEquiv').textContent = totEquiv.toFixed(2) + ' h';
             document.getElementById('statPaye').textContent = totPaye.toFixed(2) + ' h';
@@ -690,7 +700,7 @@
             document.getElementById('externalCheckboxesGroup').style.display = 'none';
             document.getElementById('dateInput').valueAsDate = new Date();
             updateRoutesListForModule();
-            if(isManualEntry) toggleManualEntry(); // Revenir par défaut au mode liste optionnel
+            if(isManualEntry) toggleManualEntry();
         }
 
         window.editEntry = function(index) {
@@ -702,9 +712,8 @@
             updateRoutesListForModule();
             document.getElementById('routeInput').value = item.route || '';
             
-            // Si l'employé n'est pas dans la liste déroulante ou pour simplifier, passer en mode manuel lors de l'édition si besoin
             if (!isManualEntry) {
-                toggleManualEntry(); // Basculer en mode input texte pour éditer le nom librement
+                toggleManualEntry();
             }
             document.getElementById('nomInput').value = item.nom || '';
             document.getElementById('idInput').value = item.id || '';
@@ -929,7 +938,7 @@
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: #9ca3af;">Aucun résultat ne correspond aux critères du rapport.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: #9ca3af;">Aucun résultat ne correspond aux critères du rapport pour cette date.</td></tr>`;
                 document.getElementById('reportTotalHeures').textContent = '0.00';
                 document.getElementById('reportTotalEquiv').textContent = '0.00';
                 return;
@@ -1138,6 +1147,10 @@
                 <div class="stat-label">Total BZ</div>
                 <div class="stat-value" id="statBz">0.00 h</div>
             </div>
+            <div class="stat-card purple">
+                <div class="stat-label">Total 17.04 + BZ</div>
+                <div class="stat-value" id="stat1704Bz">0.00 h</div>
+            </div>
             <div class="stat-card blue">
                 <div class="stat-label">Total Heures</div>
                 <div class="stat-value" id="statGlobal">0.00 h</div>
@@ -1178,7 +1191,6 @@
                     <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: 12 ou Ach1..." required oninput="updateModuleFromRouteInput()">
                     <datalist id="routesList"></datalist>
                 </div>
-                <!-- Employé avec option de bascule Manuel / Liste -->
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <label for="nomInput" style="margin-bottom: 0;">Employé</label>
