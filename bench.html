@@ -302,6 +302,7 @@
         let listeEmployesMemoire = [];
         let editingIndex = null;
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
+        let isManualEntry = false; // État pour basculer entre liste et saisie manuelle
 
         const urlParams = new URLSearchParams(window.location.search);
         const isBookerMode = urlParams.get('mode') === 'booker';
@@ -346,13 +347,11 @@
             supervisorRoutes["FA"] = ["FA1", "FA2"];
         }
 
-        // Vérification de l'authentification avec onAuthStateChanged et initialisation
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('firebaseStatus').textContent = `Connecté (Utilisateur actif). Chargement des données...` + (isBookerMode ? " [Mode Booker Actif]" : "");
                 await initialiserDonnees();
             } else {
-                // Si vous préférez autoriser l'accès sans redirection bloquante, vous pouvez commenter la ligne de redirection
                 document.getElementById('firebaseStatus').textContent = `Mode invité / Non authentifié. Tentative de chargement...`;
                 await initialiserDonnees();
             }
@@ -386,12 +385,10 @@
             saveAndRender();
         }
 
-        // Méthode CQ : Récupération et tri alphabétique des employés depuis Firestore
         window.chargerEmployes = async () => {
-            const selectEmp = document.getElementById('nomInput');
+            const container = document.getElementById('nomContainer');
             try {
                 const querySnapshot = await getDocs(collection(db, "employes"));
-                selectEmp.innerHTML = '<option value="">-- Choisir par nom --</option>';
                 
                 listeEmployesMemoire = [];
                 querySnapshot.forEach((docSnap) => {
@@ -408,6 +405,54 @@
                     return prenomA.localeCompare(prenomB);
                 });
 
+                renderNomField();
+            } catch (e) {
+                console.error("Erreur chargement employés: ", e);
+                document.getElementById('firebaseStatus').textContent = "Erreur de chargement des employés depuis Firestore.";
+            }
+        };
+
+        // Fonction pour basculer dynamiquement entre le Select et l'Input texte manuel
+        window.toggleManualEntry = function() {
+            isManualEntry = !isManualEntry;
+            renderNomField();
+            const btnToggle = document.getElementById('toggleModeBtn');
+            if (isManualEntry) {
+                btnToggle.textContent = "📋 Liste";
+                btnToggle.title = "Revenir à la liste déroulante";
+                document.getElementById('idInput').readOnly = false;
+                document.getElementById('idInput').style.background = "white";
+                document.getElementById('ancienneteInput').readOnly = false;
+                document.getElementById('ancienneteInput').style.background = "white";
+                document.getElementById('ancienneteInput').value = "";
+                document.getElementById('idInput').value = "";
+            } else {
+                btnToggle.textContent = "✍️ Manuel";
+                btnToggle.title = "Permettre la saisie manuelle";
+                document.getElementById('idInput').readOnly = false; // ou true selon préférence
+                document.getElementById('idInput').style.background = "white";
+                document.getElementById('ancienneteInput').readOnly = true;
+                document.getElementById('ancienneteInput').style.background = "#e2e8f0";
+            }
+        };
+
+        function renderNomField() {
+            const container = document.getElementById('nomContainer');
+            container.innerHTML = '';
+
+            if (!isManualEntry) {
+                // Mode Liste Déroulante
+                const select = document.createElement('select');
+                select.id = 'nomInput';
+                select.className = 'form-select';
+                select.required = true;
+                select.onchange = function() { remplirParNom(this); };
+
+                let defaultOpt = document.createElement('option');
+                defaultOpt.value = "";
+                defaultOpt.textContent = "-- Choisir par nom --";
+                select.appendChild(defaultOpt);
+
                 listeEmployesMemoire.forEach((emp) => {
                     let option = document.createElement('option');
                     let nomComplet = `${emp.nom || ''} ${emp.prenom || ''}`.trim();
@@ -418,15 +463,21 @@
                     option.dataset.anciennete = emp.anciennete || 'Non spécifiée';
                     
                     option.textContent = `${emp.nom || ''}, ${emp.prenom || ''} (ID: ${employeId})`;
-                    selectEmp.appendChild(option);
+                    select.appendChild(option);
                 });
-            } catch (e) {
-                console.error("Erreur chargement employés: ", e);
-                document.getElementById('firebaseStatus').textContent = "Erreur de chargement des employés depuis Firestore.";
+                container.appendChild(select);
+            } else {
+                // Mode Saisie Manuelle Texte Libre
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'nomInput';
+                input.className = 'form-control';
+                input.placeholder = "Nom Prénom manuel...";
+                input.required = true;
+                container.appendChild(input);
             }
-        };
+        }
 
-        // Méthode CQ : Remplissage automatique lors du choix du nom dans le select
         window.remplirParNom = (selectElement) => {
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             const checkboxesGroup = document.getElementById('externalCheckboxesGroup');
@@ -444,14 +495,14 @@
             }
         };
 
-        // Méthode CQ : Recherche inverse et remplissage automatique lors de la saisie de l'ID
         window.remplirParId = (inputElement) => {
+            if (isManualEntry) return; // Ne rien faire en mode manuel
             const saisieId = inputElement.value.trim().toLowerCase();
             const selectEmp = document.getElementById('nomInput');
             const checkboxesGroup = document.getElementById('externalCheckboxesGroup');
 
             if (!saisieId) {
-                selectEmp.value = '';
+                if(selectEmp && selectEmp.tagName === 'SELECT') selectEmp.value = '';
                 document.getElementById('ancienneteInput').value = '-';
                 checkboxesGroup.style.display = 'none';
                 return;
@@ -464,13 +515,13 @@
 
             if (trouve) {
                 let nomComplet = `${trouve.nom || ''} ${trouve.prenom || ''}`.trim();
-                selectEmp.value = nomComplet;
+                if(selectEmp && selectEmp.tagName === 'SELECT') selectEmp.value = nomComplet;
                 document.getElementById('ancienneteInput').value = trouve.anciennete || 'Non spécifiée';
                 checkboxesGroup.style.display = 'none';
                 document.getElementById('employeExterneInput').checked = false;
                 document.getElementById('temporaireInput').checked = false;
             } else {
-                selectEmp.value = '';
+                if(selectEmp && selectEmp.tagName === 'SELECT') selectEmp.value = '';
                 document.getElementById('ancienneteInput').value = '-';
                 checkboxesGroup.style.display = 'flex';
                 checkboxesGroup.style.flexDirection = 'column';
@@ -639,6 +690,7 @@
             document.getElementById('externalCheckboxesGroup').style.display = 'none';
             document.getElementById('dateInput').valueAsDate = new Date();
             updateRoutesListForModule();
+            if(isManualEntry) toggleManualEntry(); // Revenir par défaut au mode liste optionnel
         }
 
         window.editEntry = function(index) {
@@ -649,6 +701,11 @@
             document.getElementById('moduleSelect').value = item.module || '';
             updateRoutesListForModule();
             document.getElementById('routeInput').value = item.route || '';
+            
+            // Si l'employé n'est pas dans la liste déroulante ou pour simplifier, passer en mode manuel lors de l'édition si besoin
+            if (!isManualEntry) {
+                toggleManualEntry(); // Basculer en mode input texte pour éditer le nom librement
+            }
             document.getElementById('nomInput').value = item.nom || '';
             document.getElementById('idInput').value = item.id || '';
             document.getElementById('ancienneteInput').value = item.anciennete || '';
@@ -688,6 +745,7 @@
                 document.getElementById('submitBtn').style.background = "var(--primary)";
                 editingIndex = null;
                 updateRoutesListForModule();
+                if(isManualEntry) toggleManualEntry();
             }
             entries.splice(index, 1);
             saveAndRender();
@@ -1120,12 +1178,17 @@
                     <input type="text" id="routeInput" class="form-control" list="routesList" placeholder="Ex: 12 ou Ach1..." required oninput="updateModuleFromRouteInput()">
                     <datalist id="routesList"></datalist>
                 </div>
-                <!-- Liste déroulante 'nom' alimentée par Firestore (Méthode CQ) -->
+                <!-- Employé avec option de bascule Manuel / Liste -->
                 <div class="form-group">
-                    <label for="nomInput">Employé</label>
-                    <select id="nomInput" class="form-select" required onchange="remplirParNom(this)">
-                        <option value="">-- Choisir par nom --</option>
-                    </select>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <label for="nomInput" style="margin-bottom: 0;">Employé</label>
+                        <button type="button" id="toggleModeBtn" class="btn btn-warning" onclick="toggleManualEntry()" style="padding: 0 6px; height: 22px; font-size: 0.7rem;" title="Permettre la saisie manuelle">✍️ Manuel</button>
+                    </div>
+                    <div id="nomContainer">
+                        <select id="nomInput" class="form-select" required onchange="remplirParNom(this)">
+                            <option value="">-- Choisir par nom --</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="idInput">ID</label>
