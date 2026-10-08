@@ -12,25 +12,18 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="image.png">
 
-  <!-- Tailwind CSS Local (Mode Hors Ligne) -->
+  <!-- Feuille de style globale (Hors Ligne) -->
   <link rel="stylesheet" href="style.css">
 
   <!-- Google Fonts : Cinzel & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  
-  <style>
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #0d1b2a; }
-      ::-webkit-scrollbar-thumb { background: #415a77; border-radius: 4px; }
-      .card-border { border: 1px solid #415a77; }
-  </style>
 </head>
-<body class="bg-[#0d1b2a] text-[#e0e0e0] font-sans antialiased selection:bg-blue-500 selection:text-white min-h-screen flex flex-col items-center justify-center p-6 relative overflow-x-hidden">
+<body class="bg-[#0d1b2a] text-[#e0e0e0] font-sans antialiased min-h-screen flex flex-col items-center justify-center p-6 relative overflow-x-hidden">
 
   <!-- ÉCRAN DE CONNEXION -->
-  <div class="w-full max-w-md bg-[#1b263b] p-8 rounded-2xl card-border shadow-2xl relative z-10" id="vue-connexion">
+  <div class="w-full max-w-md bg-[#1b263b] p-8 rounded-2xl border border-[#415a77] shadow-2xl relative z-10" id="vue-connexion">
     <div class="text-center mb-6">
       <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center bg-blue-500/10 mx-auto mb-3 overflow-hidden p-1">
           <img src="image.png" alt="Postes Canada" class="w-full h-full object-contain">
@@ -42,18 +35,18 @@
     <form id="formConnexion">
       <div class="mb-4 text-start">
         <label class="block text-xs uppercase tracking-wider text-[#a5b4fc] mb-2">Courriel</label>
-        <input type="email" class="w-full px-4 py-3 rounded-xl bg-[#0d1b2a] text-white card-border focus:outline-none focus:border-blue-500 transition-colors text-sm" id="emailConnexion" required placeholder="nom@entreprise.com">
+        <input type="email" class="w-full px-4 py-3 rounded-xl bg-[#0d1b2a] text-white border border-[#415a77] focus:outline-none focus:border-blue-500 transition-colors text-sm" id="emailConnexion" required placeholder="nom@entreprise.com">
       </div>
       <div class="mb-6 text-start">
         <label class="block text-xs uppercase tracking-wider text-[#a5b4fc] mb-2">Mot de passe</label>
-        <input type="password" class="w-full px-4 py-3 rounded-xl bg-[#0d1b2a] text-white card-border focus:outline-none focus:border-blue-500 transition-colors text-sm" id="passwordConnexion" required placeholder="Mot de passe">
+        <input type="password" class="w-full px-4 py-3 rounded-xl bg-[#0d1b2a] text-white border border-[#415a77] focus:outline-none focus:border-blue-500 transition-colors text-sm" id="passwordConnexion" required placeholder="Mot de passe">
       </div>
       <button type="submit" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all cursor-pointer">Se connecter</button>
     </form>
   </div>
 
   <!-- APPLICATION PRINCIPALE -->
-  <div class="w-full max-w-md bg-[#1b263b] p-8 rounded-2xl card-border shadow-2xl relative z-10 hidden" id="app-container">
+  <div class="w-full max-w-md bg-[#1b263b] p-8 rounded-2xl border border-[#415a77] shadow-2xl relative z-10 hidden" id="app-container">
     
     <!-- Menu Principal -->
     <div class="menu" id="menuPrincipal">
