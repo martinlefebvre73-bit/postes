@@ -253,7 +253,7 @@ filter: invert(1);
 .text-gray-500 { color: #6b7280; }
 .text-white { color: #ffffff; }
 
-/* Boutons de base & couleurs spécifiques de menus (Ambre, Violet, Indigo, Cyan, Rose, Émeraude, etc.) */
+/* Boutons de base & couleurs spécifiques de menus (Ambre, Violet, Indigo, Cyan, Rose, Émeraude, Orange, etc.) */
 button, .btn {
 font-family: inherit;
 cursor: pointer;
@@ -273,6 +273,10 @@ transition: all 0.2s ease;
 
 .bg-amber-600 { background-color: #d97706; }
 .hover:bg-amber-700:hover { background-color: #b45309; }
+
+.bg-orange-600 { background-color: #ea580c; }
+.hover\:bg-orange-700:hover { background-color: #c2410c; }
+.shadow-orange-600\/30 { box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.3); }
 
 .bg-slate-700 { background-color: #334155; }
 .hover:bg-slate-800:hover { background-color: #1e293b; }
@@ -384,7 +388,7 @@ max-width: 100% !important;
 margin: 0 !important;
 padding: 0 !important;
 }
-section.lg:col-span-2 {
+section.lg\:col-span-2 {
 background-color: white !important;
 border: none !important;
 box-shadow: none !important;
