@@ -261,7 +261,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .text-gray-500 { color: #6b7280; }
 .text-white { color: #ffffff; }
 
-/* Boutons de base & couleurs spécifiques de menus (Ambre, Violet, Indigo, Cyan, Rose, Émeraude, Orange, etc.) */
+/* Boutons de base & couleurs spécifiques de menus */
 button, .btn {
   font-family: inherit;
   cursor: pointer;
@@ -282,6 +282,7 @@ button, .btn {
 .bg-amber-600 { background-color: #d97706; }
 .hover\:bg-amber-700:hover { background-color: #b45309; }
 
+/* Correction ajoutée pour le bouton Risque consolidé / Orange */
 .bg-orange-600 { background-color: #ea580c; }
 .hover\:bg-orange-700:hover { background-color: #c2410c; }
 .shadow-orange-600\/30 { box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.3); }
