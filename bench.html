@@ -265,7 +265,7 @@
         }
         .filter-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto auto;
             gap: 15px;
             align-items: end;
             margin-bottom: 25px;
@@ -321,7 +321,6 @@
         let editingFirebaseId = null; 
         let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
         let isManualEntry = false;
-        let firebaseEntriesCache = [];
 
         const urlParams = new URLSearchParams(window.location.search);
         const isBookerMode = urlParams.get('mode') === 'booker';
@@ -399,10 +398,6 @@
 
         async function initialiserDonnees() {
             document.getElementById('dateInput').valueAsDate = new Date();
-            const filterDateEl = document.getElementById('filterDate');
-            if(filterDateEl) filterDateEl.valueAsDate = new Date();
-            const fRecupDate = document.getElementById('fRecupDate');
-            if(fRecupDate) fRecupDate.valueAsDate = new Date();
 
             if (isBookerMode) {
                 const syntheseBtn = document.getElementById('syntheseBtn');
@@ -685,10 +680,7 @@
 
             tot1704Bz = tot1704 + totBz;
 
-            // Formule équivalent 8h global (avec 963.3)
             const totEquiv = ((tot1704 + tot1508 + totBz + 963.3) / 963.3) * 8.0;
-
-            // Formule benchmark payé global (avec 963.3)
             const totPaye = (((tot1704 + tot1508) * 1.5) + totBz + 963.3) / 963.3 * 8.0;
 
             document.getElementById('stat1704').textContent = tot1704.toFixed(2) + ' h';
@@ -830,7 +822,7 @@
             tbody.innerHTML = '';
 
             if (entries.length === 0) {
-                tbody.innerHTML = `<tr id="emptyRow"><td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td></tr>`;
+                tbody.innerHTML = `<tr id="emptyRow"><td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie affichée pour le moment.</td></tr>`;
                 document.getElementById('totalGlobalHeures').textContent = '0.00';
                 document.getElementById('totalGlobalEquiv').textContent = '0.00';
                 return;
@@ -880,89 +872,45 @@
             document.getElementById('totalGlobalEquiv').textContent = totalGlobalEquiv.toFixed(2);
         }
 
-        window.openRecupererModal = async function() {
+        window.openRecupererModal = function() {
             document.getElementById('recupererModal').style.display = 'block';
-            await chargerDonneesFirebasePourRecherche();
+            document.getElementById('fRecupDate').valueAsDate = new Date();
         }
 
         window.closeRecupererModal = function() {
             document.getElementById('recupererModal').style.display = 'none';
         }
 
-        async function chargerDonneesFirebasePourRecherche() {
-            const tbody = document.getElementById('recupererTableBody');
-            tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #64748b;">Chargement des données depuis Firebase...</td></tr>`;
-            
-            try {
-                const querySnapshot = await getDocs(collection(db, "bench"));
-                firebaseEntriesCache = [];
-                querySnapshot.forEach((docSnap) => {
-                    firebaseEntriesCache.push({ firebaseId: docSnap.id, ...docSnap.data() });
-                });
-                runRecupererFilter();
-            } catch (err) {
-                console.error("Erreur de récupération Firebase:", err);
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #dc2626;">Erreur de chargement depuis Firebase. Vérifiez votre connexion.</td></tr>`;
-            }
-        }
-
-        window.runRecupererFilter = function() {
-            const fNom = document.getElementById('fRecupNom').value.toLowerCase().trim();
-            const fId = document.getElementById('fRecupId').value.toLowerCase().trim();
+        window.chargerDonneesParDatePrincipal = async function() {
             const fDate = document.getElementById('fRecupDate').value;
-
-            const filtered = firebaseEntriesCache.filter(item => {
-                const matchNom = !fNom || (item.nom && item.nom.toLowerCase().includes(fNom));
-                const matchId = !fId || (item.id && item.id.toLowerCase().includes(fId));
-                const matchDate = !fDate || item.date === fDate;
-                return matchNom && matchId && matchDate;
-            });
-
-            const tbody = document.getElementById('recupererTableBody');
-            tbody.innerHTML = '';
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #9ca3af;">Aucune saisie trouvée dans Firebase avec ces critères.</td></tr>`;
+            if (!fDate) {
+                alert("Veuillez sélectionner une date.");
                 return;
             }
 
-            filtered.forEach(item => {
-                const tr = document.createElement('tr');
-                const modClass = getModuleClass(item.module);
-                tr.innerHTML = `
-                    <td>${item.date || 'N/A'}</td>
-                    <td><span style="padding: 2px 6px; border-radius: 4px;" class="${modClass}">${item.module || ''}</span></td>
-                    <td>${item.route || ''}</td>
-                    <td>${item.nom || ''}</td>
-                    <td>${item.id || ''}</td>
-                    <td style="text-align: right;">${(item.heure1704 || 0).toFixed(2)} h</td>
-                    <td style="text-align: right;">${(item.heure1508 || 0).toFixed(2)} h</td>
-                    <td style="text-align: right;">${(item.heureBz || 0).toFixed(2)} h</td>
-                    <td style="text-align: right; font-weight: 600;">${(item.totalHeures || 0).toFixed(2)} h</td>
-                    <td style="text-align: center;">
-                        <button class="btn btn-warning" onclick='chargerSaisieDansFormulaire(${JSON.stringify(item)})'>Sélectionner / Modifier</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        window.chargerSaisieDansFormulaire = function(item) {
-            closeRecupererModal();
-
-            let existingIndex = entries.findIndex(e => e.firebaseId === item.firebaseId || (e.date === item.date && e.id === item.id && e.route === item.route));
+            document.getElementById('firebaseStatus').textContent = `Chargement des données pour la date ${fDate} depuis Firebase...`;
             
-            if (existingIndex !== -1) {
-                editEntry(existingIndex);
-            } else {
-                entries.push(item);
+            try {
+                const querySnapshot = await getDocs(collection(db, "bench"));
+                let fetchedEntries = [];
+                querySnapshot.forEach((docSnap) => {
+                    let data = docSnap.data();
+                    if (data.date === fDate) {
+                        fetchedEntries.push({ firebaseId: docSnap.id, ...data });
+                    }
+                });
+
+                closeRecupererModal();
+                entries = fetchedEntries;
                 saveAndRender();
-                editEntry(entries.length - 1);
+
+                document.getElementById('firebaseStatus').textContent = `${entries.length} saisie(s) chargée(s) pour la date du ${fDate}.`;
+                document.getElementById('firebaseStatus').style.color = "#059669";
+            } catch (err) {
+                console.error("Erreur de récupération Firebase:", err);
+                document.getElementById('firebaseStatus').textContent = "Erreur de chargement depuis Firebase.";
+                document.getElementById('firebaseStatus').style.color = "#dc2626";
             }
-            
-            editingFirebaseId = item.firebaseId;
-            document.getElementById('firebaseStatus').textContent = "Saisie distante chargée dans le formulaire pour modification.";
-            document.getElementById('firebaseStatus').style.color = "#0284c7";
         }
 
         window.openSyntheseModal = function() {
@@ -1074,13 +1022,117 @@
             document.getElementById('reportTotalEquiv').textContent = reportEquiv.toFixed(2);
         }
 
+        window.resetReportFilters = function() {
+            document.getElementById('filterModule').value = "";
+            document.getElementById('filterRoute').value = "";
+            document.getElementById('filterNom').value = "";
+            document.getElementById('filterId').value = "";
+            document.getElementById('filterDate').value = "";
+            runReport();
+        }
+
         window.printReport = function() { window.print(); }
 
-        window.openSurveillerModal = function() {
+        window.openSurveillerModal = async function() {
             document.getElementById('surveillerModal').style.display = 'block';
+            await runSurveillerFilter();
         }
         window.closeSurveillerModal = function() {
             document.getElementById('surveillerModal').style.display = 'none';
+        }
+
+        window.runSurveillerFilter = async function() {
+            const tbody = document.getElementById('surveillerTableBody');
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Analyse des données et historique...</td></tr>`;
+
+            // Récupérer l'ensemble des données de Firebase pour l'analyse sur 7 jours
+            let allEntriesForCheck = [...entries];
+            try {
+                const querySnapshot = await getDocs(collection(db, "bench"));
+                let firebaseAll = [];
+                querySnapshot.forEach((docSnap) => {
+                    firebaseAll.push({ firebaseId: docSnap.id, ...docSnap.data() });
+                });
+                if (firebaseAll.length > 0) {
+                    allEntriesForCheck = firebaseAll;
+                }
+            } catch (err) {
+                console.warn("Impossible de récupérer l'historique complet Firebase, utilisation des données locales.", err);
+            }
+
+            // Calculer pour chaque employé les occurrences de 15.08 sur les 7 derniers jours par rapport à la date de chaque saisie
+            const alerts = [];
+
+            allEntriesForCheck.forEach((item, index) => {
+                let reasons = [];
+                
+                // 1. Plus de 1.5 en 15.08 sur une saisie
+                if ((item.heure1508 || 0) > 1.5) {
+                    reasons.push(`15.08 > 1.5h (${item.heure1508.toFixed(2)}h)`);
+                }
+
+                // 2. Dépassement Benchmark
+                if ((item.totalHeures || 0) > (item.benchmark || 8.0)) {
+                    reasons.push(`Dépassement Benchmark (${item.totalHeures.toFixed(2)}h vs ${item.benchmark.toFixed(2)}h)`);
+                }
+
+                // 3. Volume exceptionnel combiné > 2h
+                if (((item.heure1704 || 0) + (item.heure1508 || 0) + (item.heureBz || 0)) > 2.0) {
+                    reasons.push(`Volume exceptionnel > 2h`);
+                }
+
+                // 4. Heures de 15.08 à 2 reprises ou plus dans les 7 derniers jours pour le même employé
+                if (item.nom && item.date && (item.heure1508 || 0) > 0) {
+                    const currentDate = new Date(item.date);
+                    const pastDate = new Date(currentDate);
+                    pastDate.setDate(currentDate.getDate() - 7);
+
+                    let count1508 = 0;
+                    allEntriesForCheck.forEach(other => {
+                        if (other.nom && other.nom.toLowerCase() === item.nom.toLowerCase() && (other.heure1508 || 0) > 0 && other.date) {
+                            const dOther = new Date(other.date);
+                            if (dOther >= pastDate && dOther <= currentDate) {
+                                count1508++;
+                            }
+                        }
+                    });
+
+                    if (count1508 >= 2) {
+                        reasons.push(`15.08 à ${count1508} reprises sur 7 jours`);
+                    }
+                }
+
+                if (reasons.length > 0) {
+                    // Éviter les doublons si déjà présent pour la même entrée
+                    if (!alerts.some(a => a.item === item)) {
+                        alerts.push({ item, index, reasons: [...new Set(reasons)].join(', ') });
+                    }
+                }
+            });
+
+            tbody.innerHTML = '';
+            if (alerts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #9ca3af;">Aucune anomalie détectée selon les critères (15.08 > 1.5h, ≥2 fois en 7 jours, dépassements).</td></tr>`;
+                return;
+            }
+
+            alerts.forEach(alertObj => {
+                const item = alertObj.item;
+                const tr = document.createElement('tr');
+                const modClass = getModuleClass(item.module);
+                tr.innerHTML = `
+                    <td>${item.date || 'N/A'}</td>
+                    <td><span style="padding: 2px 6px; border-radius: 4px;" class="${modClass}">${item.module || ''}</span></td>
+                    <td>${item.route || ''}</td>
+                    <td>${item.nom || ''}</td>
+                    <td style="text-align: right; color: #d97706; font-weight: bold;">${(item.heure1508 || 0).toFixed(2)} h</td>
+                    <td><span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: 500;">${alertObj.reasons}</span></td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-warning" onclick="closeSurveillerModal(); editEntry(${alertObj.index})">Modifier</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         window.exportData = function() {
@@ -1116,7 +1168,7 @@
             </div>
         </div>
         <div class="header-actions">
-            <button class="btn btn-warning" onclick="openRecupererModal()" style="font-size: 0.95rem; font-weight: bold; background: #0284c7; color: white;">🔄 Récupérer / Modifier</button>
+            <button class="btn btn-warning" onclick="openRecupererModal()" style="font-size: 0.95rem; font-weight: bold; background: #0284c7; color: white;">🔄 Récupérer / Afficher par date</button>
             <button id="syntheseBtn" class="btn" onclick="openSyntheseModal()" style="font-size: 0.95rem; font-weight: bold; background: #7c3aed; color: white; display: none;">📑 Synthèse</button>
             <button class="btn btn-warning" onclick="openSurveillerModal()" style="font-size: 0.95rem; font-weight: bold; background: #f59e0b;">🚨 À surveiller</button>
             <button class="btn btn-success" onclick="openReportModal()" style="font-size: 0.95rem; font-weight: bold; background: #0284c7;">📊 Générer un Rapport</button>
@@ -1253,7 +1305,7 @@
             </thead>
             <tbody id="entriesTableBody">
                 <tr id="emptyRow">
-                    <td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie enregistrée pour le moment.</td>
+                    <td colspan="14" style="text-align: center; color: #9ca3af;">Aucune saisie affichée pour le moment.</td>
                 </tr>
             </tbody>
         </table>
@@ -1268,54 +1320,22 @@
     </div>
 </div>
 
-<!-- MODALE RECUPERER / MODIFIER DEPUIS FIREBASE -->
+<!-- MODALE RECUPERER / AFFICHER PAR DATE -->
 <div id="recupererModal" class="modal">
-    <div class="modal-content" style="max-width: 1200px;">
+    <div class="modal-content" style="max-width: 500px;">
         <span class="close-modal" onclick="closeRecupererModal()">&times;</span>
-        <h2 style="margin-bottom: 20px; color: var(--primary);">🔄 Récupérer et Modifier une Saisie depuis Firebase</h2>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">🔄 Afficher les saisies par date</h2>
         
-        <div class="filter-grid">
+        <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
             <div class="form-group">
-                <label for="fRecupNom">Nom de l'employé</label>
-                <input type="text" id="fRecupNom" class="form-control" placeholder="Rechercher nom..." oninput="runRecupererFilter()">
-            </div>
-            <div class="form-group">
-                <label for="fRecupId">ID Employé</label>
-                <input type="text" id="fRecupId" class="form-control" placeholder="Rechercher ID..." oninput="runRecupererFilter()">
-            </div>
-            <div class="form-group">
-                <label for="fRecupDate">Date</label>
-                <input type="date" id="fRecupDate" class="form-control" onchange="runRecupererFilter()">
-            </div>
-            <div>
-                <button class="btn btn-primary" onclick="runRecupererFilter()" style="width: 100%;">Rechercher</button>
+                <label for="fRecupDate">Sélectionnez la date à afficher :</label>
+                <input type="date" id="fRecupDate" class="form-control" style="font-size: 1rem; padding: 10px;">
             </div>
         </div>
 
-        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Module</th>
-                        <th>Route</th>
-                        <th>Nom</th>
-                        <th>ID</th>
-                        <th>17.04</th>
-                        <th>15.08</th>
-                        <th>BZ</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="recupererTableBody">
-                    <tr><td colspan="10" style="text-align: center; color: #9ca3af;">Chargement...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end;">
-            <button class="btn btn-danger" onclick="closeRecupererModal()">Fermer</button>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button class="btn btn-danger" onclick="closeRecupererModal()">Annuler</button>
+            <button class="btn btn-primary" onclick="chargerDonneesParDatePrincipal()">Afficher dans la page</button>
         </div>
     </div>
 </div>
@@ -1383,9 +1403,10 @@
                 <input type="text" id="filterId" class="form-control" placeholder="Rechercher ID..." oninput="runReport()">
             </div>
             <div class="form-group">
-                <label for="filterDate">Date</label>
+                <label for="filterDate">Date précise</label>
                 <input type="date" id="filterDate" class="form-control" onchange="runReport()">
             </div>
+            <div><button class="btn btn-warning" onclick="resetReportFilters()" style="width: 100%; background: #64748b; color: white;" title="Afficher tout">🔄 Tout voir</button></div>
             <div><button class="btn btn-primary" onclick="runReport()" style="width: 100%;">Filtrer</button></div>
         </div>
         <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
@@ -1395,7 +1416,7 @@
                         <th>Date</th><th>Module</th><th>Route</th><th>Nom</th><th>ID</th><th>Ancienneté</th><th>Heure 17.04</th><th>Heure 15.08</th><th>Heure BZ</th><th>Total</th><th>Benchmark</th><th>Équiv 8h</th><th>Payé</th>
                     </tr>
                 </thead>
-                <tbody id="reportTableBody"><tr><td colspan="13" style="text-align: center; color: #9ca3af;">Sélectionnez vos critères.</td></tr></tbody>
+                <tbody id="reportTableBody"><tr><td colspan="13" style="text-align: center; color: #9ca3af;">Chargement...</td></tr></tbody>
             </table>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1413,11 +1434,29 @@
 
 <!-- À SURVEILLER MODAL -->
 <div id="surveillerModal" class="modal">
-    <div class="modal-content" style="max-width: 900px;">
+    <div class="modal-content" style="max-width: 1000px;">
         <span class="close-modal" onclick="closeSurveillerModal()">&times;</span>
-        <h2 style="margin-bottom: 20px; color: var(--primary);">🚨 À surveiller</h2>
-        <p style="color: #64748b;">Module de surveillance actif.</p>
-        <div style="display: flex; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-danger" onclick="closeSurveillerModal()">Fermer</button></div>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">🚨 À surveiller (Anomalies, 15.08 > 1.5h & Historique 7 jours)</h2>
+        <p style="color: #64748b; margin-bottom: 15px;">Liste des employés ayant plus de 1,5h en 15.08, des heures de 15.08 à 2 reprises ou plus sur les 7 derniers jours, ou des dépassements.</p>
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Module</th>
+                        <th>Route</th>
+                        <th>Nom</th>
+                        <th>15.08</th>
+                        <th>Motif / Alerte</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="surveillerTableBody">
+                    <tr><td colspan="7" style="text-align: center; color: #9ca3af;">Chargement...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="display: flex; justify-content: flex-end;"><button class="btn btn-danger" onclick="closeSurveillerModal()">Fermer</button></div>
     </div>
 </div>
 
