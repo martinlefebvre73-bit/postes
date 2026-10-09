@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport Consolidé - Postes Canada</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- En-tête -->
+        <header class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-amber-400 flex items-center gap-2">
+                    <span>🔒</span> Rapport Consolidé (Authentifié)
+                </h1>
+                <p class="text-sm text-slate-400">Suivi unifié 'À Surveiller' (Bench) & 'À Risques' (Interventions) avec Volumes & Temps Préparation CQ</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="location.href='index.html'" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
+                    ← Retour au menu
+                </button>
+                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-600">
+                    🖨️ Imprimer / PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Filtres et Paramètres -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Tiers du jour (Calcul CQ)</label>
+                <select id="tierSelect" onchange="traiterEtAfficherDonnees()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-amber-300 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <option value="1">1 (Rose 2/3)</option>
+                    <option value="2">2 (Bleu 3/3)</option>
+                    <option value="3">3 (Orange 1/3)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Filtrer par recherche</label>
+                <input type="text" id="searchInput" placeholder="Nom, ID ou Route..." oninput="traiterEtAfficherDonnees()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            </div>
+            <div class="flex items-center justify-between bg-slate-900/60 border border-slate-700/60 rounded-lg px-4 py-2.5">
+                <div>
+                    <span class="text-xs text-slate-400 block">État de la Session</span>
+                    <span id="statutSession" class="text-xs font-bold text-amber-400">Vérification...</span>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 block">Total Cibles</span>
+                    <span id="totalCibles" class="text-lg font-bold text-amber-400">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau Principal Consolidé -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="rapportTable">
+                    <thead>
+                        <tr class="bg-slate-900 text-slate-300 text-xs uppercase tracking-wider border-b border-slate-700">
+                            <th class="py-3 px-3">Employé</th>
+                            <th class="py-3 px-3">ID</th>
+                            <th class="py-3 px-3">Module / Route</th>
+                            <th class="py-3 px-3">Origine de l'Alerte</th>
+                            <th class="py-3 px-3">Volumes (CM / CS / Pq / Colis)</th>
+                            <th class="py-3 px-3">Temps Prép. CQ</th>
+                            <th class="py-3 px-3">Détails / Motifs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rapportTableBody" class="divide-y divide-slate-700/50 text-sm">
+                        <tr>
+                            <td colspan="7" class="text-center py-8 text-slate-400">Vérification de l'authentification et chargement...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script Firebase avec Authentification Partagée -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const masterVolumeDB = {
+            1: {cm: 3.2, cs: 2.25, pq: 15.0, col: 17.0, r_res: 207, r_apt: 0, b_res: 165, b_apt: 329, o_res: 95, o_apt: 31},
+            2: {cm: 2.4, cs: 1.9, pq: 18.0, col: 19.0, r_res: 425, r_apt: 425, b_res: 131, b_apt: 341, o_res: 92, o_apt: 0},
+            3: {cm: 2.6, cs: 1.6, pq: 20.0, col: 9.0, r_res: 120, r_apt: 0, b_res: 113, b_apt: 113, o_res: 101, o_apt: 5},
+            4: {cm: 3.8, cs: 2.93, pq: 24.0, col: 24.7, r_res: 294, r_apt: 115, b_res: 467, b_apt: 500, o_res: 258, o_apt: 35},
+            5: {cm: 1.9, cs: 1.26, pq: 11.0, col: 5.7, r_res: 320, r_apt: 212, b_res: 120, b_apt: 120, o_res: 313, o_apt: 298},
+            6: {cm: 2.5, cs: 2.01, pq: 20.0, col: 19.0, r_res: 419, r_apt: 0, b_res: 29, b_apt: 315, o_res: 143, o_apt: 0},
+            7: {cm: 2.3, cs: 2.24, pq: 21.0, col: 18.0, r_res: 134, r_apt: 0, b_res: 426, b_apt: 426, o_res: 381, o_apt: 340},
+            8: {cm: 3.1, cs: 2.38, pq: 21.0, col: 12.0, r_res: 179, r_apt: 0, b_res: 538, b_apt: 539, o_res: 181, o_apt: 12},
+            9: {cm: 2.0, cs: 1.6, pq: 12.0, col: 8.0, r_res: 188, r_apt: 0, b_res: 151, b_apt: 151, o_res: 70, o_apt: 0},
+            10: {cm: 2.9, cs: 2.38, pq: 21.0, col: 20.0, r_res: 158, r_apt: 0, b_res: 359, b_apt: 359, o_res: 178, o_apt: 0},
+            12: {cm: 3.4, cs: 2.76, pq: 23.0, col: 21.0, r_res: 288, r_apt: 3, b_res: 260, b_apt: 260, o_res: 191, o_apt: 3},
+            14: {cm: 3.6, cs: 2.99, pq: 25.0, col: 23.0, r_res: 341, r_apt: 341, b_res: 377, b_apt: 378, o_res: 219, o_apt: 0},
+            216: {cm: 2.0, cs: 1.96, pq: 12.0, col: 10.0, r_res: 383, r_apt: 16, b_res: 387, b_apt: 1, o_res: 291, o_apt: 1}
+        };
+
+        const cqFactors = { 3: 0.064, 4: 0.088, 5: 0.108, 6: 0.128, 7: 0.158, 8: 0.178, 9: 0.22, 10: 0.246, 11: 0.266, 12: 0.286 };
+
+        function calculerPrepCQ(rNum, tier, nbsCQ = 6) {
+            const routeData = masterVolumeDB[rNum] || { r_res: 200, r_apt: 30, b_res: 150, b_apt: 40, o_res: 100, o_apt: 20 };
+            let sumResApt = 0;
+            if (tier === 1) sumResApt = routeData.r_res + routeData.r_apt;
+            else if (tier === 2) sumResApt = routeData.b_res + routeData.b_apt;
+            else if (tier === 3) sumResApt = routeData.o_res + routeData.o_apt;
+
+            let factor = cqFactors[nbsCQ] || 0.128;
+            return (sumResApt * factor).toFixed(1) + " min";
+        }
+
+        let donneesBrutesBench = [];
+        let donneesBrutesInterventions = [];
+
+        // Gestion de l'authentification globale (partagée avec index)
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('statutSession').textContent = "Connecté";
+                document.getElementById('statutSession').className = "text-xs font-bold text-emerald-400";
+                await chargerDonneesFirebase();
+            } else {
+                alert("Veuillez vous connecter via le menu principal pour accéder aux rapports.");
+                window.location.href = "index.html"; // Redirection vers l'index si non authentifié[cite: 2]
+            }
+        });
+
+        async function chargerDonneesFirebase() {
+            try {
+                const [benchSnap, interventionsSnap] = await Promise.all([
+                    getDocs(collection(db, "bench")),
+                    getDocs(collection(db, "interventions"))
+                ]);
+
+                donneesBrutesBench = [];
+                benchSnap.forEach(doc => donneesBrutesBench.push(doc.data()));
+
+                donneesBrutesInterventions = [];
+                interventionsSnap.forEach(doc => donneesBrutesInterventions.push(doc.data()));
+
+                traiterEtAfficherDonnees();
+            } catch (err) {
+                console.error("Erreur de chargement Firebase:", err);
+            }
+        }
+
+        window.traiterEtAfficherDonnees = function() {
+            const tbody = document.getElementById('rapportTableBody');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const tier = parseInt(document.getElementById('tierSelect').value);
+
+            let employesCibles = new Map();
+
+            // 1. Analyse 'À surveiller' (Collection bench)
+            donneesBrutesBench.forEach(item => {
+                let heure1508 = item.heure1508 || 0;
+                let totalHeures = item.totalHeures || 0;
+                let benchmark = item.benchmark || 8.0;
+
+                if (heure1508 > 1.5 || totalHeures > benchmark) {
+                    let idEmp = String(item.id || item.nom || 'inconnu');
+                    employesCibles.set(idEmp, {
+                        nom: item.nom || 'Inconnu',
+                        id: item.id || 'N/A',
+                        module: item.module || 'N/A',
+                        route: item.route || 'N/A',
+                        origine: "⚠️ À surveiller (Bench)",
+                        details: `15.08: ${heure1508.toFixed(2)}h | Total: ${totalHeures.toFixed(2)}h`,
+                        rNum: parseInt(String(item.route).replace(/\D/g, '')) || 1
+                    });
+                }
+            });
+
+            // 2. Analyse 'À risques' (Collection interventions)
+            let sstParEmploye = {};
+            donneesBrutesInterventions.forEach(item => {
+                let type = (item.typeIntervention || '').trim().toLowerCase();
+                if (type === 'sst') {
+                    let idEmp = String(item.idEmploye || item.nom || 'inconnu');
+                    if (!sstParEmploye[idEmp]) {
+                        sstParEmploye[idEmp] = {
+                            nom: item.nom || 'Inconnu',
+                            idEmploye: item.idEmploye || 'N/A',
+                            incidents: []
+                        };
+                    }
+                    sstParEmploye[idEmp].incidents.push({
+                        date: item.date,
+                        gravite: item.graviteSst || 'Mineur'
+                    });
+                }
+            });
+
+            for (let idEmp in sstParEmploye) {
+                let emp = sstParEmploye[idEmp];
+                if (emp.incidents.length >= 2) {
+                    employesCibles.set(idEmp, {
+                        nom: emp.nom,
+                        id: emp.idEmploye,
+                        module: "Intervention",
+                        route: "N/A",
+                        origine: "🚨 À risques (SST)",
+                        details: `${emp.incidents.length} incidents SST enregistrés`,
+                        rNum: 1
+                    });
+                }
+            }
+
+            const resultatArray = Array.from(employesCibles.values());
+            const filtered = resultatArray.filter(item => 
+                item.nom.toLowerCase().includes(searchTerm) || 
+                item.id.toLowerCase().includes(searchTerm) || 
+                String(item.route).toLowerCase().includes(searchTerm)
+            );
+
+            document.getElementById('totalCibles').textContent = filtered.length;
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Aucun employé ne correspond aux critères d'alerte.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const vol = masterVolumeDB[item.rNum] || {cm: 2.5, cs: 2.0, pq: 15.0, col: 10.0};
+                const prepCQ = calculerPrepCQ(item.rNum, tier);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-700/40 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-bold text-white">${item.nom}</td>
+                    <td class="py-3 px-3 text-slate-300">${item.id}</td>
+                    <td class="py-3 px-3"><span class="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-xs font-semibold">${item.module} - Route ${item.route}</span></td>
+                    <td class="py-3 px-3"><span class="bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded text-xs font-semibold">${item.origine}</span></td>
+                    <td class="py-3 px-3 text-xs text-slate-300">CM: ${vol.cm} | CS: ${vol.cs} | Pq: ${vol.pq} | Col: ${vol.col}</td>
+                    <td class="py-3 px-3 text-emerald-400 font-bold text-xs">${prepCQ}</td>
+                    <td class="py-3 px-3 text-xs text-slate-400">${item.details}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+    </script>
+</body>
+</html>
