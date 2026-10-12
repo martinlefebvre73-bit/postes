@@ -282,7 +282,11 @@ button, .btn {
 .bg-amber-600 { background-color: #d97706; }
 .hover\:bg-amber-700:hover { background-color: #b45309; }
 
-/* Correction ajoutée pour le bouton Risque consolidé / Orange */
+/* Boutons Camion / Assignation camion / Risques et Alertes */
+.bg-red-600 { background-color: #dc2626; }
+.hover\:bg-red-700:hover { background-color: #b91c1c; }
+.shadow-red-600\/30 { box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3); }
+
 .bg-orange-600 { background-color: #ea580c; }
 .hover\:bg-orange-700:hover { background-color: #c2410c; }
 .shadow-orange-600\/30 { box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.3); }
