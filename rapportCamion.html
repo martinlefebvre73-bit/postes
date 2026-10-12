@@ -212,7 +212,7 @@
         const db = getFirestore(app);
 
         let cachedCasierData = null;
-        const CASIER_GITHUB_URL = './casier (1).xlsx';
+        const CASIER_GITHUB_URL = './casier (1).xlsx';[cite: 1]
         let dernierRapportGenere = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -393,11 +393,10 @@
             document.getElementById('countRapport1').innerText = `${rapport1Filtre.length} entrées (filtré)`;
         }
 
-        // Fonction de recherche historique par route/camion et par date/période
         window.rechercherHistoriqueGlobal = async function() {
             const terme = document.getElementById('inputRechercheHistorique').value.toLowerCase().trim();
-            const dateDebutStr = document.getElementById('dateDebutHistorique').value; // format YYYY-MM-DD
-            const dateFinStr = document.getElementById('dateFinHistorique').value;     // format YYYY-MM-DD
+            const dateDebutStr = document.getElementById('dateDebutHistorique').value; 
+            const dateFinStr = document.getElementById('dateFinHistorique').value;     
 
             const historiqueContainer = document.getElementById('tbodyHistorique');
             historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Recherche dans l\'historique Firebase en cours...</td></tr>';
@@ -413,24 +412,19 @@
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     
-                    // Vérification de la date du rapport (si le timestamp existe)
                     if (data.timestamp && data.timestamp.toDate) {
-                        const dateDoc = data.timestamp.toDate(); // Objet Date JS
-                        // Extraire la date au format YYYY-MM-DD local pour la comparaison
+                        const dateDoc = data.timestamp.toDate(); 
                         const annee = dateDoc.getFullYear();
                         const mois = String(dateDoc.getMonth() + 1).padStart(2, '0');
                         const jour = String(dateDoc.getDate()).padStart(2, '0');
                         const dateDocFormatted = `${annee}-${mois}-${jour}`;
 
                         if (dateDebutStr && !dateFinStr) {
-                            // Recherche à une date précise
                             if (dateDocFormatted !== dateDebutStr) return;
                         } else if (dateDebutStr && dateFinStr) {
-                            // Recherche sur une période (de... à)
                             if (dateDocFormatted < dateDebutStr || dateDocFormatted > dateFinStr) return;
                         }
                     } else if (dateDebutStr) {
-                        // Si pas de timestamp stocké, on ignore le filtre date ou on laisse passer
                         return;
                     }
 
