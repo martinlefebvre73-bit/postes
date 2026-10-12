@@ -18,45 +18,122 @@
                 <h1 class="text-2xl font-bold tracking-wide">Postes Canada • Dépôt Aéroport</h1>
                 <p class="text-gray-400 text-sm mt-1">Analyseur de Rapports PDT & Casier Automatique</p>
             </div>
-            <div class="mt-4 md:mt-0 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">
-                Module Superviseur
+            <div class="mt-4 md:mt-0 flex items-center space-x-3">
+                <button onclick="ouvrirModalRecuperation()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition">
+                    📂 Récupération / Modification
+                </button>
+                <div class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">
+                    Module Superviseur
+                </div>
             </div>
         </header>
 
-        <!-- Section Importation des Fichiers -->
-        <section class="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6 mb-8">
-            <h2 class="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">1. Sélection des fichiers PDT & Chargement du Casier</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <!-- Fichier PDT 1 -->
-                <div class="border-2 border-dashed border-gray-600 bg-gray-900/50 rounded-lg p-4 text-center hover:border-red-500 transition">
-                    <label class="block font-medium text-gray-300 mb-2">Fichier PDT 1</label>
-                    <input type="file" id="filePdt1" accept=".xlsx, .xls" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"/>
+        <!-- Section Recherche Historique & Importation -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Section Importation des Fichiers (2 colonnes) -->
+            <section class="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6 lg:col-span-2 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">1. Sélection des fichiers PDT & Chargement du Casier</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <!-- Fichier PDT 1 -->
+                        <div class="border-2 border-dashed border-gray-600 bg-gray-900/50 rounded-lg p-3 text-center hover:border-red-500 transition">
+                            <label class="block font-medium text-gray-300 mb-1 text-sm">Fichier PDT 1</label>
+                            <input type="file" id="filePdt1" accept=".xlsx, .xls" class="block w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"/>
+                        </div>
+
+                        <!-- Fichier PDT 2 -->
+                        <div class="border-2 border-dashed border-gray-600 bg-gray-900/50 rounded-lg p-3 text-center hover:border-red-500 transition">
+                            <label class="block font-medium text-gray-300 mb-1 text-sm">Fichier PDT 2</label>
+                            <input type="file" id="filePdt2" accept=".xlsx, .xls" class="block w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"/>
+                        </div>
+                    </div>
+
+                    <!-- Statut du chargement automatique du casier -->
+                    <div id="casierStatus" class="bg-blue-950/60 border border-blue-800 text-blue-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between">
+                        <span>🔄 Chargement du casier depuis GitHub...</span>
+                        <span id="casierStatusBadge" class="font-bold">Patientez...</span>
+                    </div>
                 </div>
 
-                <!-- Fichier PDT 2 -->
-                <div class="border-2 border-dashed border-gray-600 bg-gray-900/50 rounded-lg p-4 text-center hover:border-red-500 transition">
-                    <label class="block font-medium text-gray-300 mb-2">Fichier PDT 2</label>
-                    <input type="file" id="filePdt2" accept=".xlsx, .xls" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer"/>
+                <div class="text-center pt-2">
+                    <button onclick="genererRapports()" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg transition duration-200 text-sm">
+                        Générer les Rapports
+                    </button>
                 </div>
-            </div>
+            </section>
 
-            <!-- Statut du chargement automatique du casier -->
-            <div id="casierStatus" class="bg-blue-950/60 border border-blue-800 text-blue-300 px-4 py-3 rounded-lg text-sm mb-6 flex items-center justify-between">
-                <span>🔄 Chargement automatique du fichier <strong>casier (1).xlsx</strong> depuis GitHub...</span>
-                <span id="casierStatusBadge" class="font-bold">Patientez...</span>
-            </div>
+            <!-- Section Recherche Historique (1 colonne) -->
+            <section class="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">🔍 Historique Global</h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Route ou Camion (optionnel)</label>
+                            <input type="text" id="inputRechercheHistorique" placeholder="Ex: 124 ou 4520..." class="bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 w-full focus:outline-none focus:border-blue-500">
+                        </div>
 
-            <div class="text-center">
-                <button onclick="genererRapports()" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition duration-200">
-                    Générer les Rapports
-                </button>
-            </div>
-        </section>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Date Début / Précise</label>
+                                <input type="date" id="dateDebutHistorique" class="bg-gray-900 border border-gray-700 text-gray-200 text-xs rounded-lg px-2 py-2 w-full focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Date Fin (optionnel)</label>
+                                <input type="date" id="dateFinHistorique" class="bg-gray-900 border border-gray-700 text-gray-200 text-xs rounded-lg px-2 py-2 w-full focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-4">
+                    <button onclick="rechercherHistoriqueGlobal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow transition text-sm">
+                        Lancer la recherche
+                    </button>
+                </div>
+            </section>
+        </div>
 
-        <!-- Section Résultats -->
+        <!-- Section Résultats de l'Historique Global -->
+        <div id="historiqueSection" class="hidden bg-gray-800 border border-blue-600/50 rounded-xl shadow-xl p-6 mb-8">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                <h2 class="text-lg font-semibold text-blue-300" id="titreHistorique">Résultats de l'historique</h2>
+                <button onclick="fermerHistorique()" class="text-gray-400 hover:text-white text-sm font-bold">Fermer ×</button>
+            </div>
+            <div class="overflow-x-auto max-h-96 rounded-lg border border-gray-700">
+                <table class="min-w-full divide-y divide-gray-700 text-sm">
+                    <thead class="bg-gray-900 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Date du Rapport</th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Route</th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Camion (PIN)</th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Odomètre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyHistorique" class="divide-y divide-gray-700 bg-gray-800"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section Résultats des Rapports Actuels -->
         <div id="resultsSection" class="hidden space-y-8">
             
+            <!-- Barre d'actions & Recherche Rapide du Rapport Actuel -->
+            <div class="bg-gray-800 border border-gray-700 p-4 rounded-xl shadow flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2 w-full md:w-auto flex-1 max-w-md">
+                    <input type="text" id="inputRechercheActuel" placeholder="Filtrer ce rapport (route ou camion)..." oninput="filtrerRapportsActuels()" class="bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-4 py-2.5 w-full focus:outline-none focus:border-red-500">
+                </div>
+
+                <div class="flex space-x-3 w-full md:w-auto justify-end">
+                    <button onclick="sauvegarderRapport()" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2.5 rounded-lg shadow transition flex items-center space-x-2">
+                        <span>💾 Sauvegarder</span>
+                    </button>
+                    <button onclick="imprimerRapports()" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2.5 rounded-lg shadow transition flex items-center space-x-2">
+                        <span>🖨️ Imprimer</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Rapport 1 -->
             <section class="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6">
                 <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
@@ -98,9 +175,45 @@
         </div>
     </div>
 
-    <script>
+    <!-- Modal de Récupération -->
+    <div id="modalRecuperation" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-2xl w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+                <h3 class="text-lg font-bold text-white">Récupérer un rapport sauvegardé</h3>
+                <button onclick="fermerModalRecuperation()" class="text-gray-400 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+            <div id="listeSauvegardes" class="space-y-3 max-h-96 overflow-y-auto mb-4">
+                <p class="text-gray-400 text-center py-4">Chargement des rapports...</p>
+            </div>
+            <div class="text-right">
+                <button onclick="fermerModalRecuperation()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs et Logique -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+            authDomain: "postes-26884.firebaseapp.com",
+            projectId: "postes-26884",
+            storageBucket: "postes-26884.firebasestorage.app",
+            messagingSenderId: "75974397689",
+            appId: "1:75974397689:web:5fd12942788612c62b1c28",
+            measurementId: "G-83YPF62ET5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
         let cachedCasierData = null;
         const CASIER_GITHUB_URL = './casier (1).xlsx';
+        let dernierRapportGenere = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -118,13 +231,13 @@
                 });
 
                 const statusDiv = document.getElementById('casierStatus');
-                statusDiv.className = "bg-green-950/60 border border-green-800 text-green-300 px-4 py-3 rounded-lg text-sm mb-6 flex items-center justify-between";
-                statusDiv.innerHTML = `<span>✅ Fichier <strong>casier (1).xlsx</strong> récupéré avec succès depuis GitHub (${cachedCasierData.length} lignes analysées).</span>`;
+                statusDiv.className = "bg-green-950/60 border border-green-800 text-green-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between";
+                statusDiv.innerHTML = `<span>✅ Casier chargé (${cachedCasierData.length} lignes)</span>`;
             } catch (error) {
                 console.error(error);
                 const statusDiv = document.getElementById('casierStatus');
-                statusDiv.className = "bg-yellow-950/60 border border-yellow-800 text-yellow-300 px-4 py-3 rounded-lg text-sm mb-6 flex items-center justify-between";
-                statusDiv.innerHTML = `<span>⚠️ Impossible de charger automatiquement le casier depuis GitHub. Assurez-vous que <strong>casier (1).xlsx</strong> est bien présent dans le même dossier sur GitHub.</span>`;
+                statusDiv.className = "bg-yellow-950/60 border border-yellow-800 text-yellow-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between";
+                statusDiv.innerHTML = `<span>⚠️ Erreur chargement casier GitHub</span>`;
             }
         });
 
@@ -157,7 +270,7 @@
             });
         }
 
-        async function genererRapports() {
+        window.genererRapports = async function() {
             const f1 = document.getElementById('filePdt1').files[0];
             const f2 = document.getElementById('filePdt2').files[0];
 
@@ -214,37 +327,239 @@
                     }
                 });
 
-                // Affichage Rapport 1
-                const tbody1 = document.getElementById('tbodyRapport1');
-                tbody1.innerHTML = '';
-                listeRapport1.forEach(item => {
-                    tbody1.innerHTML += `
-                        <tr class="hover:bg-gray-700/50 transition">
-                            <td class="px-6 py-3 whitespace-nowrap font-medium text-gray-200">${item.route}</td>
-                            <td class="px-6 py-3 whitespace-nowrap text-gray-300 font-mono">${item.pin}</td>
-                            <td class="px-6 py-3 whitespace-nowrap text-gray-300 font-mono">${item.odometre}</td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('countRapport1').innerText = `${listeRapport1.length} entrées`;
+                dernierRapportGenere = {
+                    date: new Date().toLocaleString(),
+                    timestamp: new Date(),
+                    rapport1: listeRapport1,
+                    rapport2: routesSansCamion
+                };
 
-                // Affichage Rapport 2
-                const tbody2 = document.getElementById('tbodyRapport2');
-                tbody2.innerHTML = '';
-                routesSansCamion.forEach(route => {
-                    tbody2.innerHTML += `
-                        <tr class="hover:bg-gray-700/50 transition">
-                            <td class="px-6 py-3 whitespace-nowrap font-medium text-red-400">${route}</td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('countRapport2').innerText = `${routesSansCamion.length} routes`;
-
-                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('inputRechercheActuel').value = '';
+                afficherRapportsUI(dernierRapportGenere);
 
             } catch (error) {
                 console.error(error);
                 alert("Erreur lors du traitement des données.");
+            }
+        }
+
+        window.afficherRapportsUI = function(data) {
+            const tbody1 = document.getElementById('tbodyRapport1');
+            tbody1.innerHTML = '';
+            data.rapport1.forEach(item => {
+                tbody1.innerHTML += `
+                    <tr class="hover:bg-gray-700/50 transition">
+                        <td class="px-6 py-3 whitespace-nowrap font-medium text-gray-200">${item.route}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-gray-300 font-mono">${item.pin}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-gray-300 font-mono">${item.odometre}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('countRapport1').innerText = `${data.rapport1.length} entrées`;
+
+            const tbody2 = document.getElementById('tbodyRapport2');
+            tbody2.innerHTML = '';
+            data.rapport2.forEach(route => {
+                tbody2.innerHTML += `
+                    <tr class="hover:bg-gray-700/50 transition">
+                        <td class="px-6 py-3 whitespace-nowrap font-medium text-red-400">${route}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('countRapport2').innerText = `${data.rapport2.length} routes`;
+
+            document.getElementById('resultsSection').classList.remove('hidden');
+        }
+
+        window.filtrerRapportsActuels = function() {
+            if (!dernierRapportGenere) return;
+            const terme = document.getElementById('inputRechercheActuel').value.toLowerCase().trim();
+
+            const rapport1Filtre = dernierRapportGenere.rapport1.filter(item => 
+                item.route.toLowerCase().includes(terme) || item.pin.toLowerCase().includes(terme)
+            );
+
+            const tbody1 = document.getElementById('tbodyRapport1');
+            tbody1.innerHTML = '';
+            rapport1Filtre.forEach(item => {
+                tbody1.innerHTML += `
+                    <tr class="hover:bg-gray-700/50 transition">
+                        <td class="px-6 py-3 whitespace-nowrap font-medium text-gray-200">${item.route}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-gray-300 font-mono">${item.pin}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-gray-300 font-mono">${item.odometre}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('countRapport1').innerText = `${rapport1Filtre.length} entrées (filtré)`;
+        }
+
+        // Fonction de recherche historique par route/camion et par date/période
+        window.rechercherHistoriqueGlobal = async function() {
+            const terme = document.getElementById('inputRechercheHistorique').value.toLowerCase().trim();
+            const dateDebutStr = document.getElementById('dateDebutHistorique').value; // format YYYY-MM-DD
+            const dateFinStr = document.getElementById('dateFinHistorique').value;     // format YYYY-MM-DD
+
+            const historiqueContainer = document.getElementById('tbodyHistorique');
+            historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Recherche dans l\'historique Firebase en cours...</td></tr>';
+            document.getElementById('titreHistorique').innerText = `Résultats de l'historique`;
+            document.getElementById('historiqueSection').classList.remove('hidden');
+
+            try {
+                const q = query(collection(db, "asscamion"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                let resultatsTrouves = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    
+                    // Vérification de la date du rapport (si le timestamp existe)
+                    if (data.timestamp && data.timestamp.toDate) {
+                        const dateDoc = data.timestamp.toDate(); // Objet Date JS
+                        // Extraire la date au format YYYY-MM-DD local pour la comparaison
+                        const annee = dateDoc.getFullYear();
+                        const mois = String(dateDoc.getMonth() + 1).padStart(2, '0');
+                        const jour = String(dateDoc.getDate()).padStart(2, '0');
+                        const dateDocFormatted = `${annee}-${mois}-${jour}`;
+
+                        if (dateDebutStr && !dateFinStr) {
+                            // Recherche à une date précise
+                            if (dateDocFormatted !== dateDebutStr) return;
+                        } else if (dateDebutStr && dateFinStr) {
+                            // Recherche sur une période (de... à)
+                            if (dateDocFormatted < dateDebutStr || dateDocFormatted > dateFinStr) return;
+                        }
+                    } else if (dateDebutStr) {
+                        // Si pas de timestamp stocké, on ignore le filtre date ou on laisse passer
+                        return;
+                    }
+
+                    const dateRapport = data.date || "Date inconnue";
+
+                    if (data.rapport1 && Array.isArray(data.rapport1)) {
+                        data.rapport1.forEach(item => {
+                            const matchRoute = terme === "" || String(item.route).toLowerCase().includes(terme);
+                            const matchPin = terme === "" || String(item.pin).toLowerCase().includes(terme);
+
+                            if (matchRoute && matchPin) {
+                                resultatsTrouves.push({
+                                    date: dateRapport,
+                                    route: item.route,
+                                    pin: item.pin,
+                                    odometre: item.odometre
+                                });
+                            }
+                        });
+                    }
+                });
+
+                if (resultatsTrouves.length === 0) {
+                    historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Aucun historique trouvé pour ces critères de recherche.</td></tr>';
+                    return;
+                }
+
+                historiqueContainer.innerHTML = '';
+                resultatsTrouves.forEach(res => {
+                    historiqueContainer.innerHTML += `
+                        <tr class="hover:bg-gray-700/50 transition">
+                            <td class="px-6 py-3 whitespace-nowrap text-blue-300 font-semibold">${res.date}</td>
+                            <td class="px-6 py-3 whitespace-nowrap text-gray-200">${res.route}</td>
+                            <td class="px-6 py-3 whitespace-nowrap font-mono text-gray-300">${res.pin}</td>
+                            <td class="px-6 py-3 whitespace-nowrap font-mono text-gray-300">${res.odometre}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (e) {
+                console.error("Erreur lors de la recherche historique :", e);
+                historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-red-400">Erreur lors de la consultation de l\'historique.</td></tr>';
+            }
+        }
+
+        window.fermerHistorique = function() {
+            document.getElementById('historiqueSection').classList.add('hidden');
+        }
+
+        window.sauvegarderRapport = async function() {
+            if (!dernierRapportGenere) {
+                alert("Aucun rapport à sauvegarder.");
+                return;
+            }
+            try {
+                await addDoc(collection(db, "asscamion"), {
+                    date: dernierRapportGenere.date,
+                    timestamp: new Date(),
+                    rapport1: dernierRapportGenere.rapport1,
+                    rapport2: dernierRapportGenere.rapport2
+                });
+                alert("Rapport sauvegardé avec succès dans Firebase (collection 'asscamion') !");
+            } catch (e) {
+                console.error("Erreur lors de la sauvegarde : ", e);
+                alert("Erreur lors de la sauvegarde dans Firebase.");
+            }
+        }
+
+        window.imprimerRapports = function() {
+            window.print();
+        }
+
+        window.ouvrirModalRecuperation = async function() {
+            const modal = document.getElementById('modalRecuperation');
+            const container = document.getElementById('listeSauvegardes');
+            container.innerHTML = '<p class="text-gray-400 text-center py-4">Chargement des rapports...</p>';
+            modal.classList.remove('hidden');
+
+            try {
+                const q = query(collection(db, "asscamion"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p class="text-gray-400 text-center py-4">Aucune sauvegarde trouvée dans Firebase.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                querySnapshot.forEach((docSnapshot) => {
+                    const data = docSnapshot.data();
+                    const docId = docSnapshot.id;
+                    container.innerHTML += `
+                        <div class="bg-gray-900 border border-gray-700 p-4 rounded-lg flex justify-between items-center hover:border-blue-500 transition">
+                            <div>
+                                <p class="font-semibold text-white">Rapport du ${data.date}</p>
+                                <p class="text-xs text-gray-400">${data.rapport1.length} entrées | ${data.rapport2.length} routes sans camion</p>
+                            </div>
+                            <button onclick="chargerRapportSauvegarde('${docId}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm transition">
+                                Charger
+                            </button>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error("Erreur chargement listes :", e);
+                container.innerHTML = '<p class="text-red-400 text-center py-4">Erreur lors de la récupération des rapports.</p>';
+            }
+        }
+
+        window.fermerModalRecuperation = function() {
+            document.getElementById('modalRecuperation').classList.add('hidden');
+        }
+
+        window.chargerRapportSauvegarde = async function(id) {
+            try {
+                const docRef = doc(db, "asscamion", id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    dernierRapportGenere = docSnap.data();
+                    document.getElementById('inputRechercheActuel').value = '';
+                    afficherRapportsUI(dernierRapportGenere);
+                    fermerModalRecuperation();
+                    alert("Rapport chargé avec succès !");
+                } else {
+                    alert("Ce rapport n'existe plus.");
+                }
+            } catch (e) {
+                console.error("Erreur chargement rapport :", e);
+                alert("Erreur lors du chargement du rapport.");
             }
         }
     </script>
