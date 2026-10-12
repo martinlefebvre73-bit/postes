@@ -33,7 +33,7 @@
             <!-- Section Importation des Fichiers (2 colonnes) -->
             <section class="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6 lg:col-span-2 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">1. Sélection des fichiers PDT & Chargement du Casier</h2>
+                    <h2 class="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">1. Sélection des fichiers PDT & Casier Intégré</h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <!-- Fichier PDT 1 -->
@@ -50,9 +50,8 @@
                     </div>
 
                     <!-- Statut du chargement automatique du casier -->
-                    <div id="casierStatus" class="bg-blue-950/60 border border-blue-800 text-blue-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between">
-                        <span>🔄 Chargement du casier depuis GitHub...</span>
-                        <span id="casierStatusBadge" class="font-bold">Patientez...</span>
+                    <div id="casierStatus" class="bg-green-950/60 border border-green-800 text-green-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between">
+                        <span>✅ Liste des routes du casier intégrée avec succès</span>
                     </div>
                 </div>
 
@@ -144,8 +143,8 @@
                     <table class="min-w-full divide-y divide-gray-700 text-sm">
                         <thead class="bg-gray-900 sticky top-0">
                             <tr>
-                                <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Route (Route Name)</th>
-                                <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Camion (PIN nettoyé)</th>
+                                <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Route (Route name)</th>
+                                <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Camion (PIN)</th>
                                 <th class="px-6 py-3 text-left font-medium text-gray-400 uppercase tracking-wider">Odomètre</th>
                             </tr>
                         </thead>
@@ -211,44 +210,57 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
 
-        let cachedCasierData = null;
-        const CASIER_GITHUB_URL = './casier.xlsx';
+        // Liste des routes du casier
+        const cachedCasierData = [
+            { Route: "1" }, { Route: "2" }, { Route: "3" }, { Route: "4" }, { Route: "5" },
+            { Route: "6" }, { Route: "7" }, { Route: "8" }, { Route: "9" }, { Route: "10" },
+            { Route: "11" }, { Route: "12" }, { Route: "13" }, { Route: "14" }, { Route: "15" },
+            { Route: "16" }, { Route: "17" }, { Route: "18" }, { Route: "19" }, { Route: "20" },
+            { Route: "21" }, { Route: "22" }, { Route: "23" }, { Route: "24" }, { Route: "25" },
+            { Route: "26" }, { Route: "27" }, { Route: "28" }, { Route: "29" }, { Route: "30" },
+            { Route: "31" }, { Route: "32" }, { Route: "33" }, { Route: "34" }, { Route: "35" },
+            { Route: "36" }, { Route: "37" }, { Route: "38" }, { Route: "40" }, { Route: "42" },
+            { Route: "44" }, { Route: "46" }, { Route: "48" }, { Route: "50" }, { Route: "52" },
+            { Route: "54" }, { Route: "56" }, { Route: "58" }, { Route: "60" }, { Route: "62" },
+            { Route: "64" }, { Route: "66" }, { Route: "68" }, { Route: "70" }, { Route: "72" },
+            { Route: "74" }, { Route: "76" }, { Route: "78" }, { Route: "80" }, { Route: "82" },
+            { Route: "84" }, { Route: "88" }, { Route: "94" }, { Route: "201" }, { Route: "202" },
+            { Route: "203" }, { Route: "204" }, { Route: "205" }, { Route: "206" }, { Route: "207" },
+            { Route: "208" }, { Route: "209" }, { Route: "210" }, { Route: "211" }, { Route: "212" },
+            { Route: "213" }, { Route: "214" }, { Route: "215" }, { Route: "216" }, { Route: "217" },
+            { Route: "218" }, { Route: "219" }, { Route: "220" }, { Route: "221" }, { Route: "222" },
+            { Route: "223" }, { Route: "224" }, { Route: "225" }, { Route: "226" }, { Route: "227" },
+            { Route: "228" }, { Route: "230" }, { Route: "232" }, { Route: "234" }, { Route: "236" },
+            { Route: "238" }, { Route: "240" }, { Route: "242" }, { Route: "244" }, { Route: "246" },
+            { Route: "248" }, { Route: "250" }, { Route: "252" }, { Route: "254" }, { Route: "256" },
+            { Route: "258" }, { Route: "260" }, { Route: "262" }, { Route: "264" }, { Route: "266" },
+            { Route: "268" }, { Route: "270" }, { Route: "272" }, { Route: "274" }, { Route: "278" },
+            { Route: "282" }, { Route: "286" }, { Route: "290" }, { Route: "302tp" }, { Route: "306tp" },
+            { Route: "310tp" }, { Route: "90tp" }, { Route: "96tp" }
+        ];
+
         let dernierRapportGenere = null;
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const response = await fetch(CASIER_GITHUB_URL);
-                if (!response.ok) throw new Error("Fichier introuvable sur le serveur");
-                const arrayBuffer = await response.arrayBuffer();
-                const data = new Uint8Array(arrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                cachedCasierData = [];
-                workbook.SheetNames.forEach(sheetName => {
-                    const ws = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(ws, { defval: "" });
-                    cachedCasierData = cachedCasierData.concat(json);
-                });
-
-                const statusDiv = document.getElementById('casierStatus');
-                statusDiv.className = "bg-green-950/60 border border-green-800 text-green-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between";
-                statusDiv.innerHTML = `<span>✅ Casier chargé (${cachedCasierData.length} lignes)</span>`;
-            } catch (error) {
-                console.error(error);
-                const statusDiv = document.getElementById('casierStatus');
-                statusDiv.className = "bg-yellow-950/60 border border-yellow-800 text-yellow-300 px-3 py-2 rounded-lg text-xs mb-4 flex items-center justify-between";
-                statusDiv.innerHTML = `<span>⚠️ Erreur chargement casier GitHub</span>`;
-            }
-        });
-
+        // Nettoyage du PIN : supprime toutes les lettres, puis enlève le dernier chiffre
         function nettoyerPin(rawPin) {
             if (!rawPin) return '';
             let s = String(rawPin).trim();
-            s = s.replace(/[a-zA-Z]/g, '0');
-            if (s.length > 1) {
-                s = s.substring(0, s.length - 1);
+            let digitsOnly = s.replace(/[a-zA-Z]/g, '');
+            if (digitsOnly.length > 1) {
+                return digitsOnly.substring(0, digitsOnly.length - 1);
             }
-            return s;
+            return digitsOnly;
+        }
+
+        // Nettoyage des numéros de route (supprime les lettres 'tp' et les zéros de tête)
+        function nettoyerRoute(rawRoute) {
+            if (!rawRoute) return '';
+            let s = String(rawRoute).trim();
+            let cleaned = s.replace(/[a-zA-Z]/g, ''); 
+            if (/^\d+$/.test(cleaned)) {
+                cleaned = String(parseInt(cleaned, 10));
+            }
+            return cleaned || s;
         }
 
         async function lireFichierExcel(file) {
@@ -259,7 +271,20 @@
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
                         const firstSheetName = workbook.SheetNames[0];
-                        const json = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: "" });
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                        
+                        let headerIndex = 0;
+                        for (let i = 0; i < rows.length; i++) {
+                            const rowStr = rows[i].map(cell => String(cell).toLowerCase());
+                            if (rowStr.some(cell => cell.includes('route name') || cell === 'route')) {
+                                headerIndex = i;
+                                break;
+                            }
+                        }
+
+                        const json = XLSX.utils.sheet_to_json(worksheet, { range: headerIndex, defval: "" });
                         resolve(json);
                     } catch (err) {
                         reject(err);
@@ -279,11 +304,6 @@
                 return;
             }
 
-            if (!cachedCasierData || cachedCasierData.length === 0) {
-                alert("Le fichier Casier n'a pas pu être chargé automatiquement depuis GitHub.");
-                return;
-            }
-
             try {
                 const dataPdt1 = await lireFichierExcel(f1);
                 const dataPdt2 = await lireFichierExcel(f2);
@@ -293,18 +313,24 @@
                 const listeRapport1 = [];
 
                 allPdtRows.forEach(row => {
-                    const route = row['Route'] || row['Route Name'] || row['route_name'] || row['ROUTE'] || Object.values(row)[0];
-                    const pinRaw = row['Pin'] || row['PIN'] || row['pin'] || row['Véhicule'] || '';
-                    const odometre = row['Odometre'] || row['Odometer'] || row['ODOMETRE'] || row['odometer'] || '';
+                    const keys = Object.keys(row);
+                    const routeKey = keys.find(k => k.trim().toLowerCase() === 'route name' || k.trim().toLowerCase() === 'route');
+                    const pinKey = keys.find(k => k.trim().toLowerCase() === 'pin');
+                    const odoKey = keys.find(k => k.trim().toLowerCase() === 'odometer' || k.trim().toLowerCase() === 'odometre');
 
-                    if (route) {
+                    const routeRaw = routeKey ? row[routeKey] : '';
+                    const pinRaw = pinKey ? row[pinKey] : '';
+                    const odometre = odoKey ? row[odoKey] : '';
+
+                    if (routeRaw !== '') {
+                        const cleanRoute = nettoyerRoute(routeRaw);
                         const cleanPin = nettoyerPin(pinRaw);
                         listeRapport1.push({
-                            route: String(route).trim(),
+                            route: cleanRoute,
                             pin: cleanPin,
                             odometre: odometre
                         });
-                        mapRoutesPdt.set(String(route).trim(), true);
+                        mapRoutesPdt.set(cleanRoute, true);
                     }
                 });
 
@@ -312,10 +338,8 @@
                 cachedCasierData.forEach(row => {
                     Object.values(row).forEach(val => {
                         if (val !== null && val !== undefined && val !== '') {
-                            let strVal = String(val).trim();
-                            if (/^\d+$/.test(strVal) \vert{}\vert{} /^LC\d+$/i.test(strVal)) {
-                                routesCasierSet.add(strVal);
-                            }
+                            let cleanVal = nettoyerRoute(val);
+                            routesCasierSet.add(cleanVal);
                         }
                     });
                 });
