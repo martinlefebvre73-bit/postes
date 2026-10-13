@@ -1,5 +1,5 @@
 /* ==========================================================================
-Plan de Roulement & Consignation - Style Global CSS
+Plan de Roulement & Consignation - Style Global CSS (Corrigé)
 ========================================================================== */
 
 /* Variables & Root Settings */
@@ -144,21 +144,16 @@ tr:hover {
   border-color: #6366f1;
 }
 
-/* Modals Overlay */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(2, 6, 23, 0.8);
-  backdrop-filter: blur(4px);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+/* Modals Overlay (Correction de la classe .hidden pour masquer correctement) */
+.modal-overlay,
+.fixed.inset-0.hidden {
+  display: none !important;
 }
 
-.modal-overlay.hidden {
-  display: none;
+/* Forcer l'affichage quand la classe hidden est retirée */
+.modal-overlay:not(.hidden),
+.fixed.inset-0:not(.hidden) {
+  display: flex !important;
 }
 
 .modal-content {
