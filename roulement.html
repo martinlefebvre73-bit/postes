@@ -26,7 +26,7 @@
                     <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Plan de Roulement & Consignation</h1>
                     <p class="text-xs sm:text-sm text-slate-400 flex items-center gap-2">
                         <span>Synchronisé Firestore (Collection: roulement)</span>
-                        <span id="auth-status" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500 text-white">Connexion...</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500 text-white">Actif</span>
                     </p>
                 </div>
             </div>
@@ -171,7 +171,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -185,7 +184,6 @@
         };
 
         const firebaseApp = initializeApp(firebaseConfig);
-        const auth = getAuth(firebaseApp);
         const db = getFirestore(firebaseApp);
 
         const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
@@ -210,31 +208,9 @@
                     ...item,
                     logs: {}
                 }));
-                this.currentUser = null;
-                this.initAuth();
+                this.populateDropdowns();
+                this.loadDataFromFirebase();
                 this.initEvents();
-            }
-
-            async initAuth() {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    this.currentUser = auth.currentUser;
-                    document.getElementById('auth-status').innerText = "Connecté (Firestore)";
-                    document.getElementById('auth-status').className = "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500 text-white";
-                    
-                    this.populateDropdowns();
-                    this.loadDataFromFirebase();
-                } catch (error) {
-                    console.error("Auth error:", error);
-                    document.getElementById('auth-status').innerText = "Mode hors-ligne";
-                    document.getElementById('auth-status').className = "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500 text-white";
-                    this.populateDropdowns();
-                    this.renderTable();
-                }
             }
 
             populateDropdowns() {
@@ -270,7 +246,6 @@
             }
 
             async loadDataFromFirebase() {
-                if (!auth.currentUser) return;
                 try {
                     const q = collection(db, 'roulement');
                     const querySnapshot = await getDocs(q);
@@ -424,11 +399,6 @@
             }
 
             async saveLogToFirebase() {
-                if (!auth.currentUser) {
-                    alert("Utilisateur non authentifié.");
-                    return;
-                }
-
                 const weekIndex = parseInt(document.getElementById('modal-week-index').value);
                 const supName = document.getElementById('modal-supervisor-select').value;
                 const checkboxCompleted = document.getElementById('modal-checkbox-completed').checked;
@@ -446,8 +416,7 @@
                 weekItem.logs[supName] = {
                     status,
                     notes,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: auth.currentUser.uid
+                    updatedAt: new Date().toISOString()
                 };
 
                 const saveBtn = document.getElementById('modal-save-btn');
