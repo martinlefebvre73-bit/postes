@@ -206,8 +206,16 @@ opacity: 1;
 }
 
 /* Form Elements & Utilities */
-input[type="text"],
-input[type="date"],
+input
+
+$$type="text"$$
+
+,
+input
+
+$$type="date"$$
+
+,
 select,
 textarea {
 background-color: #1e293b;
