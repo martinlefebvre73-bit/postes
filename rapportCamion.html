@@ -241,17 +241,13 @@
 
         let dernierRapportGenere = null;
 
-        // Nettoyage du PIN : supprime les lettres, enlève le dernier chiffre, et retire le '0' de tête
+        // Nettoyage du PIN : supprime les lettres et retire le dernier chiffre (ex: 7226 devient 722)
         function nettoyerPin(rawPin) {
             if (!rawPin) return '';
             let s = String(rawPin).trim();
             let digitsOnly = s.replace(/[a-zA-Z]/g, '');
             if (digitsOnly.length > 1) {
-                digitsOnly = digitsOnly.substring(0, digitsOnly.length - 1);
-            }
-            // Supprime le '0' de tête si présent
-            if (digitsOnly.startsWith('0')) {
-                digitsOnly = digitsOnly.replace(/^0+/, '');
+                return digitsOnly.substring(0, digitsOnly.length - 1);
             }
             return digitsOnly;
         }
@@ -428,7 +424,7 @@
 
             const historiqueContainer = document.getElementById('tbodyHistorique');
             historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Recherche dans l\'historique Firebase en cours...</td></tr>';
-            document.getElementById('titreHistorique').innerText = `Résultats de l'historique`;
+            document.getElementById('titreHistorique').innerText = `Résultats de l'historique (14 derniers jours)`;
             document.getElementById('historiqueSection').classList.remove('hidden');
 
             try {
@@ -436,12 +432,21 @@
                 const querySnapshot = await getDocs(q);
 
                 let resultatsTrouves = [];
+                const maintenant = new Date();
+                const ilYQuatorzeJours = new Date();
+                ilYQuatorzeJours.setDate(maintenant.getDate() - 14);
 
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     
                     if (data.timestamp && data.timestamp.toDate) {
                         const dateDoc = data.timestamp.toDate(); 
+                        
+                        // Ignore les rapports de plus de 14 jours si aucune date spécifique n'est demandée
+                        if (!dateDebutStr && dateDoc < ilYQuatorzeJours) {
+                            return;
+                        }
+
                         const annee = dateDoc.getFullYear();
                         const mois = String(dateDoc.getMonth() + 1).padStart(2, '0');
                         const jour = String(dateDoc.getDate()).padStart(2, '0');
@@ -476,7 +481,7 @@
                 });
 
                 if (resultatsTrouves.length === 0) {
-                    historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Aucun historique trouvé pour ces critères de recherche.</td></tr>';
+                    historiqueContainer.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Aucun historique trouvé pour ces critères sur les 14 derniers jours.</td></tr>';
                     return;
                 }
 
