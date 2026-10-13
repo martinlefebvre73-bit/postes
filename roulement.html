@@ -311,25 +311,28 @@
                     weekItem.assignments.forEach((task, sIdx) => {
                         const supName = SUPERVISORS[sIdx];
                         const log = weekItem.logs && weekItem.logs[supName];
-                        let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
+                        let badgeColor = "bg-slate-800/80 text-slate-300 border-slate-700";
                         let statusIcon = "";
 
                         if (log) {
                             if (log.status === 'completed') {
-                                badgeColor = "bg-emerald-950/60 text-emerald-300 border-emerald-800/60 font-medium";
+                                badgeColor = "bg-emerald-950 text-emerald-300 border-emerald-700/80 font-medium shadow-sm";
                                 statusIcon = '<i class="fa-solid fa-check text-emerald-400 ml-1"></i>';
                             } else if (log.status === 'in_progress') {
-                                badgeColor = "bg-blue-950/60 text-blue-300 border-blue-800/60";
+                                badgeColor = "bg-blue-950 text-blue-300 border-blue-700/80 font-medium shadow-sm";
                                 statusIcon = '<i class="fa-solid fa-spinner text-blue-400 ml-1 animate-spin"></i>';
                             } else if (log.status === 'issue') {
-                                badgeColor = "bg-rose-950/60 text-rose-300 border-rose-800/60";
+                                badgeColor = "bg-rose-950 text-rose-300 border-rose-700/80 font-medium shadow-sm";
                                 statusIcon = '<i class="fa-solid fa-triangle-exclamation text-rose-400 ml-1"></i>';
+                            } else if (log.status === 'pending') {
+                                badgeColor = "bg-amber-950/60 text-amber-300 border-amber-700/60";
+                                statusIcon = '<i class="fa-solid fa-clock text-amber-400 ml-1"></i>';
                             }
                         }
 
                         html += `
                             <td class="p-3.5 sm:px-4">
-                                <div data-week="${index}" data-sup="${sIdx}" class="task-tile p-2 rounded-lg border ${badgeColor} cursor-pointer hover:shadow-sm hover:border-indigo-500 transition text-center flex flex-col items-center justify-center gap-0.5" title="Cliquer pour consigner ou modifier">
+                                <div data-week="${index}" data-sup="${sIdx}" class="task-tile p-2 rounded-lg border ${badgeColor} cursor-pointer hover:shadow-md hover:border-indigo-500 transition text-center flex flex-col items-center justify-center gap-0.5" title="Cliquer pour consigner ou modifier">
                                     <span class="text-xs font-semibold truncate max-w-[110px]">${task}</span>
                                     <span class="text-[10px] text-slate-400 flex items-center">${supName} ${statusIcon}</span>
                                 </div>
@@ -349,7 +352,6 @@
                     tbody.appendChild(tr);
                 });
 
-                // Attacher les écouteurs de clics sur les tuiles générées dynamiquement
                 document.querySelectorAll('.task-tile').forEach(tile => {
                     tile.addEventListener('click', (e) => {
                         const weekIdx = parseInt(tile.getAttribute('data-week'));
