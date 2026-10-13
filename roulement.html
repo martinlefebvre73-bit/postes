@@ -38,7 +38,7 @@
                         <!-- Rempli dynamiquement -->
                     </select>
                 </div>
-                <!-- Bouton Résumé -->
+                <!-- Bouton Résumé unique -->
                 <button id="btn-open-summary" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
                     <i class="fa-solid fa-file-lines"></i> Résumé
                 </button>
@@ -54,7 +54,7 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6 overflow-y-auto">
         
-        <!-- Dashboard Stats Cards & Summary -->
+        <!-- Dashboard Stats Cards -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div class="bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-800 flex items-center justify-between">
                 <div>
@@ -76,25 +76,12 @@
             </div>
             <div class="bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-800 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Activités Consignées (Semaine)</p>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Activités Consignées (Global)</p>
                     <p class="text-2xl font-bold text-emerald-400 mt-1" id="completed-count">0 / 6</p>
                 </div>
                 <div class="w-10 h-10 rounded-lg bg-emerald-950 text-emerald-400 flex items-center justify-center font-bold border border-emerald-900/50">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
-            </div>
-        </div>
-
-        <!-- Panneau de résumé détaillé de la semaine sélectionnée -->
-        <div class="bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-800 flex flex-col gap-3">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 class="text-sm font-bold text-indigo-300 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie"></i> Résumé de la semaine sélectionnée (<span id="summary-week-label">-</span>)
-                </h3>
-                <span id="summary-status-badge" class="px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">Chargement...</span>
-            </div>
-            <div id="summary-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-                <!-- Rempli dynamiquement -->
             </div>
         </div>
 
@@ -190,7 +177,7 @@
         </div>
     </div>
 
-    <!-- Modal du Rapport de Résumé global -->
+    <!-- Modal du Rapport de Résumé (Généré par le bouton Résumé) -->
     <div id="summary-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-800 animate-in fade-in zoom-in duration-200 text-slate-100 flex flex-col max-h-[90vh]">
             <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center border-b border-slate-700">
@@ -296,6 +283,8 @@
             initEvents() {
                 document.getElementById('btn-refresh').addEventListener('click', () => this.loadDataFromFirebase());
                 document.getElementById('btn-add-week').addEventListener('click', () => this.addNewWeek());
+                
+                // Événements pour le bouton Résumé et sa modale
                 document.getElementById('btn-open-summary').addEventListener('click', () => this.openSummaryModal());
                 document.getElementById('btn-close-summary-modal').addEventListener('click', () => this.closeSummaryModal());
                 document.getElementById('btn-close-summary-footer').addEventListener('click', () => this.closeSummaryModal());
@@ -305,7 +294,6 @@
                 document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogToFirebase());
 
                 document.getElementById('modal-supervisor-select').addEventListener('change', () => this.updateModalTaskDisplay());
-                document.getElementById('summary-date-select').addEventListener('change', () => this.renderSummary());
 
                 const checkboxCompleted = document.getElementById('modal-checkbox-completed');
                 const statusSelect = document.getElementById('modal-status');
@@ -356,14 +344,14 @@
                     const currentSelected = document.getElementById('summary-date-select').value;
                     this.updateDateSelect(currentSelected);
                     this.renderTable();
-                    this.renderSummary();
+                    this.updateCompletedCountHeader();
                     this.showToast("Données synchronisées avec succès.");
                 } catch (error) {
                     console.error("Erreur chargement Firestore:", error);
                     const currentSelected = document.getElementById('summary-date-select').value;
                     this.updateDateSelect(currentSelected);
                     this.renderTable();
-                    this.renderSummary();
+                    this.updateCompletedCountHeader();
                 }
             }
 
@@ -406,7 +394,7 @@
 
                     this.updateDateSelect(weekKey);
                     this.renderTable();
-                    this.renderSummary();
+                    this.updateCompletedCountHeader();
                     this.showToast("Nouvelle semaine ajoutée avec succès !");
                 } catch (error) {
                     console.error("Erreur ajout semaine Firestore:", error);
@@ -414,81 +402,21 @@
                 }
             }
 
-            renderSummary() {
-                const selectedKey = document.getElementById('summary-date-select').value;
-                const weekItem = this.scheduleData.find(s => s.weekKey === selectedKey);
-                
-                const labelContainer = document.getElementById('summary-week-label');
-                const badgeContainer = document.getElementById('summary-status-badge');
-                const contentContainer = document.getElementById('summary-content');
-                const completedCountContainer = document.getElementById('completed-count');
+            updateCompletedCountHeader() {
+                let totalCompleted = 0;
+                let totalTasks = this.scheduleData.length * 6;
 
-                if (!weekItem) {
-                    labelContainer.textContent = "-";
-                    contentContainer.innerHTML = '<p class="text-xs text-slate-500 col-span-3">Aucune donnée disponible.</p>';
-                    completedCountContainer.textContent = "0 / 6";
-                    badgeContainer.textContent = "Inconnu";
-                    return;
-                }
-
-                labelContainer.textContent = weekItem.week;
-
-                let completedCount = 0;
-                let html = '';
-
-                weekItem.assignments.forEach((task, sIdx) => {
-                    const supName = SUPERVISORS[sIdx];
-                    const log = weekItem.logs && weekItem.logs[supName];
-                    
-                    let statusBadge = '<span class="text-xs text-slate-500 italic">Non consigné</span>';
-                    let borderCol = "border-slate-800 bg-slate-900/40";
-
-                    if (log) {
-                        if (log.status === 'completed') {
-                            completedCount++;
-                            statusBadge = '<span class="text-xs text-emerald-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-check"></i> Réalisé</span>';
-                            borderCol = "border-emerald-900/60 bg-emerald-950/20";
-                        } else if (log.status === 'in_progress') {
-                            statusBadge = '<span class="text-xs text-blue-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-spinner fa-spin"></i> En cours</span>';
-                            borderCol = "border-blue-900/60 bg-blue-950/20";
-                        } else if (log.status === 'issue') {
-                            statusBadge = '<span class="text-xs text-rose-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Anomalie</span>';
-                            borderCol = "border-rose-900/60 bg-rose-950/20";
-                        } else {
-                            statusBadge = '<span class="text-xs text-amber-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-clock"></i> En attente</span>';
-                            borderCol = "border-amber-900/60 bg-amber-950/20";
-                        }
+                this.scheduleData.forEach(weekItem => {
+                    if (weekItem.logs) {
+                        Object.values(weekItem.logs).forEach(log => {
+                            if (log && log.status === 'completed') {
+                                totalCompleted++;
+                            }
+                        });
                     }
-
-                    const notesText = log && log.notes ? log.notes : "Aucune note saisie.";
-
-                    html += `
-                        <div class="p-3 rounded-lg border ${borderCol} flex flex-col justify-between gap-1.5">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="text-xs font-bold text-slate-200">${supName}</p>
-                                    <p class="text-xs text-indigo-300 font-medium">${task}</p>
-                                </div>
-                                <div>${statusBadge}</div>
-                            </div>
-                            <p class="text-[11px] text-slate-400 italic line-clamp-2 mt-1" title="${notesText}">"${notesText}"</p>
-                        </div>
-                    `;
                 });
 
-                contentContainer.innerHTML = html;
-                completedCountContainer.textContent = `${completedCount} / 6`;
-
-                if (completedCount === 6) {
-                    badgeContainer.className = "px-2 py-0.5 rounded text-xs font-medium bg-emerald-500 text-white";
-                    badgeContainer.textContent = "Semaine complétée";
-                } else if (completedCount > 0) {
-                    badgeContainer.className = "px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white";
-                    badgeContainer.textContent = "En cours";
-                } else {
-                    badgeContainer.className = "px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700";
-                    badgeContainer.textContent = "Non débutée";
-                }
+                document.getElementById('completed-count').textContent = `${totalCompleted} / ${totalTasks}`;
             }
 
             openSummaryModal() {
@@ -608,10 +536,12 @@
                         `;
                     });
 
+                    const weekCompletedCount = weekItem.logs ? Object.values(weekItem.logs).filter(l => l && l.status === 'completed').length : 0;
+
                     html += `
                         <td class="p-3.5 sm:px-4 text-center whitespace-nowrap">
                             <button data-week="${index}" data-sup="0" class="btn-consing-all bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-900 px-3 py-1.5 rounded-lg text-xs font-medium transition inline-flex items-center gap-1.5">
-                                <i class="fa-solid fa-pen-to-square"></i> Consigner (${Object.keys(weekItem.logs || {}).length}/6)
+                                <i class="fa-solid fa-pen-to-square"></i> Consigner (${weekCompletedCount}/6)
                             </button>
                         </td>
                     `;
@@ -727,7 +657,7 @@
 
                     this.closeModal();
                     this.renderTable();
-                    this.renderSummary();
+                    this.updateCompletedCountHeader();
                     this.showToast("Enregistrement effectué avec succès !");
                 } catch (error) {
                     console.error("Erreur sauvegarde Firestore:", error);
