@@ -245,14 +245,16 @@
 
         let dernierRapportGenere = null;
 
-        // Nettoyage du PIN : supprime les lettres et retire le dernier chiffre (ex: 7226 devient 722)[cite: 3]
+        // Nettoyage du PIN : supprime les lettres, retire le dernier chiffre, et enlève les zéros au début[cite: 3]
         function nettoyerPin(rawPin) {
             if (!rawPin) return '';
             let s = String(rawPin).trim();
             let digitsOnly = s.replace(/[a-zA-Z]/g, '');
             if (digitsOnly.length > 1) {
-                return digitsOnly.substring(0, digitsOnly.length - 1);
+                digitsOnly = digitsOnly.substring(0, digitsOnly.length - 1);
             }
+            // Supprime le ou les zéros de tête
+            digitsOnly = digitsOnly.replace(/^0+/, '');
             return digitsOnly;
         }
 
@@ -362,7 +364,6 @@
                     rapport2: routesSansCamion
                 };
 
-                // Pré-remplir l'input date d'enregistrement avec la date du jour au format YYYY-MM-DD
                 const aujourdHui = new Date().toISOString().split('T')[0];
                 document.getElementById('dateEnregistrementRapport').value = aujourdHui;
 
@@ -523,7 +524,6 @@
             let timestampFinal = new Date();
 
             if (dateInputVal) {
-                // Conversion de la date YYYY-MM-DD en format lisible français avec l'heure courante
                 const [annee, mois, jour] = dateInputVal.split('-');
                 const dateObj = new Date(annee, mois - 1, jour);
                 dateEnregistrementFinal = `${jour}/${mois}/${annee} à ${new Date().toLocaleTimeString()}`;
