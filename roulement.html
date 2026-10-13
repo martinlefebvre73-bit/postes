@@ -4,20 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan de Roulement & Consignation - Firestore</title>
-    <!-- Intégration de la feuille de style externe style1.css -->
-    <link rel="stylesheet" href="style1.css">
+    <!-- Tailwind CSS pour un design moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Police Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fichier CSS externe corrigé -->
+    <link rel="stylesheet" href="style1.css">
 </head>
 <body class="h-full flex flex-col">
 
     <header>
         <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner">
-                    <i class="fa-solid fa-calendar-days text-2xl text-indigo-100"></i>
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner text-white">
+                    <i class="fa-solid fa-calendar-days text-2xl"></i>
                 </div>
                 <div>
                     <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Plan de Roulement & Consignation</h1>
@@ -49,7 +51,7 @@
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6 overflow-y-auto">
+    <main>
         
         <!-- Dashboard Stats Cards -->
         <div class="stats-grid">
@@ -91,17 +93,17 @@
                 <table id="schedule-table">
                     <thead>
                         <tr>
-                            <th>Semaine du</th>
-                            <th>Pierre-Stéphane</th>
-                            <th>Martin</th>
-                            <th>Jonathan</th>
-                            <th>Dany</th>
-                            <th>Jean</th>
-                            <th>Yves</th>
-                            <th class="text-center">Consignation</th>
+                            <th class="p-3.5 sm:px-6">Semaine du</th>
+                            <th class="p-3.5 sm:px-4">Pierre-Stéphane</th>
+                            <th class="p-3.5 sm:px-4">Martin</th>
+                            <th class="p-3.5 sm:px-4">Jonathan</th>
+                            <th class="p-3.5 sm:px-4">Dany</th>
+                            <th class="p-3.5 sm:px-4">Jean</th>
+                            <th class="p-3.5 sm:px-4">Yves</th>
+                            <th class="p-3.5 sm:px-4 text-center">Consignation</th>
                         </tr>
                     </thead>
-                    <tbody id="table-body">
+                    <tbody class="divide-y divide-slate-800 text-sm" id="table-body">
                         <!-- Dynamically populated -->
                     </tbody>
                 </table>
@@ -131,7 +133,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-800">
                     <div>
                         <p class="text-xs font-medium text-slate-400">Superviseur sélectionné</p>
-                        <select id="modal-supervisor-select" class="mt-1">
+                        <select id="modal-supervisor-select" class="mt-1 bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg block w-full p-2 font-medium">
                             <!-- Filled dynamically -->
                         </select>
                     </div>
@@ -160,7 +162,7 @@
                 </div>
                 <div>
                     <label for="modal-notes" class="block text-xs font-semibold text-slate-300 mb-1">Détails et notes sur l'action faite</label>
-                    <textarea id="modal-notes" rows="4" placeholder="Entrez les détails des activités réalisées, observations..."></textarea>
+                    <textarea id="modal-notes" rows="4" placeholder="Entrez les détails des activités réalisées, observations..." class="resize-none placeholder-slate-500"></textarea>
                 </div>
             </div>
             <div class="bg-slate-800/50 px-6 py-3.5 flex justify-end gap-3 border-t border-slate-800">
@@ -176,7 +178,7 @@
 
     <!-- Modal du Rapport de Résumé -->
     <div id="summary-modal" class="modal-overlay hidden">
-        <div class="modal-content large">
+        <div class="modal-content large flex flex-col">
             <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center border-b border-slate-700">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-file-lines text-emerald-400"></i>
@@ -493,7 +495,7 @@
                     let tr = document.createElement('tr');
                     
                     let html = `
-                        <td class="font-semibold text-slate-200 whitespace-nowrap flex items-center gap-2">
+                        <td class="p-3.5 sm:px-6 font-semibold text-slate-200 whitespace-nowrap flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
                             ${weekItem.week}
                         </td>
@@ -522,7 +524,7 @@
                         }
 
                         html += `
-                            <td>
+                            <td class="p-3.5 sm:px-4">
                                 <div data-week="${index}" data-sup="${sIdx}" class="task-tile ${badgeColor}" title="Cliquer pour consigner ou modifier">
                                     <span class="text-xs font-semibold truncate max-w-[110px]">${task}</span>
                                     <span class="text-[10px] text-slate-400 flex items-center">${supName} ${statusIcon}</span>
@@ -534,7 +536,7 @@
                     const weekCompletedCount = weekItem.logs ? Object.values(weekItem.logs).filter(l => l && l.status === 'completed').length : 0;
 
                     html += `
-                        <td class="text-center whitespace-nowrap">
+                        <td class="p-3.5 sm:px-4 text-center whitespace-nowrap">
                             <button data-week="${index}" data-sup="0" class="btn-consing-all bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-900 px-3 py-1.5 rounded-lg text-xs font-medium transition inline-flex items-center gap-1.5">
                                 <i class="fa-solid fa-pen-to-square"></i> Consigner (${weekCompletedCount}/6)
                             </button>
@@ -673,9 +675,8 @@
             }
         }
 
-        let app;
         window.addEventListener('DOMContentLoaded', () => {
-            app = new RoulementFirebaseApp();
+            new RoulementFirebaseApp();
         });
     </script>
 </body>
