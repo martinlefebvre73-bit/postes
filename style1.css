@@ -1,12 +1,10 @@
 /* ==========================================================================
-Plan de Roulement & Consignation - Style Global CSS (Corrigé)
+Plan de Roulement & Consignation - Style Global CSS (Version Premium)
 ========================================================================== */
 
-/* Variables & Root Settings */
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
-  font-weight: 400;
   color-scheme: dark;
 }
 
@@ -15,8 +13,8 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #020617; /* bg-slate-950 */
-  color: #f1f5f9; /* text-slate-100 */
+  background: radial-gradient(circle at top center, #0f172a 0%, #020617 100%);
+  color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -27,20 +25,24 @@ body {
 
 /* Layout Components */
 header {
-  background-color: #0f172a; /* bg-slate-900 */
-  border-bottom: 1px solid #1e293b; /* border-slate-800 */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 40;
 }
 
 main {
   flex: 1;
-  max-width: 80rem;
+  max-width: 84rem;
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   overflow-y: auto;
 }
 
@@ -62,7 +64,7 @@ main {
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 @media (min-width: 1024px) {
@@ -72,22 +74,29 @@ main {
 }
 
 .stat-card {
-  background-color: #0f172a;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #1e293b;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.5) 100%);
+  padding: 1.25rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(51, 65, 85, 0.5);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.4);
 }
 
 /* Schedule Table Container */
 .schedule-container {
-  background-color: #0f172a;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #1e293b;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(51, 65, 85, 0.6);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -105,93 +114,95 @@ table {
 
 th {
   background-color: #1e293b;
-  color: #cbd5e1;
+  color: #94a3b8;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid #334155;
-  padding: 0.875rem 1rem;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid #334155;
+  padding: 1rem 1.25rem;
 }
 
 td {
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid #1e293b;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.8);
   font-size: 0.875rem;
 }
 
 tr:hover {
-  background-color: rgba(30, 41, 59, 0.5);
+  background-color: rgba(30, 41, 59, 0.35);
 }
 
 /* Interactive Task Tiles */
 .task-tile {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
   border-width: 1px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.125rem;
+  gap: 0.25rem;
   text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .task-tile:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px -3px rgba(99, 102, 241, 0.25);
+  border-color: #6366f1 !important;
 }
 
-/* Modals Overlay (Correction de la classe .hidden pour masquer correctement) */
+/* Modals Overlay */
 .modal-overlay,
 .fixed.inset-0.hidden {
   display: none !important;
 }
 
-/* Forcer l'affichage quand la classe hidden est retirée */
 .modal-overlay:not(.hidden),
 .fixed.inset-0:not(.hidden) {
   display: flex !important;
 }
 
 .modal-content {
-  background-color: #0f172a;
-  border-radius: 1rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  max-width: 32rem;
+  background: linear-gradient(145deg, #0f172a 0%, #090d16 100%);
+  border-radius: 1.25rem;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+  max-width: 34rem;
   width: 100%;
   overflow: hidden;
-  border: 1px solid #1e293b;
+  border: 1px solid rgba(51, 65, 85, 0.8);
   color: #f1f5f9;
   display: flex;
   flex-direction: column;
 }
 
 .modal-content.large {
-  max-width: 42rem;
+  max-width: 46rem;
   max-height: 90vh;
 }
 
 /* Toast Notifications */
 #toast {
   position: fixed;
-  bottom: 1.25rem;
-  right: 1.25rem;
+  bottom: 1.5rem;
+  right: 1.5rem;
   z-index: 50;
-  transform: translateY(5rem);
+  transform: translateY(6rem);
   opacity: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #1e293b;
-  border: 1px solid #334155;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(71, 85, 105, 0.8);
   color: #ffffff;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 0.875rem 1.25rem;
+  border-radius: 1rem;
+  box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
   font-size: 0.875rem;
 }
 
@@ -205,20 +216,21 @@ input[type="text"],
 input[type="date"],
 select,
 textarea {
-  background-color: #1e293b;
-  border: 1px solid #334155;
+  background-color: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(71, 85, 105, 0.8);
   color: #f1f5f9;
-  border-radius: 0.5rem;
-  padding: 0.625rem;
+  border-radius: 0.625rem;
+  padding: 0.75rem;
   font-size: 0.875rem;
   width: 100%;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
   border-color: #6366f1;
-  box-shadow: 0 0 0 1px #6366f1;
+  background-color: rgba(30, 41, 59, 1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
 button {
@@ -228,4 +240,9 @@ button {
   align-items: center;
   justify-content: center;
   font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  filter: brightness(1.1);
 }
