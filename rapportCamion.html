@@ -241,13 +241,17 @@
 
         let dernierRapportGenere = null;
 
-        // Nettoyage du PIN : supprime toutes les lettres, puis enlève le dernier chiffre
+        // Nettoyage du PIN : supprime les lettres, enlève le dernier chiffre, et retire le '0' de tête
         function nettoyerPin(rawPin) {
             if (!rawPin) return '';
             let s = String(rawPin).trim();
             let digitsOnly = s.replace(/[a-zA-Z]/g, '');
             if (digitsOnly.length > 1) {
-                return digitsOnly.substring(0, digitsOnly.length - 1);
+                digitsOnly = digitsOnly.substring(0, digitsOnly.length - 1);
+            }
+            // Supprime le '0' de tête si présent
+            if (digitsOnly.startsWith('0')) {
+                digitsOnly = digitsOnly.replace(/^0+/, '');
             }
             return digitsOnly;
         }
