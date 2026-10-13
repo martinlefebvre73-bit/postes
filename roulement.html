@@ -1,50 +1,48 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan de Roulement & Consignation - Firestore</title>
-    <!-- Tailwind CSS pour un design moderne -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Plan de Roulement & Consignation - Hors Ligne</title>
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Police Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Fichier CSS externe corrigé -->
+    <!-- Fichier CSS externe unique -->
     <link rel="stylesheet" href="style1.css">
 </head>
-<body class="h-full flex flex-col">
+<body>
 
     <header>
-        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner text-white">
-                    <i class="fa-solid fa-calendar-days text-2xl"></i>
+        <div class="header-container">
+            <div class="header-brand">
+                <div class="header-icon">
+                    <i class="fa-solid fa-calendar-days"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Plan de Roulement & Consignation</h1>
-                    <p class="text-xs sm:text-sm text-slate-400 flex items-center gap-2">
-                        <span>Synchronisé Firestore (Collection: roulement)</span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500 text-white">Actif</span>
+                    <h1>Plan de Roulement & Consignation</h1>
+                    <p class="subtitle">
+                        <span>Mode Local (Hors Connexion)</span>
+                        <span class="badge-active">Actif</span>
                     </p>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="header-actions">
                 <!-- Sélecteur de date pour le résumé -->
-                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                    <label for="summary-date-select" class="text-xs font-semibold text-slate-300 whitespace-nowrap">Semaine du :</label>
-                    <select id="summary-date-select" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-md p-1 focus:ring-indigo-500 focus:border-indigo-500">
+                <div class="date-select-wrapper">
+                    <label for="summary-date-select">Semaine du :</label>
+                    <select id="summary-date-select">
                         <!-- Rempli dynamiquement -->
                     </select>
                 </div>
-                <!-- Bouton Résumé unique -->
-                <button id="btn-open-summary" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                <!-- Boutons d'action -->
+                <button id="btn-open-summary" class="btn btn-emerald">
                     <i class="fa-solid fa-file-lines"></i> Résumé
                 </button>
-                <button id="btn-add-week" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                <button id="btn-add-week" class="btn btn-indigo">
                     <i class="fa-solid fa-plus"></i> + Semaines
                 </button>
-                <button id="btn-refresh" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm border border-slate-700">
+                <button id="btn-refresh" class="btn btn-slate">
                     <i class="fa-solid fa-rotate-right"></i> Actualiser
                 </button>
             </div>
@@ -52,33 +50,32 @@
     </header>
 
     <main>
-        
         <!-- Dashboard Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Superviseurs</p>
-                    <p class="text-2xl font-bold text-slate-100 mt-1">6</p>
+                    <p class="stat-label">Superviseurs</p>
+                    <p class="stat-value">6</p>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-blue-950 text-blue-400 flex items-center justify-center font-bold border border-blue-900/50">
+                <div class="stat-icon blue">
                     <i class="fa-solid fa-users"></i>
                 </div>
             </div>
             <div class="stat-card">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Tâches Actives</p>
-                    <p class="text-2xl font-bold text-slate-100 mt-1">6</p>
+                    <p class="stat-label">Tâches Actives</p>
+                    <p class="stat-value">6</p>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-indigo-950 text-indigo-400 flex items-center justify-center font-bold border border-indigo-900/50">
+                <div class="stat-icon indigo">
                     <i class="fa-solid fa-list-check"></i>
                 </div>
             </div>
             <div class="stat-card">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Activités Consignées (Global)</p>
-                    <p class="text-2xl font-bold text-emerald-400 mt-1" id="completed-count">0 / 6</p>
+                    <p class="stat-label">Activités Consignées (Global)</p>
+                    <p class="stat-value emerald" id="completed-count">0 / 6</p>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-emerald-950 text-emerald-400 flex items-center justify-center font-bold border border-emerald-900/50">
+                <div class="stat-icon emerald">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
             </div>
@@ -86,73 +83,72 @@
 
         <!-- Schedule Table -->
         <div class="schedule-container">
-            <div class="p-4 border-b border-slate-800 flex justify-between items-center text-xs text-slate-400 italic">
+            <div class="schedule-notice">
                 <span>Cliquez directement sur une tuile de tâche pour consigner ou modifier les détails d'un superviseur.</span>
             </div>
             <div class="schedule-table-wrapper">
                 <table id="schedule-table">
                     <thead>
                         <tr>
-                            <th class="p-3.5 sm:px-6">Semaine du</th>
-                            <th class="p-3.5 sm:px-4">Pierre-Stéphane</th>
-                            <th class="p-3.5 sm:px-4">Martin</th>
-                            <th class="p-3.5 sm:px-4">Jonathan</th>
-                            <th class="p-3.5 sm:px-4">Dany</th>
-                            <th class="p-3.5 sm:px-4">Jean</th>
-                            <th class="p-3.5 sm:px-4">Yves</th>
-                            <th class="p-3.5 sm:px-4 text-center">Consignation</th>
+                            <th>Semaine du</th>
+                            <th>Pierre-Stéphane</th>
+                            <th>Martin</th>
+                            <th>Jonathan</th>
+                            <th>Dany</th>
+                            <th>Jean</th>
+                            <th>Yves</th>
+                            <th class="text-center">Consignation</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-800 text-sm" id="table-body">
+                    <tbody id="table-body">
                         <!-- Dynamically populated -->
                     </tbody>
                 </table>
             </div>
         </div>
-
     </main>
 
     <!-- Modal de consignation / modification -->
     <div id="log-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center border-b border-slate-700">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-clipboard-user text-indigo-400"></i>
-                    <h3 class="font-bold text-lg" id="modal-title">Consigner l'activité</h3>
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <i class="fa-solid fa-clipboard-user"></i>
+                    <h3 id="modal-title">Consigner l'activité</h3>
                 </div>
-                <button id="btn-close-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+                <button id="btn-close-modal" class="modal-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="p-6 flex flex-col gap-4">
+            <div class="modal-body">
                 <input type="hidden" id="modal-week-index">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Semaine concernée</p>
-                    <p class="text-base font-bold text-slate-100" id="modal-week-label">-</p>
+                    <p class="field-label">Semaine concernée</p>
+                    <p class="field-value" id="modal-week-label">-</p>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-800">
+                <div class="modal-grid">
                     <div>
-                        <p class="text-xs font-medium text-slate-400">Superviseur sélectionné</p>
-                        <select id="modal-supervisor-select" class="mt-1 bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg block w-full p-2 font-medium">
+                        <p class="field-label">Superviseur sélectionné</p>
+                        <select id="modal-supervisor-select">
                             <!-- Filled dynamically -->
                         </select>
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-slate-400">Tâche assignée</p>
-                        <p class="text-sm font-bold text-indigo-400 mt-1.5" id="modal-assigned-task">-</p>
+                        <p class="field-label">Tâche assignée</p>
+                        <p class="task-assigned" id="modal-assigned-task">-</p>
                     </div>
                 </div>
 
                 <!-- Case à cocher pour consigner/valider rapidement -->
-                <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 flex items-center gap-3">
-                    <input type="checkbox" id="modal-checkbox-completed" class="w-5 h-5 accent-indigo-600 rounded cursor-pointer">
-                    <label for="modal-checkbox-completed" class="text-sm font-medium text-slate-200 cursor-pointer select-none">
-                        Marquer cette tâche comme <span class="text-emerald-400 font-semibold">Réalisée / Validée</span>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="modal-checkbox-completed">
+                    <label for="modal-checkbox-completed">
+                        Marquer cette tâche comme <span class="text-emerald">Réalisée / Validée</span>
                     </label>
                 </div>
 
                 <div>
-                    <label for="modal-status" class="block text-xs font-semibold text-slate-300 mb-1">Statut d'avancement détaillé</label>
+                    <label for="modal-status" class="block-label">Statut d'avancement détaillé</label>
                     <select id="modal-status">
                         <option value="pending">⏳ En attente</option>
                         <option value="in_progress">🔄 En cours</option>
@@ -161,15 +157,13 @@
                     </select>
                 </div>
                 <div>
-                    <label for="modal-notes" class="block text-xs font-semibold text-slate-300 mb-1">Détails et notes sur l'action faite</label>
-                    <textarea id="modal-notes" rows="4" placeholder="Entrez les détails des activités réalisées, observations..." class="resize-none placeholder-slate-500"></textarea>
+                    <label for="modal-notes" class="block-label">Détails et notes sur l'action faite</label>
+                    <textarea id="modal-notes" rows="4" placeholder="Entrez les détails des activités réalisées, observations..."></textarea>
                 </div>
             </div>
-            <div class="bg-slate-800/50 px-6 py-3.5 flex justify-end gap-3 border-t border-slate-800">
-                <button id="btn-cancel-modal" class="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-lg text-xs font-medium transition shadow-sm">
-                    Annuler
-                </button>
-                <button id="modal-save-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition shadow-sm flex items-center gap-1.5">
+            <div class="modal-footer">
+                <button id="btn-cancel-modal" class="btn btn-slate-outline">Annuler</button>
+                <button id="modal-save-btn" class="btn btn-indigo">
                     <i class="fa-solid fa-floppy-disk"></i> Enregistrer
                 </button>
             </div>
@@ -178,50 +172,32 @@
 
     <!-- Modal du Rapport de Résumé -->
     <div id="summary-modal" class="modal-overlay hidden">
-        <div class="modal-content large flex flex-col">
-            <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center border-b border-slate-700">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-file-lines text-emerald-400"></i>
-                    <h3 class="font-bold text-lg">Rapport de Résumé - Semaine du <span id="modal-summary-week-title">-</span></h3>
+        <div class="modal-content large">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <i class="fa-solid fa-file-lines text-emerald"></i>
+                    <h3>Rapport de Résumé - Semaine du <span id="modal-summary-week-title">-</span></h3>
                 </div>
-                <button id="btn-close-summary-modal" class="text-slate-400 hover:text-white p-1 rounded-lg transition">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+                <button id="btn-close-summary-modal" class="modal-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="p-6 overflow-y-auto flex flex-col gap-4 text-sm" id="modal-summary-body">
+            <div class="modal-body scrollable" id="modal-summary-body">
                 <!-- Rempli dynamiquement -->
             </div>
-            <div class="bg-slate-800/50 px-6 py-3.5 flex justify-end gap-3 border-t border-slate-800">
-                <button id="btn-close-summary-footer" class="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 rounded-lg text-xs font-medium transition shadow-sm">
-                    Fermer
-                </button>
+            <div class="modal-footer">
+                <button id="btn-close-summary-footer" class="btn btn-slate-outline">Fermer</button>
             </div>
         </div>
     </div>
 
     <!-- Toast Notification -->
     <div id="toast">
-        <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <i class="fa-solid fa-circle-check text-emerald"></i>
         <span id="toast-message">Action réussie !</span>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
-            authDomain: "postes-26884.firebaseapp.com",
-            projectId: "postes-26884",
-            storageBucket: "postes-26884.firebasestorage.app",
-            messagingSenderId: "75974397689",
-            appId: "1:75974397689:web:5fd12942788612c62b1c28",
-            measurementId: "G-83YPF62ET5"
-        };
-
-        const firebaseApp = initializeApp(firebaseConfig);
-        const db = getFirestore(firebaseApp);
-
+    <script>
         const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
 
         const BASE_SCHEDULE = [
@@ -239,15 +215,32 @@
             { weekKey: "2026-12-28", week: "28 déc. 2026", assignments: ["Suivis anomalies", "Sécurité routière", "Retour SST-PAICD", "Extra", "Télématique", "Nouveaux employés"] }
         ];
 
-        class RoulementFirebaseApp {
+        class RoulementLocalApp {
             constructor() {
-                this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({
-                    ...item,
-                    logs: {}
-                }));
+                this.loadDataFromLocalStorage();
                 this.populateDropdowns();
-                this.loadDataFromFirebase();
                 this.initEvents();
+            }
+
+            loadDataFromLocalStorage() {
+                const saved = localStorage.getItem('roulement_local_data');
+                if (saved) {
+                    try {
+                        this.scheduleData = JSON.parse(saved);
+                    } catch (e) {
+                        this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({ ...item, logs: {} }));
+                    }
+                } else {
+                    this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({ ...item, logs: {} }));
+                }
+                const currentSelected = document.getElementById('summary-date-select').value;
+                this.updateDateSelect(currentSelected);
+                this.renderTable();
+                this.updateCompletedCountHeader();
+            }
+
+            saveDataToLocalStorage() {
+                localStorage.setItem('roulement_local_data', JSON.stringify(this.scheduleData));
             }
 
             populateDropdowns() {
@@ -280,7 +273,11 @@
             }
 
             initEvents() {
-                document.getElementById('btn-refresh').addEventListener('click', () => this.loadDataFromFirebase());
+                document.getElementById('btn-refresh').addEventListener('click', () => {
+                    this.loadDataFromLocalStorage();
+                    this.showToast("Données rechargées depuis la mémoire locale.");
+                });
+                
                 document.getElementById('btn-add-week').addEventListener('click', () => this.addNewWeek());
                 
                 document.getElementById('btn-open-summary').addEventListener('click', () => this.openSummaryModal());
@@ -289,7 +286,7 @@
 
                 document.getElementById('btn-close-modal').addEventListener('click', () => this.closeModal());
                 document.getElementById('btn-cancel-modal').addEventListener('click', () => this.closeModal());
-                document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogToFirebase());
+                document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogLocally());
 
                 document.getElementById('modal-supervisor-select').addEventListener('change', () => this.updateModalTaskDisplay());
 
@@ -309,51 +306,7 @@
                 });
             }
 
-            async loadDataFromFirebase() {
-                try {
-                    const q = collection(db, 'roulement');
-                    const querySnapshot = await getDocs(q);
-                    
-                    const remoteData = [];
-                    querySnapshot.forEach((docSnap) => {
-                        remoteData.push({ weekKey: docSnap.id, ...docSnap.data() });
-                    });
-
-                    if (remoteData.length > 0) {
-                        remoteData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
-                        
-                        remoteData.forEach(remoteItem => {
-                            const found = this.scheduleData.find(s => s.weekKey === remoteItem.weekKey);
-                            if (found) {
-                                found.logs = remoteItem.logs || {};
-                                found.assignments = remoteItem.assignments || found.assignments;
-                            } else {
-                                this.scheduleData.push({
-                                    weekKey: remoteItem.weekKey,
-                                    week: remoteItem.week,
-                                    assignments: remoteItem.assignments,
-                                    logs: remoteItem.logs || {}
-                                });
-                            }
-                        });
-                        this.scheduleData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
-                    }
-
-                    const currentSelected = document.getElementById('summary-date-select').value;
-                    this.updateDateSelect(currentSelected);
-                    this.renderTable();
-                    this.updateCompletedCountHeader();
-                    this.showToast("Données synchronisées avec succès.");
-                } catch (error) {
-                    console.error("Erreur chargement Firestore:", error);
-                    const currentSelected = document.getElementById('summary-date-select').value;
-                    this.updateDateSelect(currentSelected);
-                    this.renderTable();
-                    this.updateCompletedCountHeader();
-                }
-            }
-
-            async addNewWeek() {
+            addNewWeek() {
                 const lastItem = this.scheduleData[this.scheduleData.length - 1];
                 let lastDate = new Date(lastItem.weekKey);
                 lastDate.setDate(lastDate.getDate() + 7);
@@ -380,24 +333,13 @@
                 };
 
                 this.scheduleData.push(newWeekObj);
+                this.scheduleData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
 
-                try {
-                    const docRef = doc(db, 'roulement', weekKey);
-                    await setDoc(docRef, {
-                        weekKey: weekKey,
-                        week: weekLabel,
-                        assignments: newAssignments,
-                        logs: {}
-                    });
-
-                    this.updateDateSelect(weekKey);
-                    this.renderTable();
-                    this.updateCompletedCountHeader();
-                    this.showToast("Nouvelle semaine ajoutée avec succès !");
-                } catch (error) {
-                    console.error("Erreur ajout semaine Firestore:", error);
-                    alert("Erreur lors de l'enregistrement de la nouvelle semaine.");
-                }
+                this.saveDataToLocalStorage();
+                this.updateDateSelect(weekKey);
+                this.renderTable();
+                this.updateCompletedCountHeader();
+                this.showToast("Nouvelle semaine ajoutée avec succès !");
             }
 
             updateCompletedCountHeader() {
@@ -425,14 +367,13 @@
                 document.getElementById('modal-summary-week-title').textContent = weekItem.week;
                 const bodyContainer = document.getElementById('modal-summary-body');
 
-                let completedCount = 0;
                 let html = `
-                    <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/60 flex justify-between items-center">
-                        <span class="font-semibold text-slate-300">Période concernée :</span>
-                        <span class="text-indigo-300 font-bold">Semaine du ${weekItem.week}</span>
+                    <div class="summary-period-box">
+                        <span class="summary-period-label">Période concernée :</span>
+                        <span class="summary-period-value">Semaine du ${weekItem.week}</span>
                     </div>
-                    <div class="flex flex-col gap-3">
-                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Détail des tâches et actions des superviseurs :</h4>
+                    <div class="summary-list">
+                        <h4 class="summary-list-title">Détail des tâches et actions des superviseurs :</h4>
                 `;
 
                 weekItem.assignments.forEach((task, sIdx) => {
@@ -440,39 +381,38 @@
                     const log = weekItem.logs && weekItem.logs[supName];
 
                     let statusText = "Non consigné / En attente";
-                    let statusColor = "text-slate-400 bg-slate-800 border-slate-700";
+                    let statusClass = "status-badge pending";
 
                     if (log) {
                         if (log.status === 'completed') {
-                            completedCount++;
                             statusText = "Réalisé / Validé";
-                            statusColor = "text-emerald-300 bg-emerald-950/60 border-emerald-800/60";
+                            statusClass = "status-badge completed";
                         } else if (log.status === 'in_progress') {
                             statusText = "En cours";
-                            statusColor = "text-blue-300 bg-blue-950/60 border-blue-800/60";
+                            statusClass = "status-badge progress";
                         } else if (log.status === 'issue') {
                             statusText = "Problème / Anomalie";
-                            statusColor = "text-rose-300 bg-rose-950/60 border-rose-800/60";
+                            statusClass = "status-badge issue";
                         } else {
                             statusText = "En attente";
-                            statusColor = "text-amber-300 bg-amber-950/60 border-amber-800/60";
+                            statusClass = "status-badge pending";
                         }
                     }
 
                     const notes = log && log.notes ? log.notes : "Aucune note enregistrée pour cette tâche.";
 
                     html += `
-                        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/80 flex flex-col gap-2">
-                            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-700/50 pb-2">
+                        <div class="summary-item-card">
+                            <div class="summary-item-header">
                                 <div>
-                                    <span class="font-bold text-slate-100 text-base">${supName}</span>
-                                    <span class="text-xs text-indigo-300 ml-2 font-medium">(Tâche : ${task})</span>
+                                    <span class="summary-sup-name">${supName}</span>
+                                    <span class="summary-task-name">(Tâche : ${task})</span>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-md text-xs font-semibold border ${statusColor} w-fit">${statusText}</span>
+                                <span class="${statusClass}">${statusText}</span>
                             </div>
                             <div>
-                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Notes et détails des actions :</p>
-                                <p class="text-slate-200 mt-1 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 text-xs italic">"${notes}"</p>
+                                <p class="summary-notes-label">Notes et détails des actions :</p>
+                                <p class="summary-notes-text">"${notes}"</p>
                             </div>
                         </div>
                     `;
@@ -495,8 +435,8 @@
                     let tr = document.createElement('tr');
                     
                     let html = `
-                        <td class="p-3.5 sm:px-6 font-semibold text-slate-200 whitespace-nowrap flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <td class="week-cell">
+                            <span class="week-dot"></span>
                             ${weekItem.week}
                         </td>
                     `;
@@ -504,30 +444,30 @@
                     weekItem.assignments.forEach((task, sIdx) => {
                         const supName = SUPERVISORS[sIdx];
                         const log = weekItem.logs && weekItem.logs[supName];
-                        let badgeColor = "bg-slate-800/80 text-slate-300 border-slate-700";
+                        let tileClass = "task-tile default";
                         let statusIcon = "";
 
                         if (log) {
                             if (log.status === 'completed') {
-                                badgeColor = "bg-emerald-950 text-emerald-300 border-emerald-700/80 font-medium shadow-sm";
-                                statusIcon = '<i class="fa-solid fa-check text-emerald-400 ml-1"></i>';
+                                tileClass = "task-tile completed";
+                                statusIcon = '<i class="fa-solid fa-check text-emerald"></i>';
                             } else if (log.status === 'in_progress') {
-                                badgeColor = "bg-blue-950 text-blue-300 border-blue-700/80 font-medium shadow-sm";
-                                statusIcon = '<i class="fa-solid fa-spinner text-blue-400 ml-1 animate-spin"></i>';
+                                tileClass = "task-tile progress";
+                                statusIcon = '<i class="fa-solid fa-spinner fa-spin text-blue"></i>';
                             } else if (log.status === 'issue') {
-                                badgeColor = "bg-rose-950 text-rose-300 border-rose-700/80 font-medium shadow-sm";
-                                statusIcon = '<i class="fa-solid fa-triangle-exclamation text-rose-400 ml-1"></i>';
+                                tileClass = "task-tile issue";
+                                statusIcon = '<i class="fa-solid fa-triangle-exclamation text-rose"></i>';
                             } else if (log.status === 'pending') {
-                                badgeColor = "bg-amber-950/60 text-amber-300 border-amber-700/60";
-                                statusIcon = '<i class="fa-solid fa-clock text-amber-400 ml-1"></i>';
+                                tileClass = "task-tile pending";
+                                statusIcon = '<i class="fa-solid fa-clock text-amber"></i>';
                             }
                         }
 
                         html += `
-                            <td class="p-3.5 sm:px-4">
-                                <div data-week="${index}" data-sup="${sIdx}" class="task-tile ${badgeColor}" title="Cliquer pour consigner ou modifier">
-                                    <span class="text-xs font-semibold truncate max-w-[110px]">${task}</span>
-                                    <span class="text-[10px] text-slate-400 flex items-center">${supName} ${statusIcon}</span>
+                            <td>
+                                <div data-week="${index}" data-sup="${sIdx}" class="${tileClass}" title="Cliquer pour consigner ou modifier">
+                                    <span class="tile-task-text">${task}</span>
+                                    <span class="tile-sup-text">${supName} ${statusIcon}</span>
                                 </div>
                             </td>
                         `;
@@ -536,8 +476,8 @@
                     const weekCompletedCount = weekItem.logs ? Object.values(weekItem.logs).filter(l => l && l.status === 'completed').length : 0;
 
                     html += `
-                        <td class="p-3.5 sm:px-4 text-center whitespace-nowrap">
-                            <button data-week="${index}" data-sup="0" class="btn-consing-all bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-900 px-3 py-1.5 rounded-lg text-xs font-medium transition inline-flex items-center gap-1.5">
+                        <td class="text-center">
+                            <button data-week="${index}" data-sup="0" class="btn-consing-all">
                                 <i class="fa-solid fa-pen-to-square"></i> Consigner (${weekCompletedCount}/6)
                             </button>
                         </td>
@@ -618,7 +558,7 @@
                 document.getElementById('log-modal').classList.add('hidden');
             }
 
-            async saveLogToFirebase() {
+            saveLogLocally() {
                 const weekIndex = parseInt(document.getElementById('modal-week-index').value);
                 const supName = document.getElementById('modal-supervisor-select').value;
                 const checkboxCompleted = document.getElementById('modal-checkbox-completed').checked;
@@ -639,30 +579,11 @@
                     updatedAt: new Date().toISOString()
                 };
 
-                const saveBtn = document.getElementById('modal-save-btn');
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Enregistrement...';
-
-                try {
-                    const docRef = doc(db, 'roulement', weekItem.weekKey);
-                    await setDoc(docRef, {
-                        weekKey: weekItem.weekKey,
-                        week: weekItem.week,
-                        assignments: weekItem.assignments,
-                        logs: weekItem.logs
-                    }, { merge: true });
-
-                    this.closeModal();
-                    this.renderTable();
-                    this.updateCompletedCountHeader();
-                    this.showToast("Enregistrement effectué avec succès !");
-                } catch (error) {
-                    console.error("Erreur sauvegarde Firestore:", error);
-                    alert("Erreur lors de l'enregistrement dans Firebase.");
-                } finally {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Enregistrer';
-                }
+                this.saveDataToLocalStorage();
+                this.closeModal();
+                this.renderTable();
+                this.updateCompletedCountHeader();
+                this.showToast("Enregistrement local effectué avec succès !");
             }
 
             showToast(message) {
@@ -676,7 +597,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            new RoulementFirebaseApp();
+            new RoulementLocalApp();
         });
     </script>
 </body>
