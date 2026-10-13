@@ -31,6 +31,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
+                <button id="btn-add-week" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-plus"></i> + Semaines
+                </button>
                 <button id="btn-refresh" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm border border-slate-700">
                     <i class="fa-solid fa-rotate-right"></i> Actualiser
                 </button>
@@ -189,6 +192,7 @@
         const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
 
         const BASE_SCHEDULE = [
+            { weekKey: "2026-10-12", week: "12 oct. 2026", assignments: ["Extra", "Télématique", "Nouveaux employés", "Suivis anomalies", "Sécurité routière", "Retour SST-PAICD"] },
             { weekKey: "2026-10-19", week: "19 oct. 2026", assignments: ["Télématique", "Nouveaux employés", "Suivis anomalies", "Sécurité routière", "Retour SST-PAICD", "Extra"] },
             { weekKey: "2026-10-26", week: "26 oct. 2026", assignments: ["Extra", "Télématique", "Nouveaux employés", "Suivis anomalies", "Sécurité routière", "Retour SST-PAICD"] },
             { weekKey: "2026-11-02", week: "02 nov. 2026", assignments: ["Retour SST-PAICD", "Extra", "Télématique", "Nouveaux employés", "Suivis anomalies", "Sécurité routière"] },
@@ -223,6 +227,7 @@
 
             initEvents() {
                 document.getElementById('btn-refresh').addEventListener('click', () => this.loadDataFromFirebase());
+                document.getElementById('btn-add-week').addEventListener('click', () => this.addNewWeek());
                 document.getElementById('btn-close-modal').addEventListener('click', () => this.closeModal());
                 document.getElementById('btn-cancel-modal').addEventListener('click', () => this.closeModal());
                 document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogToFirebase());
@@ -250,14 +255,31 @@
                     const q = collection(db, 'roulement');
                     const querySnapshot = await getDocs(q);
                     
+                    const remoteData = [];
                     querySnapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        const weekKey = docSnap.id;
-                        const found = this.scheduleData.find(item => item.weekKey === weekKey);
-                        if (found) {
-                            found.logs = data.logs || {};
-                        }
+                        remoteData.push({ weekKey: docSnap.id, ...docSnap.data() });
                     });
+
+                    if (remoteData.length > 0) {
+                        remoteData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+                        
+                        // Fusionner les données distantes avec la structure de base pour s'assurer que les semaines (comme le 12 oct) existent
+                        remoteData.forEach(remoteItem => {
+                            const found = this.scheduleData.find(s => s.weekKey === remoteItem.weekKey);
+                            if (found) {
+                                found.logs = remoteItem.logs || {};
+                                found.assignments = remoteItem.assignments || found.assignments;
+                            } else {
+                                this.scheduleData.push({
+                                    weekKey: remoteItem.weekKey,
+                                    week: remoteItem.week,
+                                    assignments: remoteItem.assignments,
+                                    logs: remoteItem.logs || {}
+                                });
+                            }
+                        });
+                        this.scheduleData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+                    }
 
                     this.renderTable();
                     this.updateStats();
@@ -265,6 +287,52 @@
                 } catch (error) {
                     console.error("Erreur chargement Firestore:", error);
                     this.renderTable();
+                }
+            }
+
+            async addNewWeek() {
+                const lastItem = this.scheduleData[this.scheduleData.length - 1];
+                let lastDate = new Date(lastItem.weekKey);
+                lastDate.setDate(lastDate.getDate() + 7);
+
+                const year = lastDate.getFullYear();
+                const month = String(lastDate.getMonth() + 1).padStart(2, '0');
+                const day = String(lastDate.getDate()).padStart(2, '0');
+                const weekKey = `${year}-${month}-${day}`;
+
+                const monthsFr = ["jan.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+                const weekLabel = `${day} ${monthsFr[lastDate.getMonth()]} ${year}`;
+
+                const lastAssignments = lastItem.assignments;
+                const newAssignments = [
+                    lastAssignments[lastAssignments.length - 1],
+                    ...lastAssignments.slice(0, lastAssignments.length - 1)
+                ];
+
+                const newWeekObj = {
+                    weekKey: weekKey,
+                    week: weekLabel,
+                    assignments: newAssignments,
+                    logs: {}
+                };
+
+                this.scheduleData.push(newWeekObj);
+
+                try {
+                    const docRef = doc(db, 'roulement', weekKey);
+                    await setDoc(docRef, {
+                        weekKey: weekKey,
+                        week: weekLabel,
+                        assignments: newAssignments,
+                        logs: {}
+                    });
+
+                    this.renderTable();
+                    this.updateStats();
+                    this.showToast("Nouvelle semaine ajoutée avec succès !");
+                } catch (error) {
+                    console.error("Erreur ajout semaine Firestore:", error);
+                    alert("Erreur lors de l'enregistrement de la nouvelle semaine.");
                 }
             }
 
