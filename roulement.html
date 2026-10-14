@@ -11,28 +11,40 @@
     <!-- Fichier CSS externe unique -->
     <link rel="stylesheet" href="style1.css">
     <style>
-        /* Styles spécifiques au modal d'objectifs */
+        /* Ajustements pour compacter le modal des objectifs et le garder dans l'écran */
+        #objectif-modal .modal-content {
+            max-height: 85vh; /* Le modal ne dépassera jamais 85% de la hauteur de l'écran */
+            max-width: 500px; /* Plus étroit pour un look plus proportionné */
+            display: flex;
+            flex-direction: column;
+        }
+        #objectif-modal .modal-body {
+            overflow-y: auto; /* Ajoute un défilement interne si l'écran est minuscule */
+            padding-right: 8px;
+        }
+        
         .objectif-input-group {
-            margin-bottom: 12px;
+            margin-bottom: 8px; /* Espacement réduit */
             background: #f8fafc;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 8px 10px; /* Espacement réduit */
+            border-radius: 6px;
             border: 1px solid #e2e8f0;
         }
         .objectif-input {
             width: 100%;
-            padding: 8px 12px;
-            margin-top: 6px;
+            padding: 6px 10px; /* Champ plus fin */
+            margin-top: 4px;
             border: 1px solid #cbd5e1;
-            border-radius: 6px;
+            border-radius: 4px;
             font-family: inherit;
-            font-size: 0.9em;
+            font-size: 0.85em; /* Police légèrement réduite */
         }
         .objectif-input:focus {
             outline: none;
             border-color: #6366f1;
             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
         }
+
         /* Curseur pour indiquer que l'en-tête est déplaçable */
         #objectif-modal .modal-header {
             cursor: grab;
@@ -40,6 +52,7 @@
         #objectif-modal .modal-header:active {
             cursor: grabbing;
         }
+
         /* Style pour l'affichage de l'objectif dans le modal de consignation */
         .modal-objective-display {
             background: #fffbeb;
@@ -342,7 +355,6 @@
                 let yOffset = 0;
 
                 header.addEventListener("mousedown", (e) => {
-                    // Empêcher le déplacement si on clique sur le bouton fermer
                     if(e.target.closest('.modal-close-btn')) return;
                     
                     initialX = e.clientX - xOffset;
@@ -660,7 +672,6 @@
 
             openObjectifModal() {
                 const modal = document.getElementById('objectif-modal');
-                // Réinitialise la position du modal à chaque ouverture
                 if (modal.resetPosition) modal.resetPosition();
 
                 const weekSelect = document.getElementById('objectif-week-select');
@@ -847,7 +858,6 @@
                 const assignedTask = weekItem.assignments[supIdx];
                 document.getElementById('modal-assigned-task').innerText = assignedTask;
 
-                // Affichage de l'objectif de la tâche uniquement dans le modal
                 const obj = weekItem.objectives && weekItem.objectives[assignedTask];
                 const objContainer = document.getElementById('modal-objective-container');
                 const objText = document.getElementById('modal-objective-text');
