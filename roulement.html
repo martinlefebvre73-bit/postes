@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan de Roulement & Consignation - Hors Ligne</title>
+    <title>Plan de Roulement & Consignation - Firestore</title>
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Police Inter -->
@@ -22,7 +22,7 @@
                 <div>
                     <h1>Plan de Roulement & Consignation</h1>
                     <p class="subtitle">
-                        <span>Mode Local (Hors Connexion)</span>
+                        <span>Synchronisé Firestore (Collection: roulement)</span>
                         <span class="badge-active">Actif</span>
                     </p>
                 </div>
@@ -42,8 +42,12 @@
                 <button id="btn-add-week" class="btn btn-indigo">
                     <i class="fa-solid fa-plus"></i> + Semaines
                 </button>
-                <button id="btn-refresh" class="btn btn-slate">
+                <button id="btn-refresh" class="btn btn-slate-outline">
                     <i class="fa-solid fa-rotate-right"></i> Actualiser
+                </button>
+                <!-- NOUVEAU BOUTON SAUVEGARDE GLOBALE -->
+                <button id="btn-save-all" class="btn btn-slate">
+                    <i class="fa-solid fa-cloud-arrow-up text-blue"></i> Sauvegarder
                 </button>
             </div>
         </div>
@@ -72,7 +76,7 @@
             </div>
             <div class="stat-card">
                 <div>
-                    <p class="stat-label">Activités Consignées (Global)</p>
+                    <p class="stat-label">Activités Consignées</p>
                     <p class="stat-value emerald" id="completed-count">0 / 6</p>
                 </div>
                 <div class="stat-icon emerald">
@@ -113,7 +117,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title-wrapper">
-                    <i class="fa-solid fa-clipboard-user"></i>
+                    <i class="fa-solid fa-clipboard-user text-blue"></i>
                     <h3 id="modal-title">Consigner l'activité</h3>
                 </div>
                 <button id="btn-close-modal" class="modal-close-btn">
@@ -197,7 +201,23 @@
         <span id="toast-message">Action réussie !</span>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+            authDomain: "postes-26884.firebaseapp.com",
+            projectId: "postes-26884",
+            storageBucket: "postes-26884.firebasestorage.app",
+            messagingSenderId: "75974397689",
+            appId: "1:75974397689:web:5fd12942788612c62b1c28",
+            measurementId: "G-83YPF62ET5"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const db = getFirestore(firebaseApp);
+
         const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
 
         const BASE_SCHEDULE = [
@@ -215,32 +235,15 @@
             { weekKey: "2026-12-28", week: "28 déc. 2026", assignments: ["Suivis anomalies", "Sécurité routière", "Retour SST-PAICD", "Extra", "Télématique", "Nouveaux employés"] }
         ];
 
-        class RoulementLocalApp {
+        class RoulementFirebaseApp {
             constructor() {
-                this.loadDataFromLocalStorage();
+                this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({
+                    ...item,
+                    logs: {}
+                }));
                 this.populateDropdowns();
+                this.loadDataFromFirebase();
                 this.initEvents();
-            }
-
-            loadDataFromLocalStorage() {
-                const saved = localStorage.getItem('roulement_local_data');
-                if (saved) {
-                    try {
-                        this.scheduleData = JSON.parse(saved);
-                    } catch (e) {
-                        this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({ ...item, logs: {} }));
-                    }
-                } else {
-                    this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({ ...item, logs: {} }));
-                }
-                const currentSelected = document.getElementById('summary-date-select').value;
-                this.updateDateSelect(currentSelected);
-                this.renderTable();
-                this.updateCompletedCountHeader();
-            }
-
-            saveDataToLocalStorage() {
-                localStorage.setItem('roulement_local_data', JSON.stringify(this.scheduleData));
             }
 
             populateDropdowns() {
@@ -273,12 +276,11 @@
             }
 
             initEvents() {
-                document.getElementById('btn-refresh').addEventListener('click', () => {
-                    this.loadDataFromLocalStorage();
-                    this.showToast("Données rechargées depuis la mémoire locale.");
-                });
-                
+                document.getElementById('btn-refresh').addEventListener('click', () => this.loadDataFromFirebase());
                 document.getElementById('btn-add-week').addEventListener('click', () => this.addNewWeek());
+                
+                // NOUVEAU BOUTON SAUVEGARDE GLOBALE
+                document.getElementById('btn-save-all').addEventListener('click', () => this.saveAllToFirebase());
                 
                 document.getElementById('btn-open-summary').addEventListener('click', () => this.openSummaryModal());
                 document.getElementById('btn-close-summary-modal').addEventListener('click', () => this.closeSummaryModal());
@@ -286,7 +288,9 @@
 
                 document.getElementById('btn-close-modal').addEventListener('click', () => this.closeModal());
                 document.getElementById('btn-cancel-modal').addEventListener('click', () => this.closeModal());
-                document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogLocally());
+                
+                // Sauvegarde individuelle via la tuile
+                document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogToFirebase());
 
                 document.getElementById('modal-supervisor-select').addEventListener('change', () => this.updateModalTaskDisplay());
 
@@ -306,7 +310,82 @@
                 });
             }
 
-            addNewWeek() {
+            async loadDataFromFirebase() {
+                try {
+                    const q = collection(db, 'roulement');
+                    const querySnapshot = await getDocs(q);
+                    
+                    const remoteData = [];
+                    querySnapshot.forEach((docSnap) => {
+                        remoteData.push({ weekKey: docSnap.id, ...docSnap.data() });
+                    });
+
+                    if (remoteData.length > 0) {
+                        remoteData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+                        
+                        remoteData.forEach(remoteItem => {
+                            const found = this.scheduleData.find(s => s.weekKey === remoteItem.weekKey);
+                            if (found) {
+                                found.logs = remoteItem.logs || {};
+                                found.assignments = remoteItem.assignments || found.assignments;
+                            } else {
+                                this.scheduleData.push({
+                                    weekKey: remoteItem.weekKey,
+                                    week: remoteItem.week,
+                                    assignments: remoteItem.assignments,
+                                    logs: remoteItem.logs || {}
+                                });
+                            }
+                        });
+                        this.scheduleData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+                    }
+
+                    const currentSelected = document.getElementById('summary-date-select').value;
+                    this.updateDateSelect(currentSelected);
+                    this.renderTable();
+                    this.updateCompletedCountHeader();
+                    this.showToast("Données synchronisées avec succès.");
+                } catch (error) {
+                    console.error("Erreur chargement Firestore:", error);
+                    const currentSelected = document.getElementById('summary-date-select').value;
+                    this.updateDateSelect(currentSelected);
+                    this.renderTable();
+                    this.updateCompletedCountHeader();
+                }
+            }
+
+            // FONCTION DE SAUVEGARDE GLOBALE DANS FIREBASE
+            async saveAllToFirebase() {
+                const saveBtn = document.getElementById('btn-save-all');
+                const originalHtml = saveBtn.innerHTML;
+                
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sauvegarde...';
+
+                try {
+                    // Parcourt toutes les semaines et les envoie à Firestore
+                    const promises = this.scheduleData.map(weekItem => {
+                        const docRef = doc(db, 'roulement', weekItem.weekKey);
+                        return setDoc(docRef, {
+                            weekKey: weekItem.weekKey,
+                            week: weekItem.week,
+                            assignments: weekItem.assignments,
+                            logs: weekItem.logs || {}
+                        }, { merge: true });
+                    });
+                    
+                    await Promise.all(promises);
+                    this.showToast("Sauvegarde Cloud globale réussie !");
+                } catch (error) {
+                    console.error("Erreur sauvegarde globale Firestore:", error);
+                    alert("Erreur lors de la sauvegarde complète dans Firebase.");
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalHtml;
+                }
+            }
+
+            async addNewWeek() {
                 const lastItem = this.scheduleData[this.scheduleData.length - 1];
                 let lastDate = new Date(lastItem.weekKey);
                 lastDate.setDate(lastDate.getDate() + 7);
@@ -333,13 +412,24 @@
                 };
 
                 this.scheduleData.push(newWeekObj);
-                this.scheduleData.sort((a, b) => a.weekKey.localeCompare(b.weekKey));
 
-                this.saveDataToLocalStorage();
-                this.updateDateSelect(weekKey);
-                this.renderTable();
-                this.updateCompletedCountHeader();
-                this.showToast("Nouvelle semaine ajoutée avec succès !");
+                try {
+                    const docRef = doc(db, 'roulement', weekKey);
+                    await setDoc(docRef, {
+                        weekKey: weekKey,
+                        week: weekLabel,
+                        assignments: newAssignments,
+                        logs: {}
+                    });
+
+                    this.updateDateSelect(weekKey);
+                    this.renderTable();
+                    this.updateCompletedCountHeader();
+                    this.showToast("Nouvelle semaine ajoutée et synchronisée !");
+                } catch (error) {
+                    console.error("Erreur ajout semaine Firestore:", error);
+                    alert("Erreur lors de l'enregistrement de la nouvelle semaine.");
+                }
             }
 
             updateCompletedCountHeader() {
@@ -558,7 +648,7 @@
                 document.getElementById('log-modal').classList.add('hidden');
             }
 
-            saveLogLocally() {
+            async saveLogToFirebase() {
                 const weekIndex = parseInt(document.getElementById('modal-week-index').value);
                 const supName = document.getElementById('modal-supervisor-select').value;
                 const checkboxCompleted = document.getElementById('modal-checkbox-completed').checked;
@@ -579,11 +669,30 @@
                     updatedAt: new Date().toISOString()
                 };
 
-                this.saveDataToLocalStorage();
-                this.closeModal();
-                this.renderTable();
-                this.updateCompletedCountHeader();
-                this.showToast("Enregistrement local effectué avec succès !");
+                const saveBtn = document.getElementById('modal-save-btn');
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+
+                try {
+                    const docRef = doc(db, 'roulement', weekItem.weekKey);
+                    await setDoc(docRef, {
+                        weekKey: weekItem.weekKey,
+                        week: weekItem.week,
+                        assignments: weekItem.assignments,
+                        logs: weekItem.logs
+                    }, { merge: true });
+
+                    this.closeModal();
+                    this.renderTable();
+                    this.updateCompletedCountHeader();
+                    this.showToast("Enregistrement effectué avec succès !");
+                } catch (error) {
+                    console.error("Erreur sauvegarde Firestore:", error);
+                    alert("Erreur lors de l'enregistrement dans Firebase.");
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Enregistrer';
+                }
             }
 
             showToast(message) {
@@ -597,7 +706,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            new RoulementLocalApp();
+            new RoulementFirebaseApp();
         });
     </script>
 </body>
