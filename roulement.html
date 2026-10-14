@@ -11,7 +11,7 @@
     <!-- Fichier CSS externe unique -->
     <link rel="stylesheet" href="style1.css">
     <style>
-        /* Styles spécifiques au modal d'objectifs pour assurer un bon affichage */
+        /* Styles spécifiques au modal d'objectifs */
         .objectif-input-group {
             margin-bottom: 12px;
             background: #f8fafc;
@@ -32,6 +32,13 @@
             outline: none;
             border-color: #6366f1;
             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+        /* Curseur pour indiquer que l'en-tête est déplaçable */
+        #objectif-modal .modal-header {
+            cursor: grab;
+        }
+        #objectif-modal .modal-header:active {
+            cursor: grabbing;
         }
         /* Style pour l'affichage de l'objectif dans le modal de consignation */
         .modal-objective-display {
@@ -61,7 +68,6 @@
                 </div>
             </div>
             <div class="header-actions">
-                <!-- Sélecteur de date pour le résumé -->
                 <div class="date-select-wrapper">
                     <label for="summary-date-select">Semaine du :</label>
                     <select id="summary-date-select">
@@ -173,7 +179,7 @@
             <div class="modal-footer">
                 <button id="btn-cancel-objectif" class="btn btn-slate-outline">Annuler</button>
                 <button id="btn-save-objectif" class="btn" style="background-color: #f59e0b; color: white;">
-                    <i class="fa-solid fa-floppy-disk"></i> Enregistrer
+                    <i class="fa-solid fa-floppy-disk"></i> Sauvegarder et fermer
                 </button>
             </div>
         </div>
@@ -318,6 +324,57 @@
                 this.populateDropdowns();
                 this.loadDataFromFirebase();
                 this.initEvents();
+                this.makeModalDraggable('objectif-modal');
+            }
+
+            // Fonction générique pour rendre un modal déplaçable
+            makeModalDraggable(modalId) {
+                const modal = document.getElementById(modalId);
+                const content = modal.querySelector('.modal-content');
+                const header = modal.querySelector('.modal-header');
+
+                let isDragging = false;
+                let currentX = 0;
+                let currentY = 0;
+                let initialX = 0;
+                let initialY = 0;
+                let xOffset = 0;
+                let yOffset = 0;
+
+                header.addEventListener("mousedown", (e) => {
+                    // Empêcher le déplacement si on clique sur le bouton fermer
+                    if(e.target.closest('.modal-close-btn')) return;
+                    
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                    isDragging = true;
+                });
+
+                document.addEventListener("mouseup", () => {
+                    initialX = currentX;
+                    initialY = currentY;
+                    isDragging = false;
+                });
+
+                document.addEventListener("mousemove", (e) => {
+                    if (isDragging) {
+                        e.preventDefault();
+                        currentX = e.clientX - initialX;
+                        currentY = e.clientY - initialY;
+                        xOffset = currentX;
+                        yOffset = currentY;
+                        content.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+                    }
+                });
+
+                // Fonction de réinitialisation à attacher au modal
+                modal.resetPosition = () => {
+                    xOffset = 0;
+                    yOffset = 0;
+                    currentX = 0;
+                    currentY = 0;
+                    content.style.transform = `translate3d(0px, 0px, 0px)`;
+                };
             }
 
             populateDropdowns() {
@@ -602,6 +659,10 @@
             }
 
             openObjectifModal() {
+                const modal = document.getElementById('objectif-modal');
+                // Réinitialise la position du modal à chaque ouverture
+                if (modal.resetPosition) modal.resetPosition();
+
                 const weekSelect = document.getElementById('objectif-week-select');
                 weekSelect.innerHTML = '';
                 
@@ -619,7 +680,7 @@
                 }
 
                 this.populateObjectifInputs();
-                document.getElementById('objectif-modal').classList.remove('hidden');
+                modal.classList.remove('hidden');
             }
 
             populateObjectifInputs() {
@@ -662,7 +723,7 @@
 
                 const saveBtn = document.getElementById('btn-save-objectif');
                 saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sauvegarde...';
 
                 try {
                     const docRef = doc(db, 'roulement', weekItem.weekKey);
@@ -670,7 +731,7 @@
                         objectives: weekItem.objectives
                     }, { merge: true });
 
-                    this.closeObjectifModal();
+                    this.closeObjectifModal(); // Ferme le modal après la sauvegarde
                     this.renderTable();
                     this.showToast("Objectifs enregistrés avec succès !");
                 } catch (error) {
@@ -678,7 +739,7 @@
                     alert("Erreur lors de l'enregistrement des objectifs.");
                 } finally {
                     saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Enregistrer';
+                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Sauvegarder et fermer';
                 }
             }
 
@@ -699,8 +760,6 @@
                     weekItem.assignments.forEach((task, sIdx) => {
                         const supName = SUPERVISORS[sIdx];
                         const log = weekItem.logs && weekItem.logs[supName];
-                        
-                        // On récupère l'objectif lié à la tâche pour afficher ou non l'icône
                         const obj = weekItem.objectives && weekItem.objectives[task];
                         
                         let tileClass = "task-tile default";
@@ -722,7 +781,6 @@
                             }
                         }
 
-                        // Ajout d'une cible orange à côté du nom de la tâche si un objectif est défini
                         let objectiveIndicator = (obj && obj.trim() !== "") ? '<i class="fa-solid fa-bullseye" style="color: #f59e0b; font-size: 0.9em; margin-left: 6px;" title="Objectif défini"></i>' : "";
 
                         html += `
