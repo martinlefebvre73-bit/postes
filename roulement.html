@@ -10,6 +10,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Fichier CSS externe unique -->
     <link rel="stylesheet" href="style1.css">
+    <style>
+        /* Styles spécifiques au modal d'objectifs pour assurer un bon affichage */
+        .objectif-input-group {
+            margin-bottom: 12px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .objectif-input {
+            width: 100%;
+            padding: 8px 12px;
+            margin-top: 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+        .objectif-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+        /* Style pour l'affichage de l'objectif dans le modal de consignation */
+        .modal-objective-display {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
 
@@ -36,6 +69,9 @@
                     </select>
                 </div>
                 <!-- Boutons d'action -->
+                <button id="btn-objectif" class="btn" style="background-color: #f59e0b; color: white;">
+                    <i class="fa-solid fa-bullseye"></i> Objectifs
+                </button>
                 <button id="btn-open-summary" class="btn btn-emerald">
                     <i class="fa-solid fa-file-lines"></i> Résumé
                 </button>
@@ -45,7 +81,6 @@
                 <button id="btn-refresh" class="btn btn-slate-outline">
                     <i class="fa-solid fa-rotate-right"></i> Actualiser
                 </button>
-                <!-- NOUVEAU BOUTON SAUVEGARDE GLOBALE -->
                 <button id="btn-save-all" class="btn btn-slate">
                     <i class="fa-solid fa-cloud-arrow-up text-blue"></i> Sauvegarder
                 </button>
@@ -112,6 +147,38 @@
         </div>
     </main>
 
+    <!-- Modal des Objectifs -->
+    <div id="objectif-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <i class="fa-solid fa-bullseye" style="color: #f59e0b;"></i>
+                    <h3>Définir les objectifs par tâche</h3>
+                </div>
+                <button id="btn-close-objectif-modal" class="modal-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body scrollable">
+                <div style="margin-bottom: 15px;">
+                    <p class="field-label">Semaine concernée</p>
+                    <select id="objectif-week-select" class="objectif-input" style="margin-top: 4px;">
+                        <!-- Filled dynamically -->
+                    </select>
+                </div>
+                <div id="objectif-inputs-container">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-objectif" class="btn btn-slate-outline">Annuler</button>
+                <button id="btn-save-objectif" class="btn" style="background-color: #f59e0b; color: white;">
+                    <i class="fa-solid fa-floppy-disk"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de consignation / modification -->
     <div id="log-modal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -143,8 +210,14 @@
                     </div>
                 </div>
 
+                <!-- Affichage de l'objectif dans le modal de consignation -->
+                <div id="modal-objective-container" class="modal-objective-display" style="display: none;">
+                    <p class="field-label" style="color: #d97706; margin-bottom: 4px; font-size: 0.85em;"><i class="fa-solid fa-bullseye"></i> Objectif de la tâche</p>
+                    <p id="modal-objective-text" style="font-size: 0.95em; color: #451a03; font-style: italic;">-</p>
+                </div>
+
                 <!-- Case à cocher pour consigner/valider rapidement -->
-                <div class="checkbox-container">
+                <div class="checkbox-container" style="margin-top: 15px;">
                     <input type="checkbox" id="modal-checkbox-completed">
                     <label for="modal-checkbox-completed">
                         Marquer cette tâche comme <span class="text-emerald">Réalisée / Validée</span>
@@ -239,7 +312,8 @@
             constructor() {
                 this.scheduleData = JSON.parse(JSON.stringify(BASE_SCHEDULE)).map(item => ({
                     ...item,
-                    logs: {}
+                    logs: {},
+                    objectives: {} 
                 }));
                 this.populateDropdowns();
                 this.loadDataFromFirebase();
@@ -279,7 +353,6 @@
                 document.getElementById('btn-refresh').addEventListener('click', () => this.loadDataFromFirebase());
                 document.getElementById('btn-add-week').addEventListener('click', () => this.addNewWeek());
                 
-                // NOUVEAU BOUTON SAUVEGARDE GLOBALE
                 document.getElementById('btn-save-all').addEventListener('click', () => this.saveAllToFirebase());
                 
                 document.getElementById('btn-open-summary').addEventListener('click', () => this.openSummaryModal());
@@ -288,11 +361,16 @@
 
                 document.getElementById('btn-close-modal').addEventListener('click', () => this.closeModal());
                 document.getElementById('btn-cancel-modal').addEventListener('click', () => this.closeModal());
-                
-                // Sauvegarde individuelle via la tuile
                 document.getElementById('modal-save-btn').addEventListener('click', () => this.saveLogToFirebase());
 
                 document.getElementById('modal-supervisor-select').addEventListener('change', () => this.updateModalTaskDisplay());
+
+                // Événements du modal d'objectifs
+                document.getElementById('btn-objectif').addEventListener('click', () => this.openObjectifModal());
+                document.getElementById('btn-close-objectif-modal').addEventListener('click', () => this.closeObjectifModal());
+                document.getElementById('btn-cancel-objectif').addEventListener('click', () => this.closeObjectifModal());
+                document.getElementById('btn-save-objectif').addEventListener('click', () => this.saveObjectifsToFirebase());
+                document.getElementById('objectif-week-select').addEventListener('change', () => this.populateObjectifInputs());
 
                 const checkboxCompleted = document.getElementById('modal-checkbox-completed');
                 const statusSelect = document.getElementById('modal-status');
@@ -327,13 +405,15 @@
                             const found = this.scheduleData.find(s => s.weekKey === remoteItem.weekKey);
                             if (found) {
                                 found.logs = remoteItem.logs || {};
+                                found.objectives = remoteItem.objectives || {};
                                 found.assignments = remoteItem.assignments || found.assignments;
                             } else {
                                 this.scheduleData.push({
                                     weekKey: remoteItem.weekKey,
                                     week: remoteItem.week,
                                     assignments: remoteItem.assignments,
-                                    logs: remoteItem.logs || {}
+                                    logs: remoteItem.logs || {},
+                                    objectives: remoteItem.objectives || {}
                                 });
                             }
                         });
@@ -354,7 +434,6 @@
                 }
             }
 
-            // FONCTION DE SAUVEGARDE GLOBALE DANS FIREBASE
             async saveAllToFirebase() {
                 const saveBtn = document.getElementById('btn-save-all');
                 const originalHtml = saveBtn.innerHTML;
@@ -363,14 +442,14 @@
                 saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sauvegarde...';
 
                 try {
-                    // Parcourt toutes les semaines et les envoie à Firestore
                     const promises = this.scheduleData.map(weekItem => {
                         const docRef = doc(db, 'roulement', weekItem.weekKey);
                         return setDoc(docRef, {
                             weekKey: weekItem.weekKey,
                             week: weekItem.week,
                             assignments: weekItem.assignments,
-                            logs: weekItem.logs || {}
+                            logs: weekItem.logs || {},
+                            objectives: weekItem.objectives || {}
                         }, { merge: true });
                     });
                     
@@ -408,7 +487,8 @@
                     weekKey: weekKey,
                     week: weekLabel,
                     assignments: newAssignments,
-                    logs: {}
+                    logs: {},
+                    objectives: {}
                 };
 
                 this.scheduleData.push(newWeekObj);
@@ -419,7 +499,8 @@
                         weekKey: weekKey,
                         week: weekLabel,
                         assignments: newAssignments,
-                        logs: {}
+                        logs: {},
+                        objectives: {}
                     });
 
                     this.updateDateSelect(weekKey);
@@ -463,12 +544,13 @@
                         <span class="summary-period-value">Semaine du ${weekItem.week}</span>
                     </div>
                     <div class="summary-list">
-                        <h4 class="summary-list-title">Détail des tâches et actions des superviseurs :</h4>
+                        <h4 class="summary-list-title">Détail des tâches et actions :</h4>
                 `;
 
                 weekItem.assignments.forEach((task, sIdx) => {
                     const supName = SUPERVISORS[sIdx];
                     const log = weekItem.logs && weekItem.logs[supName];
+                    const obj = weekItem.objectives && weekItem.objectives[task];
 
                     let statusText = "Non consigné / En attente";
                     let statusClass = "status-badge pending";
@@ -490,6 +572,7 @@
                     }
 
                     const notes = log && log.notes ? log.notes : "Aucune note enregistrée pour cette tâche.";
+                    const objectiveText = obj ? `<p style="font-size: 0.85em; color: #f59e0b; margin-top: 5px;"><i class="fa-solid fa-bullseye"></i> <strong>Objectif de la tâche :</strong> ${obj}</p>` : "";
 
                     html += `
                         <div class="summary-item-card">
@@ -501,7 +584,8 @@
                                 <span class="${statusClass}">${statusText}</span>
                             </div>
                             <div>
-                                <p class="summary-notes-label">Notes et détails des actions :</p>
+                                ${objectiveText}
+                                <p class="summary-notes-label" style="margin-top: 8px;">Notes et détails des actions :</p>
                                 <p class="summary-notes-text">"${notes}"</p>
                             </div>
                         </div>
@@ -515,6 +599,87 @@
 
             closeSummaryModal() {
                 document.getElementById('summary-modal').classList.add('hidden');
+            }
+
+            openObjectifModal() {
+                const weekSelect = document.getElementById('objectif-week-select');
+                weekSelect.innerHTML = '';
+                
+                this.scheduleData.forEach((item, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = index;
+                    opt.textContent = `Semaine du ${item.week}`;
+                    weekSelect.appendChild(opt);
+                });
+                
+                const currentSummaryWeekKey = document.getElementById('summary-date-select').value;
+                const currentIdx = this.scheduleData.findIndex(s => s.weekKey === currentSummaryWeekKey);
+                if (currentIdx !== -1) {
+                    weekSelect.value = currentIdx;
+                }
+
+                this.populateObjectifInputs();
+                document.getElementById('objectif-modal').classList.remove('hidden');
+            }
+
+            populateObjectifInputs() {
+                const weekIdx = document.getElementById('objectif-week-select').value;
+                const weekItem = this.scheduleData[weekIdx];
+                const container = document.getElementById('objectif-inputs-container');
+                container.innerHTML = '';
+
+                SUPERVISORS.forEach((supName, sIdx) => {
+                    const task = weekItem.assignments[sIdx];
+                    const currentObj = (weekItem.objectives && weekItem.objectives[task]) ? weekItem.objectives[task] : "";
+
+                    container.innerHTML += `
+                        <div class="objectif-input-group">
+                            <label class="block-label" style="font-size: 0.85em; color: #334155;">
+                                Objectif pour la tâche : <strong style="color:#2563eb;">${task}</strong> 
+                                <span style="font-size: 0.9em; color: #64748b;">(Assignée à ${supName})</span>
+                            </label>
+                            <input type="text" id="obj-input-${sIdx}" class="objectif-input" value="${currentObj}" placeholder="Définir un objectif clair pour cette tâche...">
+                        </div>
+                    `;
+                });
+            }
+
+            closeObjectifModal() {
+                document.getElementById('objectif-modal').classList.add('hidden');
+            }
+
+            async saveObjectifsToFirebase() {
+                const weekIdx = document.getElementById('objectif-week-select').value;
+                const weekItem = this.scheduleData[weekIdx];
+                
+                if (!weekItem.objectives) weekItem.objectives = {};
+
+                SUPERVISORS.forEach((supName, sIdx) => {
+                    const task = weekItem.assignments[sIdx];
+                    const val = document.getElementById(`obj-input-${sIdx}`).value.trim();
+                    weekItem.objectives[task] = val;
+                });
+
+                const saveBtn = document.getElementById('btn-save-objectif');
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+
+                try {
+                    const docRef = doc(db, 'roulement', weekItem.weekKey);
+                    await setDoc(docRef, {
+                        objectives: weekItem.objectives
+                    }, { merge: true });
+
+                    this.closeObjectifModal();
+                    this.renderTable();
+                    this.showToast("Objectifs enregistrés avec succès !");
+                } catch (error) {
+                    console.error("Erreur sauvegarde objectifs:", error);
+                    alert("Erreur lors de l'enregistrement des objectifs.");
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Enregistrer';
+                }
             }
 
             renderTable() {
@@ -534,6 +699,10 @@
                     weekItem.assignments.forEach((task, sIdx) => {
                         const supName = SUPERVISORS[sIdx];
                         const log = weekItem.logs && weekItem.logs[supName];
+                        
+                        // On récupère l'objectif lié à la tâche pour afficher ou non l'icône
+                        const obj = weekItem.objectives && weekItem.objectives[task];
+                        
                         let tileClass = "task-tile default";
                         let statusIcon = "";
 
@@ -553,10 +722,13 @@
                             }
                         }
 
+                        // Ajout d'une cible orange à côté du nom de la tâche si un objectif est défini
+                        let objectiveIndicator = (obj && obj.trim() !== "") ? '<i class="fa-solid fa-bullseye" style="color: #f59e0b; font-size: 0.9em; margin-left: 6px;" title="Objectif défini"></i>' : "";
+
                         html += `
                             <td>
                                 <div data-week="${index}" data-sup="${sIdx}" class="${tileClass}" title="Cliquer pour consigner ou modifier">
-                                    <span class="tile-task-text">${task}</span>
+                                    <span class="tile-task-text">${task} ${objectiveIndicator}</span>
                                     <span class="tile-sup-text">${supName} ${statusIcon}</span>
                                 </div>
                             </td>
@@ -616,6 +788,18 @@
                 
                 const assignedTask = weekItem.assignments[supIdx];
                 document.getElementById('modal-assigned-task').innerText = assignedTask;
+
+                // Affichage de l'objectif de la tâche uniquement dans le modal
+                const obj = weekItem.objectives && weekItem.objectives[assignedTask];
+                const objContainer = document.getElementById('modal-objective-container');
+                const objText = document.getElementById('modal-objective-text');
+                
+                if (obj && obj.trim() !== "") {
+                    objText.innerText = obj;
+                    objContainer.style.display = 'block';
+                } else {
+                    objContainer.style.display = 'none';
+                }
 
                 const log = weekItem.logs && weekItem.logs[supName];
                 const saveBtn = document.getElementById('modal-save-btn');
@@ -679,7 +863,8 @@
                         weekKey: weekItem.weekKey,
                         week: weekItem.week,
                         assignments: weekItem.assignments,
-                        logs: weekItem.logs
+                        logs: weekItem.logs,
+                        objectives: weekItem.objectives || {}
                     }, { merge: true });
 
                     this.closeModal();
