@@ -268,15 +268,15 @@
 
                 <!-- Bloc optionnel pour SST -->
                 <div id="blocSstOptions" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
-                    <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :[cite: 1]</label>
+                    <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :</label>
                     <div class="d-flex gap-4 mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="graviteSst" id="sstMineur" value="Mineur" checked>
-                            <label class="form-check-label text-light" for="sstMineur">Mineur[cite: 1]</label>
+                            <label class="form-check-label text-light" for="sstMineur">Mineur</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="graviteSst" id="sstMajeur" value="Majeur">
-                            <label class="form-check-label text-light" for="sstMajeur">Majeur[cite: 1]</label>
+                            <label class="form-check-label text-light" for="sstMajeur">Majeur</label>
                         </div>
                     </div>
 
@@ -429,15 +429,15 @@
                         </div>
 
                         <div id="blocSstOptionsEdit" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
-                            <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :[cite: 1]</label>
+                            <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :</label>
                             <div class="d-flex gap-4">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="graviteSstEdit" id="editSstMineur" value="Mineur" checked>
-                                    <label class="form-check-label text-light" for="editSstMineur">Mineur[cite: 1]</label>
+                                    <label class="form-check-label text-light" for="editSstMineur">Mineur</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="graviteSstEdit" id="editSstMajeur" value="Majeur">
-                                    <label class="form-check-label text-light" for="editSstMajeur">Majeur[cite: 1]</label>
+                                    <label class="form-check-label text-light" for="editSstMajeur">Majeur</label>
                                 </div>
                             </div>
                         </div>
@@ -1060,7 +1060,30 @@
                 querySnapshot.forEach((docSnap) => {
                     let data = docSnap.data();
                     let matchType = !typeChoisi || typeChoisi === "Toutes" || (data.typeIntervention || '').trim().toLowerCase() === typeChoisi.toLowerCase();
-                    let matchAnciennete = !filtreAnciennete || (data.anciennete || '').toLowerCase().includes(filtreAnciennete);
+                    
+                    // NOUVELLE LOGIQUE POUR L'ANCIENNETÉ
+                    let matchAnciennete = true;
+                    if (filtreAnciennete) {
+                        let strAnc = (data.anciennete || '').toLowerCase();
+                        let valAnciennete = parseFloat(strAnc.replace(',', '.')); 
+                        
+                        if (strAnc.includes('mois') && !isNaN(parseFloat(strAnc))) {
+                            valAnciennete = parseFloat(strAnc) / 12;
+                        } else if (isNaN(valAnciennete)) {
+                            valAnciennete = 0;
+                        }
+
+                        if (filtreAnciennete === "1 ans") matchAnciennete = valAnciennete <= 1;
+                        else if (filtreAnciennete === "2 ans") matchAnciennete = valAnciennete > 1 && valAnciennete <= 2;
+                        else if (filtreAnciennete === "3 ans") matchAnciennete = valAnciennete > 2 && valAnciennete <= 3;
+                        else if (filtreAnciennete === "4 ans") matchAnciennete = valAnciennete > 3 && valAnciennete <= 4;
+                        else if (filtreAnciennete === "5 ans") matchAnciennete = valAnciennete > 4 && valAnciennete <= 5;
+                        else if (filtreAnciennete === "10 ans") matchAnciennete = valAnciennete > 5 && valAnciennete <= 10;
+                        else if (filtreAnciennete === "15 ans") matchAnciennete = valAnciennete > 10 && valAnciennete <= 15;
+                        else if (filtreAnciennete === "20 ans") matchAnciennete = valAnciennete > 15 && valAnciennete <= 20;
+                        else if (filtreAnciennete === "25 ans") matchAnciennete = valAnciennete > 20 && valAnciennete <= 25;
+                        else if (filtreAnciennete === "30ans et plus") matchAnciennete = valAnciennete > 25; 
+                    }
                     
                     let matchGravite = true;
                     if (filtreGravite) {
