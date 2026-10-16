@@ -6,28 +6,6 @@
     <title>Feuille de Contrôle & Accueil CQ</title>
     <!-- Tailwind CSS CDN -->
     <link rel="stylesheet" href="style2.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-full flex flex-col justify-between">
 
@@ -130,7 +108,7 @@
                     </div>
 
                     <!-- Quarts de route 1/4 -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 tile-pale">
                         <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Quarts de route (1/4)</span>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
@@ -153,7 +131,7 @@
                     </div>
 
                     <!-- Fractionnement alternatif 1/3 -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 tile-pale">
                         <span class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">Fractionnement alternatif (1/3)</span>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <label class="flex items-center space-x-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition shadow-sm">
@@ -331,11 +309,17 @@
                         </div>
                     </div>
 
-                    <!-- Texte libre -->
-                    <div>
-                        <label for="observations-textarea" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Observations / Commentaires libres</label>
+                    <!-- Texte libre / Observations avec Dictée -->
+                    <div class="tile-pale p-4 rounded-xl border border-slate-200 mt-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <label for="observations-textarea" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Observations / Commentaires libres</label>
+                            <button type="button" id="btn-dictation" class="text-xs bg-slate-800 hover:bg-slate-700 text-brand-400 px-3 py-1.5 rounded-lg flex items-center space-x-2 transition border border-slate-700 shadow-sm" title="Activer la dictée vocale">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                                <span id="dictation-status" class="font-medium">Dictée</span>
+                            </button>
+                        </div>
                         <textarea id="observations-textarea" rows="3" placeholder="Saisir les remarques particulières, incidents ou détails logistiques..."
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm"></textarea>
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-brand-500 focus:border-brand-500 p-3 transition shadow-sm tile-pale-input"></textarea>
                     </div>
                 </div>
 
@@ -426,13 +410,11 @@
             measurementId: "G-83YPF62ET5"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const COLLECTION_NAME = "acceuilcq";
 
-        // Détection du Mode Chef via l'URL (?mode=chef)
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('mode') === 'chef') {
             const chefStatsContainer = document.getElementById('chef-stats-container');
@@ -489,7 +471,6 @@
             }
         }
 
-        // Gestion de l'affichage dynamique des sections Ramassage et BLP
         const pickupCheckbox = document.getElementById('pickup-checkbox');
         const ramassageSectionContainer = document.getElementById('ramassage-section-container');
         const blpCheckbox = document.getElementById('blp-checkbox');
@@ -512,7 +493,6 @@
         pickupCheckbox.addEventListener('change', toggleSections);
         blpCheckbox.addEventListener('change', toggleSections);
 
-        // Liste personnalisée des numéros de route fournis
         const routeList = [
             "001", "002", "003", "004", "005", "006", "007", "008", "009", "010",
             "011", "012", "013", "014", "015", "016", "017", "018", "019", "020",
@@ -536,12 +516,10 @@
             routeSelect.appendChild(option);
         });
 
-        // Initialisation de la date du jour
         const dateInput = document.getElementById('date-input');
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
 
-        // Horloge dynamique
         function updateClock() {
             const now = new Date();
             const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
@@ -551,7 +529,6 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // Gestion dynamique des lignes de Courrier de Quartier (CQ)
         document.getElementById('add-cq-row').addEventListener('click', () => {
             const container = document.getElementById('cq-rows-container');
             const newRow = document.createElement('div');
@@ -593,7 +570,6 @@
             container.appendChild(newRow);
         });
 
-        // Gestion dynamique des lignes de Ramassage
         document.getElementById('add-ramassage-row').addEventListener('click', () => {
             const container = document.getElementById('ramassage-rows-container');
             const newRow = document.createElement('div');
@@ -620,7 +596,6 @@
             container.appendChild(newRow);
         });
 
-        // Gestion dynamique des lignes BLP
         document.getElementById('add-blp-row').addEventListener('click', () => {
             const container = document.getElementById('blp-rows-container');
             const newRow = document.createElement('div');
@@ -639,7 +614,6 @@
             container.appendChild(newRow);
         });
 
-        // Suppression de lignes dynamiques (délégation d'événements)
         document.addEventListener('click', (e) => {
             if (e.target.closest('.remove-row-btn')) {
                 const row = e.target.closest('.cq-row');
@@ -667,7 +641,6 @@
             }
         });
 
-        // Modal de recherche
         const searchModal = document.getElementById('search-modal');
         document.getElementById('open-search-modal').addEventListener('click', () => {
             searchModal.classList.remove('hidden');
@@ -676,7 +649,6 @@
             searchModal.classList.add('hidden');
         });
 
-        // Exécution de la recherche dans Firebase
         document.getElementById('execute-search-btn').addEventListener('click', async () => {
             const queryVal = document.getElementById('search-query-input').value.trim().toLowerCase();
             const resultsContainer = document.getElementById('search-results-container');
@@ -721,7 +693,6 @@
             }
         });
 
-        // Charger les données d'un document Firestore dans le formulaire
         function loadFormDataToUI(docId, data) {
             document.getElementById('firebase-doc-id').value = docId;
             document.getElementById('date-input').value = data.date || today;
@@ -736,20 +707,16 @@
             blpCheckbox.checked = !!data.blp;
             toggleSections();
 
-            // Quarts 1/4
             document.querySelectorAll('input[name="quart_4"]').forEach(cb => {
                 cb.checked = data.quarts4 && data.quarts4.includes(cb.value);
             });
-            // Fractions 1/3
             document.querySelectorAll('input[name="fraction_3"]').forEach(cb => {
                 cb.checked = data.fractions3 && data.fractions3.includes(cb.value);
             });
-            // Tiers du jour CQ
             document.querySelectorAll('input[name="tier_jour"]').forEach(cb => {
                 cb.checked = data.tiersJour && data.tiersJour.includes(cb.value);
             });
 
-            // Recharger Courrier de quartier (CQ)
             const cqContainer = document.getElementById('cq-rows-container');
             cqContainer.innerHTML = '';
             if (data.cqRows && data.cqRows.length > 0) {
@@ -794,7 +761,6 @@
                 });
             }
 
-            // Recharger Ramassage
             const ramContainer = document.getElementById('ramassage-rows-container');
             ramContainer.innerHTML = '';
             if (data.ramassageRows && data.ramassageRows.length > 0) {
@@ -824,7 +790,6 @@
                 });
             }
 
-            // Recharger BLP Emplacements
             const blpContainer = document.getElementById('blp-rows-container');
             blpContainer.innerHTML = '';
             const blpList = data.blpRows || (data.blpEmplacement ? [{ emplacement: data.blpEmplacement }] : []);
@@ -847,21 +812,17 @@
                 });
             }
 
-            // Basculer l'UI en mode modification
             document.getElementById('form-mode-badge').textContent = "Mode Modification";
             document.getElementById('form-mode-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30";
             document.getElementById('submit-btn-text').textContent = "Mettre à jour dans Firebase";
         }
 
-        // Soumission du formulaire (Enregistrement ou Mise à jour dans Firebase)
         const form = document.getElementById('cq-form');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Collecte des données du formulaire
             const docId = document.getElementById('firebase-doc-id').value;
             
-            // Collecte des lignes CQ
             const cqRows = [];
             document.querySelectorAll('.cq-row').forEach(row => {
                 cqRows.push({
@@ -874,7 +835,6 @@
                 });
             });
 
-            // Collecte des lignes Ramassage
             const ramassageRows = [];
             document.querySelectorAll('.ramassage-row').forEach(row => {
                 ramassageRows.push({
@@ -884,7 +844,6 @@
                 });
             });
 
-            // Collecte des lignes BLP Emplacements
             const blpRows = [];
             document.querySelectorAll('.blp-row').forEach(row => {
                 blpRows.push({
@@ -917,16 +876,13 @@
 
             try {
                 if (docId) {
-                    // Mise à jour d'un enregistrement existant
                     await updateDoc(doc(db, COLLECTION_NAME, docId), formData);
                     showToast("Mise à jour réussie", `La fiche de ${formData.nom} a été modifiée dans Firebase.`);
                 } else {
-                    // Création d'un nouvel enregistrement dans collection 'acceuilcq'
                     formData.createdAt = new Date().toISOString();
                     const docRef = await addDoc(collection(db, COLLECTION_NAME), formData);
                     document.getElementById('firebase-doc-id').value = docRef.id;
                     
-                    // Basculer en mode modification pour le document créé
                     document.getElementById('form-mode-badge').textContent = "Mode Modification";
                     document.getElementById('form-mode-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30";
                     document.getElementById('submit-btn-text').textContent = "Mettre à jour dans Firebase";
@@ -942,14 +898,12 @@
             }
         });
 
-        // Bouton réinitialiser / nouveau
         document.getElementById('reset-btn').addEventListener('click', () => {
             form.reset();
             document.getElementById('firebase-doc-id').value = '';
             dateInput.value = today;
             toggleSections();
             
-            // Réinitialiser les sections dynamiques à 1 seule ligne par défaut
             document.getElementById('cq-rows-container').innerHTML = `
                 <div class="cq-row bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                     <div class="md:col-span-3">
@@ -1023,7 +977,6 @@
                 </div>
             `;
 
-            // Rétablir le badge mode création
             document.getElementById('form-mode-badge').textContent = "Mode Création";
             document.getElementById('form-mode-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30";
             document.getElementById('submit-btn-text').textContent = "Enregistrer dans Firebase";
@@ -1031,7 +984,6 @@
             showToast("Nouveau formulaire", "Les champs ont été réinitialisés.", true);
         });
 
-        // Fonction d'affichage des notifications Toast
         function showToast(title, message, isError = false) {
             const toast = document.getElementById('toast-notification');
             document.getElementById('toast-title').textContent = title;
@@ -1051,6 +1003,71 @@
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-24', 'opacity-0');
             }, 4000);
+        }
+
+        // --- Dictée Vocale ---
+        const btnDictation = document.getElementById('btn-dictation');
+        const dictationStatus = document.getElementById('dictation-status');
+        const obsTextarea = document.getElementById('observations-textarea');
+        let isRecording = false;
+        let recognition;
+
+        if (btnDictation && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'fr-CA'; 
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = function() {
+                isRecording = true;
+                btnDictation.classList.replace('text-brand-400', 'text-rose-500');
+                btnDictation.classList.add('animate-pulse');
+                dictationStatus.textContent = "Écoute...";
+                showToast("Dictée vocale", "Parlez maintenant...");
+            };
+
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    }
+                }
+                if (finalTranscript) {
+                    const currentVal = obsTextarea.value;
+                    obsTextarea.value = currentVal + (currentVal.endsWith(' ') || currentVal === '' ? '' : ' ') + finalTranscript;
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Erreur dictée: ", event.error);
+                stopDictation();
+            };
+
+            recognition.onend = function() {
+                stopDictation();
+            };
+            
+            function stopDictation() {
+                isRecording = false;
+                btnDictation.classList.replace('text-rose-500', 'text-brand-400');
+                btnDictation.classList.remove('animate-pulse');
+                dictationStatus.textContent = "Dictée";
+                if(recognition) {
+                    try { recognition.stop(); } catch(e) {}
+                }
+            }
+
+            btnDictation.addEventListener('click', () => {
+                if (isRecording) {
+                    stopDictation();
+                } else {
+                    try { recognition.start(); } catch(e) { console.error(e); }
+                }
+            });
+        } else if (btnDictation) {
+            btnDictation.style.display = 'none';
         }
     </script>
 
