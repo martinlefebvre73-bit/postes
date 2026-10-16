@@ -1061,18 +1061,35 @@
                     let data = docSnap.data();
                     let matchType = !typeChoisi || typeChoisi === "Toutes" || (data.typeIntervention || '').trim().toLowerCase() === typeChoisi.toLowerCase();
                     
-                    // NOUVELLE LOGIQUE POUR L'ANCIENNETÉ
+                    // CALCUL DE L'ANCIENNETÉ PAR ÉCART AVEC LA DATE DU JOUR
                     let matchAnciennete = true;
                     if (filtreAnciennete) {
-                        let strAnc = (data.anciennete || '').toLowerCase();
-                        let valAnciennete = parseFloat(strAnc.replace(',', '.')); 
+                        let strAnc = (data.anciennete || '').trim().toLowerCase();
+                        let valAnciennete = 0;
                         
-                        if (strAnc.includes('mois') && !isNaN(parseFloat(strAnc))) {
-                            valAnciennete = parseFloat(strAnc) / 12;
-                        } else if (isNaN(valAnciennete)) {
-                            valAnciennete = 0;
+                        // 1. Si la valeur est une Date d'embauche (ex: YYYY-MM-DD ou DD/MM/YYYY)
+                        let dateEmbauche = null;
+                        if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(strAnc)) {
+                            dateEmbauche = new Date(strAnc.replace(/\//g, '-'));
+                        } else if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/.test(strAnc)) {
+                            let parts = strAnc.split(/[-\/]/);
+                            dateEmbauche = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                         }
 
+                        if (dateEmbauche && !isNaN(dateEmbauche.getTime())) {
+                            let aujourdHui = new Date();
+                            let diffMs = aujourdHui - dateEmbauche;
+                            valAnciennete = diffMs > 0 ? diffMs / (1000 * 60 * 60 * 24 * 365.25) : 0;
+                        } 
+                        // 2. Si la valeur est déjà textuelle ("6 mois", "2 ans", "2.5")
+                        else if (strAnc.includes('mois') && !isNaN(parseFloat(strAnc))) {
+                            valAnciennete = parseFloat(strAnc) / 12;
+                        } else {
+                            valAnciennete = parseFloat(strAnc.replace(',', '.'));
+                            if (isNaN(valAnciennete)) valAnciennete = 0;
+                        }
+
+                        // Application des tranches d'ancienneté
                         if (filtreAnciennete === "1 ans") matchAnciennete = valAnciennete <= 1;
                         else if (filtreAnciennete === "2 ans") matchAnciennete = valAnciennete > 1 && valAnciennete <= 2;
                         else if (filtreAnciennete === "3 ans") matchAnciennete = valAnciennete > 2 && valAnciennete <= 3;
