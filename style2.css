@@ -3,36 +3,31 @@
 
 :root {
     /* Palette de couleurs - Thème Foncé */
-    --bg-body: #0f172a;        /* Fond principal très sombre (slate-900) */
-    --bg-header: #020617;      /* En-tête encore plus sombre (slate-950) */
-    --bg-card: #1e293b;        /* Fond des formulaires et cartes (slate-800) */
-    --bg-input: #334155;       /* Fond des champs de saisie (slate-700) */
+    --bg-body: #0f172a;        /* Fond principal (slate-900) */
+    --bg-header: #020617;      /* En-tête (slate-950) */
+    --bg-card: #1e293b;        /* Fond des formulaires (slate-800) */
+    --bg-input: #334155;       /* Fond des champs (slate-700) */
     --bg-hover: #475569;       /* Survol (slate-600) */
     
-    --text-main: #f8fafc;      /* Texte principal clair (slate-50) */
+    --text-main: #f8fafc;      /* Texte clair (slate-50) */
     --text-muted: #94a3b8;     /* Texte secondaire (slate-400) */
-    --text-highlight: #38bdf8; /* Accentuation texte (sky-400) */
+    --text-highlight: #38bdf8; /* Accentuation (sky-400) */
     
-    --border-color: #334155;   /* Bordures discrètes (slate-700) */
-    --border-focus: #10b981;   /* Focus des champs (emerald-500) */
+    --border-color: #334155;   /* Bordures (slate-700) */
+    --border-focus: #10b981;   /* Focus (emerald-500) */
     
-    /* Boutons de couleur vibrants */
-    --btn-primary-bg: #10b981; /* Bouton principal (Vert Émeraude) */
+    --btn-primary-bg: #10b981; 
     --btn-primary-hover: #059669; 
-    --btn-accent-bg: #6366f1;  /* Boutons d'ajout (Indigo) */
+    --btn-accent-bg: #6366f1;  
     --btn-accent-hover: #4f46e5;
-    --btn-danger: #ef4444;     /* Boutons de suppression (Rouge) */
+    --btn-danger: #ef4444;     
     
-    /* Ombres */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
     --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.4);
 }
 
-/* =========================================
-   1. RESET & BASE (Garantie Hors Ligne)
-========================================= */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { 
     font-family: 'Inter', sans-serif; 
@@ -44,26 +39,32 @@ body {
 }
 svg { display: block; }
 
-/* =========================================
-   2. SURCHARGES DU THÈME FONCÉ
-========================================= */
-/* Arrière-plans des conteneurs existants */
 .bg-white, .bg-slate-50, .bg-slate-100 { background-color: var(--bg-card) !important; }
 .bg-slate-900 { background-color: var(--bg-header) !important; }
 .bg-slate-800 { background-color: var(--bg-card) !important; border-color: var(--border-color) !important;}
 .bg-brand-50, .bg-blue-50\/30 { background-color: rgba(30, 41, 59, 0.5) !important; }
 
-/* Bordures */
+/* NOUVEAU: Tuiles plus pâles pour contraste (slate-700) */
+.tile-pale {
+    background-color: #334155 !important; 
+    border-color: #475569 !important;
+}
+.tile-pale-input {
+    background-color: #1e293b !important; 
+    border-color: #475569 !important;
+}
+.tile-pale-input:focus {
+    border-color: var(--border-focus) !important;
+}
+
 .border, .border-b, .border-t, .border-slate-100, .border-slate-200, .border-slate-300, .border-slate-700 {
     border-color: var(--border-color) !important;
 }
 
-/* Couleurs de texte existantes */
 .text-slate-800, .text-slate-900, .text-slate-700 { color: var(--text-main) !important; }
 .text-slate-600, .text-slate-500, .text-slate-400 { color: var(--text-muted) !important; }
 .text-brand-400, .text-brand-600 { color: var(--text-highlight) !important; }
 
-/* Formulaires : Inputs, Selects, Textareas */
 input[type="text"], input[type="date"], select, textarea {
     background-color: var(--bg-input) !important;
     color: var(--text-main) !important;
@@ -79,7 +80,6 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
 }
 
-/* Checkboxes */
 input[type="checkbox"] {
     width: 1.25rem;
     height: 1.25rem;
@@ -89,9 +89,6 @@ input[type="checkbox"] {
     border: 1px solid var(--border-color) !important;
 }
 
-/* =========================================
-   3. BOUTONS DE COULEUR (Présentation Pro)
-========================================= */
 button, .btn {
     cursor: pointer;
     transition: all 0.2s ease-in-out;
@@ -100,7 +97,6 @@ button, .btn {
     justify-content: center;
 }
 
-/* Bouton Principal de Soumission (Vert Émeraude Vibrant) */
 #submit-btn, .bg-gradient-to-r.from-brand-600.to-brand-700 {
     background: linear-gradient(135deg, var(--btn-primary-bg), #047857) !important;
     color: #ffffff !important;
@@ -115,7 +111,6 @@ button, .btn {
     box-shadow: var(--shadow-lg), 0 0 20px rgba(16, 185, 129, 0.6) !important;
 }
 
-/* Boutons d'Action (Ajout de ligne - Bleu Indigo Vibrant) */
 button.bg-slate-900, button.bg-slate-800, #add-cq-row, #add-ramassage-row, #add-blp-row, #execute-search-btn {
     background-color: var(--btn-accent-bg) !important;
     color: #ffffff !important;
@@ -127,7 +122,6 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
     transform: translateY(-1px);
 }
 
-/* Bouton Réinitialiser */
 #reset-btn {
     background-color: transparent !important;
     color: var(--text-main) !important;
@@ -138,21 +132,25 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
     color: #ffffff !important;
 }
 
-/* Boutons Supprimer (Rouge) */
 .text-rose-500 { color: var(--btn-danger) !important; }
 .text-rose-500:hover { color: #dc2626 !important; transform: scale(1.1); }
 
-/* Blocs Tiers du Jour (Ajustement contraste pour thème sombre) */
 .bg-orange-500 { background-color: #f97316 !important; color: white !important;}
-.bg-rose-300 { background-color: #be123c !important; color: white !important;} /* Assombri pour meilleur contraste */
-.bg-blue-600 { background-color: #2563eb !important; color: white !important;}
-.text-rose-950 { color: white !important; }
 
-/* =========================================
-   4. CLASSES DE STRUCTURE & MISE EN PAGE
-   (Remplace la librairie en mode hors ligne)
-========================================= */
-/* Flexbox */
+/* MODIFICATION : TUILE 2/3 EN ROSE PÂLE */
+.bg-rose-300 { 
+    background-color: #fecdd3 !important; /* Rose très pâle */
+    color: #881337 !important; /* Texte bordeaux foncé */
+}
+.bg-rose-300 input[type="checkbox"] {
+    background-color: white !important;
+    border-color: #fda4af !important;
+    accent-color: #e11d48 !important; 
+}
+
+.bg-blue-600 { background-color: #2563eb !important; color: white !important;}
+.text-rose-950 { color: #881337 !important; }
+
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .flex-grow { flex-grow: 1; }
@@ -161,8 +159,6 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
 .justify-end { justify-content: flex-end; }
-
-/* Grille */
 .grid { display: grid; }
 .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -179,35 +175,26 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
     .md\:col-span-4 { grid-column: span 4 / span 4; }
     .md\:col-span-11 { grid-column: span 11 / span 11; }
 }
-
-/* Espacements et Marges (Gaps, Space) */
 .gap-3 { gap: 0.75rem; }
 .gap-4 { gap: 1rem; }
 .gap-6 { gap: 1.5rem; }
-
 .space-x-1 > * + * { margin-left: 0.25rem; }
 .space-x-1\.5 > * + * { margin-left: 0.375rem; }
 .space-x-2 > * + * { margin-left: 0.5rem; }
 .space-x-3 > * + * { margin-left: 0.75rem; }
 .space-x-4 > * + * { margin-left: 1rem; }
-
 .space-y-2 > * + * { margin-top: 0.5rem; }
 .space-y-3 > * + * { margin-top: 0.75rem; }
 .space-y-4 > * + * { margin-top: 1rem; }
 .space-y-6 > * + * { margin-top: 1.5rem; }
-
-/* Dimensions */
 .w-full { width: 100%; }
 .w-2\.5 { width: 0.625rem; } .h-2\.5 { height: 0.625rem; }
 .w-3\.5 { width: 0.875rem; } .h-3\.5 { height: 0.875rem; }
 .w-4 { width: 1rem; } .h-4 { height: 1rem; }
 .w-5 { width: 1.25rem; } .h-5 { height: 1.25rem; }
-
 .max-w-4xl { max-width: 56rem; }
 .max-w-lg { max-width: 32rem; }
 .mx-auto { margin-left: auto; margin-right: auto; }
-
-/* Paddings & Margins */
 .p-1 { padding: 0.25rem; }
 .p-2 { padding: 0.5rem; }
 .p-2\.5 { padding: 0.625rem; }
@@ -215,13 +202,11 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
 .p-4 { padding: 1rem; }
 .p-5 { padding: 1.25rem; }
 .p-6 { padding: 1.5rem; }
-
 .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
 .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
 .px-4 { padding-left: 1rem; padding-right: 1rem; }
 .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
 .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-
 .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
 .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
 .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
@@ -229,21 +214,18 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
 .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
 .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
 .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-
 .pt-1 { padding-top: 0.25rem; }
 .pt-4 { padding-top: 1rem; }
 .pt-6 { padding-top: 1.5rem; }
 .pb-3 { padding-bottom: 0.75rem; }
 .pl-4 { padding-left: 1rem; }
-
 .mb-2 { margin-bottom: 0.5rem; }
 .mb-3 { margin-bottom: 0.75rem; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-6 { margin-bottom: 1.5rem; }
 .mt-1 { margin-top: 0.25rem; }
+.mt-4 { margin-top: 1rem; }
 .mt-12 { margin-top: 3rem; }
-
-/* Typographie */
 .text-\[10px\] { font-size: 10px; line-height: 14px; }
 .text-\[11px\] { font-size: 11px; line-height: 16px; }
 .text-xs { font-size: 0.75rem; line-height: 1rem; }
@@ -251,78 +233,38 @@ button.bg-slate-900:hover, #add-cq-row:hover, #add-ramassage-row:hover, #add-blp
 .text-base { font-size: 1rem; line-height: 1.5rem; }
 .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
 .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
 .font-bold { font-weight: 700; }
-
 .uppercase { text-transform: uppercase; }
 .tracking-wider { letter-spacing: 0.05em; }
 .tracking-tight { letter-spacing: -0.025em; }
 .text-center { text-align: center; }
-
-/* Arrondis */
 .rounded { border-radius: 0.25rem; }
 .rounded-lg { border-radius: 0.5rem; }
 .rounded-xl { border-radius: 0.75rem; }
 .rounded-2xl { border-radius: 1rem; }
 .rounded-full { border-radius: 9999px; }
-
-/* Ombres Spécifiques */
 .shadow-sm { box-shadow: var(--shadow-sm); }
 .shadow-md { box-shadow: var(--shadow-md); }
 .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6); }
 .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
-
-/* Utilitaires divers */
 .hidden { display: none !important; }
 .block { display: block; }
 .inline-flex { display: inline-flex; }
-
-/* Transitions & Animations */
 .transition { transition: all 0.2s ease-in-out; }
 .transform { transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) scale(var(--tw-scale-x, 1)); }
 .hover\:-translate-y-0\.5:hover { --tw-translate-y: -0.125rem; }
 .active\:scale-95:active { --tw-scale-x: 0.95; transform: scale(0.95); }
-
-@keyframes pulse {
-    50% { opacity: .5; }
-}
+@keyframes pulse { 50% { opacity: .5; } }
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-
-@keyframes ping {
-    75%, 100% { transform: scale(2); opacity: 0; }
-}
+@keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
 .animate-ping { animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
-
-/* =========================================
-   5. COMPOSANTS SPÉCIFIQUES & MODALS
-========================================= */
-/* Modals (Fenêtre de recherche) */
-#search-modal {
-    background-color: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(4px);
-}
-#search-modal > div {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-}
-
-/* Toast Notifications */
-#toast-notification > div {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
-}
-
-/* Custom Scrollbar pour un look pro */
+#search-modal { background-color: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); }
+#search-modal > div { background-color: var(--bg-card); border: 1px solid var(--border-color); }
+#toast-notification > div { background-color: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-body); }
 ::-webkit-scrollbar-thumb { background: var(--bg-input); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
-
-/* Badges mode création / modification */
-#form-mode-badge {
-    background-color: rgba(16, 185, 129, 0.15) !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
-}
+#form-mode-badge { background-color: rgba(16, 185, 129, 0.15) !important; border-color: rgba(16, 185, 129, 0.3) !important; }
