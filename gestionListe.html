@@ -10,7 +10,7 @@
         form, .search-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="email"], input[type="tel"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"], input[type="email"], input[type="tel"], input[type="date"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         .checkbox-group { display: flex; align-items: center; gap: 10px; }
         .checkbox-group input { width: 20px; height: 20px; }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
@@ -25,6 +25,7 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-retour { background-color: #607d8b; text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px; font-size: 14px; }
         .btn-retour:hover { background-color: #455a64; }
+        .print-section { display: flex; gap: 10px; align-items: center; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -84,11 +85,16 @@
         <button type="button" id="cancelBtn" class="btn-cancel" style="display:none;" onclick="resetForm()">Annuler</button>
     </form>
 
-    <!-- Section de recherche -->
+    <!-- Section de recherche et d'impression -->
     <div class="search-container">
         <div class="form-group" style="margin-bottom: 0;">
             <label for="searchInput">Rechercher un employé :</label>
             <input type="text" id="searchInput" placeholder="Filtrer par nom ou par ID employé..." oninput="filterEmployees()">
+        </div>
+        <div class="print-section">
+            <label for="printDate" style="margin: 0;">Date d'impression :</label>
+            <input type="date" id="printDate" style="width: auto;">
+            <button type="button" onclick="imprimerListe()" style="background-color: #2196F3;">🖨️ Imprimer Liste</button>
         </div>
     </div>
 
@@ -143,6 +149,9 @@
                 window.location.href = 'index.html';
             }
         });
+
+        // Initialiser la date du jour par défaut pour l'impression
+        document.getElementById('printDate').valueAsDate = new Date();
 
         // Fonction pour charger la collection 'employes'
         async function loadEmployees() {
@@ -267,6 +276,75 @@
             formTitle.textContent = "Ajouter un employé";
             submitBtn.textContent = "Ajouter l'employé";
             cancelBtn.style.display = "none";
+        }
+
+        // Fonction d'impression de la liste
+        window.imprimerListe = function() {
+            const printDate = document.getElementById('printDate').value;
+            if (!printDate) {
+                alert("Veuillez sélectionner une date pour l'impression.");
+                return;
+            }
+
+            // Exclure les employés qui ont quitté le dépôt de l'impression (optionnel, mais logique pour une liste active)
+            const employesActifs = allEmployees.filter(emp => !emp.quitteDepot);
+
+            let printWindow = window.open('', '_blank');
+            let htmlContent = `
+                <html>
+                <head>
+                    <title>Liste des employés - ${printDate}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { text-align: center; color: #333; }
+                        h3 { text-align: center; color: #666; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Liste des employés</h1>
+                    <h3>Date d'impression : ${printDate}</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Employé</th>
+                                <th>Nom de l'employé</th>
+                                <th>Téléphone</th>
+                                <th>Route</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            employesActifs.forEach(emp => {
+                htmlContent += `
+                    <tr>
+                        <td>${emp.idEmploye || 'N/A'}</td>
+                        <td>${emp.prenom || ''} ${emp.nom || ''}</td>
+                        <td>${emp.telephone || 'N/A'}</td>
+                        <td>${emp.route || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                        </tbody>
+                    </table>
+                    <script>
+                        window.onload = function() { 
+                            window.print();
+                            // Optionnel: fermer la fenêtre après l'impression
+                            // window.onafterprint = function() { window.close(); }
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
         }
 
         function escapeHtml(str) {
