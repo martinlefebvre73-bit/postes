@@ -99,6 +99,8 @@
     <div class="top-bar">
         <h1>Gestion des Fiches</h1>
         <div>
+            <!-- Bouton pour nettoyer les doublons -->
+            <button onclick="cleanDuplicates()" class="btn-warning" style="background-color: #9c27b0;">🧹 Nettoyer les doublons</button>
             <!-- Bouton pour afficher la zone CSV -->
             <button onclick="toggleCsvSection()" class="btn-warning">Mise à jour en lot (CSV)</button>
             <a href="#" onclick="alert('Simulation : Redirection vers le menu principal'); return false;" class="btn-retour">Retour au menu</a>
@@ -191,7 +193,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Configuration Firebase
         const firebaseConfig = {
@@ -483,6 +485,117 @@
             const section = document.getElementById("csvSection");
             section.style.display = section.style.display === "none" ? "block" : "none";
         }
+
+        // --- FONCTION DE NETTOYAGE INTELLIGENT DES DOUBLONS ---
+        window.cleanDuplicates = async function() {
+            if (!allEmployees || allEmployees.length === 0) {
+                alert("Aucun employé chargé dans la base de données.");
+                return;
+            }
+
+            const confirmation = confirm("Voulez-vous lancer la recherche et le nettoyage des doublons ?\n\n- La fiche la plus complète sera conservée.\n- Les informations manquantes de la fiche principale seront complétées grâce aux doublons avant leur suppression.");
+            if (!confirmation) return;
+
+            // 1. Regrouper les employés par clé unique (ID Employé en priorité, sinon Nom + Prénom)
+            const groups = {};
+
+            allEmployees.forEach(emp => {
+                let key = "";
+                const idClean = String(emp.idEmploye || "").trim().toLowerCase();
+                const nomClean = String(emp.nom || "").trim().toLowerCase();
+                const prenomClean = String(emp.prenom || "").trim().toLowerCase();
+
+                if (idClean !== "") {
+                    key = `id_${idClean}`;
+                } else if (nomClean !== "" || prenomClean !== "") {
+                    key = `name_${nomClean}_${prenomClean}`;
+                } else {
+                    return; // Ignorer les fiches totalement vides
+                }
+
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(emp);
+            });
+
+            // Fonction pour évaluer le score de complétion d'une fiche
+            const evaluerScore = (emp) => {
+                let score = 0;
+                const champs = ['idEmploye', 'prenom', 'nom', 'route', 'anciennete', 'telephone', 'email'];
+                champs.forEach(f => {
+                    if (emp[f] && String(emp[f]).trim() !== "") score++;
+                });
+                return score;
+            };
+
+            let doublonsTrouves = 0;
+            let fichesSupprimees = 0;
+            let fichesEnrichies = 0;
+
+            employeeListEl.innerHTML = "<p style='color:blue; font-weight:bold;'>Analyse et nettoyage des doublons en cours...</p>";
+
+            // 2. Traiter chaque groupe
+            for (const key in groups) {
+                const list = groups[key];
+                
+                if (list.length > 1) {
+                    doublonsTrouves += (list.length - 1);
+
+                    // Trier le groupe par score de complétion décroissant (le meilleur en premier)
+                    list.sort((a, b) => evaluerScore(b) - evaluerScore(a));
+
+                    const gagnant = list[0]; // La fiche la plus complète à conserver
+                    const perdants = list.slice(1); // Les doublons à supprimer
+
+                    let updatesGagnant = {};
+                    let aDesUpdates = false;
+
+                    // Récupérer les informations utiles contenues dans les fiches en double
+                    const champsAExaminer = ['route', 'telephone', 'email', 'anciennete', 'prenom', 'nom', 'idEmploye'];
+                    perdants.forEach(p => {
+                        champsAExaminer.forEach(champ => {
+                            const valGagnant = gagnant[champ] ? String(gagnant[champ]).trim() : "";
+                            const valPerdant = p[champ] ? String(p[champ]).trim() : "";
+
+                            // Si le gagnant n'a pas l'information mais que le doublon l'a, on la récupère
+                            if (valGagnant === "" && valPerdant !== "") {
+                                updatesGagnant[champ] = valPerdant;
+                                gagnant[champ] = valPerdant; // Mise à jour locale
+                                aDesUpdates = true;
+                            }
+                        });
+                    });
+
+                    // Si le gagnant a été enrichi avec des infos manquantes, on le met à jour sur Firestore
+                    if (aDesUpdates) {
+                        try {
+                            const empRef = doc(db, "employes", gagnant.docId);
+                            await updateDoc(empRef, updatesGagnant);
+                            fichesEnrichies++;
+                        } catch (err) {
+                            console.error("Erreur lors de la mise à jour de la fiche principale :", err);
+                        }
+                    }
+
+                    // Supprimer les fiches en double incomplètes
+                    for (const perdant of perdants) {
+                        try {
+                            await deleteDoc(doc(db, "employes", perdant.docId));
+                            fichesSupprimees++;
+                        } catch (err) {
+                            console.error("Erreur lors de la suppression du doublon :", err);
+                        }
+                    }
+                }
+            }
+
+            if (doublonsTrouves === 0) {
+                alert("Aucun doublon n'a été détecté dans la base de données.");
+                loadEmployees();
+            } else {
+                alert(`Nettoyage terminé avec succès !\n\n- Doublons détectés : ${doublonsTrouves}\n- Fiches supprimées : ${fichesSupprimees}\n- Fiches complétées/enrichies : ${fichesEnrichies}`);
+                loadEmployees(); // Recharger la liste mise à jour
+            }
+        };
 
         document.getElementById("btnUpdateCSV").addEventListener("click", async () => {
             const fileInput = document.getElementById("csvFileInput");
