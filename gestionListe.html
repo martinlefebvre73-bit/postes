@@ -285,18 +285,21 @@
         // Exécuter la génération des dates
         genererSemaines();
 
-        // Fonction d'impression modifiée (Tri par route)
+        // Fonction d'impression modifiée (Tri par route amélioré)
         window.printList = function() {
             const printArea = document.getElementById("printSection");
             const period = document.getElementById("printPeriod").value;
             const periodText = period ? ` - Semaine du ${period}` : "";
             
-            // --- TRI PAR ROUTE (Ordre croissant) ---
-            // On utilise localeCompare avec l'option "numeric" pour que "Route 2" passe avant "Route 10"
+            // --- TRI PAR ROUTE INTELLIGENT ---
+            // Enlève le mot "route" pour comparer juste les numéros et règle les conflits d'espaces
             const listeTriee = [...currentDisplayedEmployees].sort((a, b) => {
-                const routeA = a.route || "";
-                const routeB = b.route || "";
-                return routeA.localeCompare(routeB, undefined, { numeric: true, sensitivity: 'base' });
+                // On nettoie la chaîne : on retire "route" (insensible à la casse) et les espaces
+                const cleanRouteA = String(a.route || "").replace(/route\s*/i, "").trim();
+                const cleanRouteB = String(b.route || "").replace(/route\s*/i, "").trim();
+                
+                // On compare le résultat avec l'option numérique ("2" passera avant "10")
+                return cleanRouteA.localeCompare(cleanRouteB, 'fr', { numeric: true, sensitivity: 'base' });
             });
             
             let html = `<h2 class="print-title">Liste des Employés${periodText}</h2>`;
