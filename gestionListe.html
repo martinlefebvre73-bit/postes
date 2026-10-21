@@ -37,13 +37,61 @@
         #printSection { display: none; }
         
         @media print {
-            body * { visibility: hidden; }
-            #printSection, #printSection * { visibility: visible; }
-            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-family: Arial, sans-serif; }
-            .print-table th, .print-table td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
-            .print-table th { background-color: #f2f2f2; font-weight: bold; }
-            h2.print-title { text-align: center; margin-bottom: 20px; }
+            /* Configuration du format Légal (8.5 x 14 pouces) */
+            @page {
+                size: 8.5in 14in;
+                margin: 15mm;
+            }
+
+            body {
+                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Masquer tout le reste du DOM pour éviter la création de pages vides */
+            body > *:not(#printSection) {
+                display: none !important;
+            }
+
+            #printSection {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+                font-family: Arial, sans-serif;
+            }
+
+            .print-table tr {
+                page-break-inside: avoid;
+            }
+
+            .print-table th, .print-table td {
+                border: 1px solid #000;
+                padding: 8px 12px;
+                text-align: left;
+                font-size: 13px;
+            }
+
+            .print-table th {
+                background-color: #f2f2f2 !important;
+                font-weight: bold;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            h2.print-title {
+                text-align: center;
+                margin-bottom: 15px;
+                margin-top: 0;
+            }
         }
     </style>
 </head>
@@ -287,16 +335,20 @@
             const period = document.getElementById("printPeriod").value;
             const periodText = period ? ` - Semaine du ${period}` : "";
             
-            // --- FILTRER LES EMPLOYÉS PRÉSENTS (Exclut ceux qui ont quitté) ---
-            const employesPresents = currentDisplayedEmployees.filter(emp => !emp.quitteDepot);
+            // --- FILTRER LES EMPLOYÉS (Exclut ceux qui ont quitté ET ceux sans route) ---
+            const employesPresents = currentDisplayedEmployees.filter(emp => {
+                const aUneRoute = emp.route && String(emp.route).trim() !== "";
+                return !emp.quitteDepot && aUneRoute;
+            });
 
-            // --- TRI PAR ROUTE (Nombres, puis R, C, T) ---
+            // --- TRI PAR ROUTE (1. Chiffres, 2. R, 3. ACH, 4. C, 5. T) ---
             const listeTriee = employesPresents.sort((a, b) => {
                 const analyserRoute = (routeStr) => {
                     let original = String(routeStr || "").toUpperCase().trim();
+                    // On enlève "ROUTE" ou "RTE" pour ne garder que l'essentiel
                     let texte = original.replace(/ROUTE/g, "").replace(/RTE/g, "").trim();
                     
-                    let categorie = 5; 
+                    let categorie = 6; // Catégorie par défaut pour les autres cas
                     let numero = 0;
                     
                     const matchNum = texte.match(/\d+/);
@@ -306,12 +358,14 @@
                     
                     if (!aDesLettres && texte.length > 0) {
                         categorie = 1; // Uniquement des chiffres
-                    } else if (texte.includes("R")) {
-                        categorie = 2; // Contient un R
-                    } else if (texte.includes("C")) {
-                        categorie = 3; // Contient un C
-                    } else if (texte.includes("T")) {
-                        categorie = 4; // Contient un T
+                    } else if (texte.startsWith("R")) {
+                        categorie = 2; // Commençant par R
+                    } else if (texte.startsWith("ACH")) {
+                        categorie = 3; // Commençant par ACH
+                    } else if (texte.startsWith("C")) {
+                        categorie = 4; // Commençant par C
+                    } else if (texte.startsWith("T")) {
+                        categorie = 5; // Commençant par T
                     }
                     
                     return { categorie, numero, original };
@@ -321,12 +375,12 @@
                 const routeB = analyserRoute(b.route);
 
                 if (routeA.categorie !== routeB.categorie) {
-                    return routeA.categorie - routeB.categorie;
+                    return routeA.categorie - routeB.categorie; // Trie par catégorie (1 à 5)
                 }
                 if (routeA.numero !== routeB.numero) {
-                    return routeA.numero - routeB.numero;
+                    return routeA.numero - routeB.numero; // Trie par chiffre croissant dans la même catégorie
                 }
-                return routeA.original.localeCompare(routeB.original);
+                return routeA.original.localeCompare(routeB.original); // Trie alphabétique si ex aequo
             });
             
             let html = `<h2 class="print-title">Liste des Employés${periodText}</h2>`;
@@ -342,19 +396,16 @@
                         <tbody>`;
             
             if (listeTriee.length === 0) {
-                html += `<tr><td colspan="4" style="text-align:center;">Aucun employé à afficher</td></tr>`;
+                html += `<tr><td colspan="4" style="text-align:center;">Aucun employé avec une route attribuée à afficher</td></tr>`;
             } else {
                 listeTriee.forEach(emp => {
-                    const status = emp.quitteDepot ? " (A quitté)" : "";
-                    
-                    // Récupération sécuritaire pour s'assurer que ça ne plante jamais
                     let telephoneAffichage = emp.telephone && String(emp.telephone).trim() !== "" ? String(emp.telephone).trim() : "-";
                     let routeAffichage = emp.route && String(emp.route).trim() !== "" ? String(emp.route).trim() : "-";
                     let idAffichage = emp.idEmploye && String(emp.idEmploye).trim() !== "" ? String(emp.idEmploye).trim() : "-";
                     
                     html += `<tr>
                                 <td><strong>${routeAffichage}</strong></td>
-                                <td><strong>${emp.nom || ''}</strong>, ${emp.prenom || ''}${status}</td>
+                                <td><strong>${emp.nom || ''}</strong>, ${emp.prenom || ''}</td>
                                 <td>${idAffichage}</td>
                                 <td>${telephoneAffichage}</td>
                              </tr>`;
