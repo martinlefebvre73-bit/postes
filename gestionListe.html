@@ -10,7 +10,7 @@
         form, .search-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="email"], input[type="tel"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"], input[type="email"], input[type="tel"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         .checkbox-group { display: flex; align-items: center; gap: 10px; }
         .checkbox-group input { width: 20px; height: 20px; }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
@@ -25,11 +25,13 @@
         .actions button { padding: 5px 10px; font-size: 14px; }
         .left-status { color: #d9534f; font-weight: bold; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn-retour { background-color: #607d8b; text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px; font-size: 14px; }
+        .btn-retour { background-color: #607d8b; text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px; font-size: 14px; display: inline-block; }
         .btn-retour:hover { background-color: #455a64; }
+        .btn-warning { background-color: #ff9800; border: none; cursor: pointer; margin-right: 10px; padding: 8px 12px; border-radius: 4px; color: white; font-size: 14px;}
+        .btn-warning:hover { background-color: #e68a00; }
         
         .print-controls { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
-        .print-controls input { flex: 1; }
+        .print-controls select { flex: 1; }
 
         /* Styles spécifiques à l'impression */
         #printSection { display: none; }
@@ -46,10 +48,24 @@
     </style>
 </head>
 <body>
-
     <div class="top-bar">
-        <h1>Gestion des Fiches Employés</h1>
-        <a href="#" onclick="alert('Simulation : Redirection vers le menu principal'); return false;" class="btn-retour">Retour au menu</a>
+        <h1>Gestion des Fiches</h1>
+        <div>
+            <!-- Bouton pour afficher la zone CSV -->
+            <button onclick="toggleCsvSection()" class="btn-warning">Mise à jour en lot (CSV)</button>
+            <a href="#" onclick="alert('Simulation : Redirection vers le menu principal'); return false;" class="btn-retour">Retour au menu</a>
+        </div>
+    </div>
+
+    <!-- Section cachée pour l'importation de fichier de mise à jour -->
+    <div id="csvSection" class="search-container" style="display: none; background: #e9ecef; border: 1px dashed #999;">
+        <h3>Mise à jour en lot (Compléter les fiches)</h3>
+        <p style="font-size: 13px; color: #555;">Importez un fichier CSV avec l'ID en <strong>1ère colonne</strong>. <br>L'application vérifiera automatiquement les autres colonnes pour les routes et téléphones manquants.</p>
+        <div class="form-group checkbox-group">
+            <input type="file" id="csvFileInput" accept=".csv" style="flex: 1; padding: 5px;">
+            <button type="button" id="btnUpdateCSV" style="background-color: #ff9800;">Mettre à jour via CSV</button>
+        </div>
+        <div id="csvResult" style="font-size: 14px; font-weight: bold; margin-top: 10px;"></div>
     </div>
 
     <!-- Formulaire d'ajout / modification -->
@@ -92,7 +108,6 @@
             <input type="email" id="email" >
         </div>
 
-        <!-- Champ Case à cocher : Quitté le dépôt -->
         <div class="form-group checkbox-group">
             <input type="checkbox" id="quitteDepot">
             <label for="quitteDepot" style="margin-bottom:0; cursor:pointer;">A quitté le dépôt</label>
@@ -109,10 +124,10 @@
             <input type="text" id="searchInput" placeholder="Filtrer par nom ou par ID employé..." oninput="filterEmployees()">
         </div>
         
-        <!-- Nouveaux contrôles d'impression -->
+        <!-- Contrôles d'impression mis à jour avec menu déroulant -->
         <div class="print-controls">
-            <label for="printPeriod" style="white-space: nowrap;">Période choisie :</label>
-            <input type="text" id="printPeriod" placeholder="Ex: Semaine du 12 au 18 Mars...">
+            <label for="printPeriod" style="white-space: nowrap;">Semaine du :</label>
+            <select id="printPeriod"></select>
         </div>
         <button type="button" class="btn-print" onclick="printList()">🖨️ Imprimer la liste affichée</button>
     </div>
@@ -150,8 +165,8 @@
         const submitBtn = document.getElementById("submitBtn");
         const cancelBtn = document.getElementById("cancelBtn");
 
-        let allEmployees = []; // Tableau pour stocker les employés et faciliter la recherche locale
-        let currentDisplayedEmployees = []; // Suit les employés actuellement filtrés pour l'impression
+        let allEmployees = []; 
+        let currentDisplayedEmployees = []; 
 
         const utilisateursAutorises = [
             "sandra.dostie@canadapost.ca",
@@ -163,15 +178,12 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 if (!user.email || !utilisateursAutorises.includes(user.email.toLowerCase().trim())) {
-                    alert("Accès refusé : Vous n'avez pas les autorisations nécessaires.");
                     employeeListEl.innerHTML = "<p style='color:red; font-weight:bold;'>Accès refusé. Veuillez vous connecter avec un compte autorisé.</p>";
-                    // Désactivé pour le bac à sable : window.location.href = 'index.html';
                 } else {
                     loadEmployees();
                 }
             } else {
                 employeeListEl.innerHTML = "<p style='color:red; font-weight:bold;'>Vous n'êtes pas connecté. <br>Dans l'application complète, vous seriez redirigé vers la page de connexion.</p>";
-                // Désactivé pour le bac à sable : window.location.href = 'index.html';
             }
         });
 
@@ -198,7 +210,7 @@
 
         // Fonction pour afficher une liste d'employés sous forme de cartes
         window.displayEmployees = function(employees) {
-            currentDisplayedEmployees = employees; // Mise à jour de la liste active pour l'impression
+            currentDisplayedEmployees = employees;
             employeeListEl.innerHTML = "";
 
             if (employees.length === 0) {
@@ -229,47 +241,85 @@
             });
         }
 
-        // Fonction de filtrage en temps réel par Nom ou ID
         window.filterEmployees = function() {
             const query = document.getElementById("searchInput").value.toLowerCase().trim();
             
             const filtered = allEmployees.filter(emp => {
                 const nomMatch = (emp.nom || "").toLowerCase().includes(query);
                 const idMatch = (emp.idEmploye || "").toLowerCase().includes(query);
-                const prenomMatch = (emp.prenom || "").toLowerCase().includes(query); // Optionnel pour plus de confort
+                const prenomMatch = (emp.prenom || "").toLowerCase().includes(query); 
                 return nomMatch || idMatch || prenomMatch;
             });
 
             displayEmployees(filtered);
         }
 
-        // --- NOUVELLE FONCTION D'IMPRESSION ---
+        // Générer les dates des dimanches pour le menu déroulant
+        function genererSemaines() {
+            const select = document.getElementById("printPeriod");
+            const aujourdhui = new Date();
+            const jourSemaine = aujourdhui.getDay(); // 0 = Dimanche
+            
+            // Trouver le dernier dimanche (ou aujourd'hui si on est dimanche)
+            const dernierDimanche = new Date(aujourdhui);
+            dernierDimanche.setDate(aujourdhui.getDate() - jourSemaine);
+
+            // Créer les options : 4 semaines passées, la semaine actuelle, et 5 semaines futures
+            for (let i = -4; i <= 5; i++) {
+                const dimancheOption = new Date(dernierDimanche);
+                dimancheOption.setDate(dernierDimanche.getDate() + (i * 7));
+                
+                const optionsFormat = { year: 'numeric', month: 'long', day: 'numeric' };
+                const dateString = dimancheOption.toLocaleDateString('fr-CA', optionsFormat);
+                
+                const option = document.createElement("option");
+                option.value = dateString;
+                option.text = "Dimanche " + dateString;
+                
+                if (i === 0) option.selected = true; // Sélectionne par défaut la semaine en cours
+                
+                select.appendChild(option);
+            }
+        }
+        
+        // Exécuter la génération des dates
+        genererSemaines();
+
+        // Fonction d'impression modifiée (Tri par route)
         window.printList = function() {
             const printArea = document.getElementById("printSection");
-            const period = document.getElementById("printPeriod").value.trim();
-            const periodText = period ? ` - Période: ${period}` : "";
+            const period = document.getElementById("printPeriod").value;
+            const periodText = period ? ` - Semaine du ${period}` : "";
+            
+            // --- TRI PAR ROUTE (Ordre croissant) ---
+            // On utilise localeCompare avec l'option "numeric" pour que "Route 2" passe avant "Route 10"
+            const listeTriee = [...currentDisplayedEmployees].sort((a, b) => {
+                const routeA = a.route || "";
+                const routeB = b.route || "";
+                return routeA.localeCompare(routeB, undefined, { numeric: true, sensitivity: 'base' });
+            });
             
             let html = `<h2 class="print-title">Liste des Employés${periodText}</h2>`;
             html += `<table class="print-table">
                         <thead>
                             <tr>
+                                <th>Route</th>
                                 <th>Nom, Prénom</th>
                                 <th>ID</th>
-                                <th>Route</th>
                                 <th>Téléphone</th>
                             </tr>
                         </thead>
                         <tbody>`;
             
-            if (currentDisplayedEmployees.length === 0) {
+            if (listeTriee.length === 0) {
                 html += `<tr><td colspan="4" style="text-align:center;">Aucun employé à afficher</td></tr>`;
             } else {
-                currentDisplayedEmployees.forEach(emp => {
+                listeTriee.forEach(emp => {
                     const status = emp.quitteDepot ? " (A quitté)" : "";
                     html += `<tr>
+                                <td><strong>${emp.route || 'N/A'}</strong></td>
                                 <td><strong>${emp.nom || ''}</strong>, ${emp.prenom || ''}${status}</td>
                                 <td>${emp.idEmploye || 'N/A'}</td>
-                                <td>${emp.route || 'N/A'}</td>
                                 <td>${emp.telephone || 'N/A'}</td>
                              </tr>`;
                 });
@@ -278,11 +328,9 @@
             html += `</tbody></table>`;
             printArea.innerHTML = html;
             
-            // Déclenche la fenêtre d'impression du navigateur
             window.print();
         }
 
-        // Événement Soumission du formulaire (Ajout ou Modification)
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             
@@ -343,6 +391,111 @@
         function escapeHtml(str) {
             return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
+
+        // Afficher/Masquer la section CSV
+        window.toggleCsvSection = function() {
+            const section = document.getElementById("csvSection");
+            if (section.style.display === "none") {
+                section.style.display = "block";
+            } else {
+                section.style.display = "none";
+            }
+        }
+
+        // Logique d'importation et mise à jour CSV améliorée
+        document.getElementById("btnUpdateCSV").addEventListener("click", async () => {
+            const fileInput = document.getElementById("csvFileInput");
+            const resultDiv = document.getElementById("csvResult");
+            
+            if (!fileInput.files.length) {
+                resultDiv.style.color = "red";
+                resultDiv.textContent = "Veuillez sélectionner un fichier CSV.";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async (e) => {
+                const text = e.target.result.replace(/^\uFEFF/, ''); 
+                const rows = text.split(/\r?\n/).filter(row => row.trim() !== "");
+                
+                if (rows.length < 2) {
+                    resultDiv.textContent = "Fichier vide ou sans données.";
+                    return;
+                }
+
+                // Détecter automatiquement le séparateur
+                let separator = ',';
+                if (rows[0].includes(';')) separator = ';';
+                else if (rows[0].includes('\t')) separator = '\t';
+                
+                let updatedCount = 0;
+                let notFoundCount = 0;
+                resultDiv.style.color = "blue";
+                resultDiv.textContent = "Mise à jour en cours... Veuillez patienter.";
+
+                for (let i = 1; i < rows.length; i++) {
+                    const columns = rows[i].split(separator).map(col => {
+                        let cleaned = col.trim();
+                        // Enlève les guillemets qui peuvent entourer les IDs provenant d'Excel
+                        if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+                            cleaned = cleaned.substring(1, cleaned.length - 1).trim();
+                        }
+                        return cleaned;
+                    });
+                    
+                    const csvId = columns[0];
+                    const csvRoute = columns[1] || "";
+                    const csvTel = columns[2] || "";
+
+                    if (!csvId) continue;
+
+                    const matchedEmployee = allEmployees.find(emp => {
+                        const dbId = String(emp.idEmploye || "").trim().toLowerCase();
+                        const searchId = String(csvId).trim().toLowerCase();
+                        return dbId === searchId;
+                    });
+
+                    if (matchedEmployee) {
+                        let updates = {};
+                        let needsUpdate = false;
+
+                        if (csvRoute !== "" && (!matchedEmployee.route || matchedEmployee.route === "")) {
+                            updates.route = csvRoute;
+                            needsUpdate = true;
+                        }
+
+                        if (csvTel !== "" && (!matchedEmployee.telephone || matchedEmployee.telephone === "")) {
+                            updates.telephone = csvTel;
+                            needsUpdate = true;
+                        }
+
+                        if (needsUpdate) {
+                            try {
+                                const empRef = doc(db, "employes", matchedEmployee.docId);
+                                await updateDoc(empRef, updates);
+                                updatedCount++;
+                            } catch (err) {
+                                console.error(`Erreur mise à jour ID ${csvId}`, err);
+                            }
+                        }
+                    } else {
+                        notFoundCount++;
+                    }
+                }
+
+                resultDiv.style.color = "green";
+                resultDiv.textContent = `Terminé : ${updatedCount} employé(s) mis à jour. ${notFoundCount} ID(s) introuvables ou déjà à jour.`;
+                
+                if (updatedCount > 0) {
+                    loadEmployees(); 
+                }
+            };
+
+            reader.readAsText(file);
+        });
+
     </script>
 </body>
 </html>
