@@ -287,8 +287,11 @@
             const period = document.getElementById("printPeriod").value;
             const periodText = period ? ` - Semaine du ${period}` : "";
             
+            // --- FILTRER LES EMPLOYÉS PRÉSENTS (Exclut ceux qui ont quitté) ---
+            const employesPresents = currentDisplayedEmployees.filter(emp => !emp.quitteDepot);
+
             // --- TRI PAR ROUTE (Nombres, puis R, C, T) ---
-            const listeTriee = [...currentDisplayedEmployees].sort((a, b) => {
+            const listeTriee = employesPresents.sort((a, b) => {
                 const analyserRoute = (routeStr) => {
                     let original = String(routeStr || "").toUpperCase().trim();
                     let texte = original.replace(/ROUTE/g, "").replace(/RTE/g, "").trim();
