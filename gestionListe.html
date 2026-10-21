@@ -59,11 +59,11 @@
 
     <!-- Section cachée pour l'importation de fichier de mise à jour -->
     <div id="csvSection" class="search-container" style="display: none; background: #e9ecef; border: 1px dashed #999;">
-        <h3>Mise à jour en lot (Compléter les fiches)</h3>
-        <p style="font-size: 13px; color: #555;">Importez un fichier CSV avec l'ID en <strong>1ère colonne</strong>. <br>L'application vérifiera automatiquement les autres colonnes pour les routes et téléphones manquants.</p>
+        <h3>Mise à jour intelligente (Fichier CSV)</h3>
+        <p style="font-size: 13px; color: #555;">Importez votre fichier CSV. Le système trouvera automatiquement les colonnes ID, Route et Téléphone pour compléter les fiches vides.</p>
         <div class="form-group checkbox-group">
             <input type="file" id="csvFileInput" accept=".csv" style="flex: 1; padding: 5px;">
-            <button type="button" id="btnUpdateCSV" style="background-color: #ff9800;">Mettre à jour via CSV</button>
+            <button type="button" id="btnUpdateCSV" style="background-color: #ff9800;">Mettre à jour</button>
         </div>
         <div id="csvResult" style="font-size: 14px; font-weight: bold; margin-top: 10px;"></div>
     </div>
@@ -124,7 +124,7 @@
             <input type="text" id="searchInput" placeholder="Filtrer par nom ou par ID employé..." oninput="filterEmployees()">
         </div>
         
-        <!-- Contrôles d'impression mis à jour avec menu déroulant -->
+        <!-- Contrôles d'impression -->
         <div class="print-controls">
             <label for="printPeriod" style="white-space: nowrap;">Semaine du :</label>
             <select id="printPeriod"></select>
@@ -174,7 +174,7 @@
             "martin.lefebvre@canadapost.ca"
         ];
 
-        // Vérification de la session et des autorisations au chargement
+        // Vérification de la session
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 if (!user.email || !utilisateursAutorises.includes(user.email.toLowerCase().trim())) {
@@ -208,7 +208,6 @@
             }
         }
 
-        // Fonction pour afficher une liste d'employés sous forme de cartes
         window.displayEmployees = function(employees) {
             currentDisplayedEmployees = employees;
             employeeListEl.innerHTML = "";
@@ -220,6 +219,10 @@
 
             employees.forEach((emp) => {
                 const hasLeft = emp.quitteDepot || false;
+                
+                // Sécuriser l'affichage si la donnée est vide
+                const valRoute = emp.route ? emp.route : '<span style="color:#aaa;">Vide</span>';
+                const valTel = emp.telephone ? emp.telephone : '<span style="color:#aaa;">Vide</span>';
 
                 const card = document.createElement("div");
                 card.className = "employee-card";
@@ -227,9 +230,9 @@
                     <div class="employee-info">
                         <h3>${emp.prenom || ''} ${emp.nom || ''}</h3>
                         <p><strong>ID :</strong> ${emp.idEmploye || 'N/A'}</p>
-                        <p><strong>Route :</strong> ${emp.route || 'N/A'}</p>
+                        <p><strong>Route :</strong> ${valRoute}</p>
                         <p><strong>Ancienneté :</strong> ${emp.anciennete || 'N/A'}</p>
-                        <p><strong>Téléphone :</strong> ${emp.telephone || 'N/A'}</p>
+                        <p><strong>Téléphone :</strong> ${valTel}</p>
                         <p><strong>Email :</strong> ${emp.email || ''}</p>
                         ${hasLeft ? '<p class="left-status">⚠️ A quitté le dépôt</p>' : ''}
                     </div>
@@ -254,17 +257,14 @@
             displayEmployees(filtered);
         }
 
-        // Générer les dates des dimanches pour le menu déroulant
         function genererSemaines() {
             const select = document.getElementById("printPeriod");
             const aujourdhui = new Date();
-            const jourSemaine = aujourdhui.getDay(); // 0 = Dimanche
+            const jourSemaine = aujourdhui.getDay(); 
             
-            // Trouver le dernier dimanche (ou aujourd'hui si on est dimanche)
             const dernierDimanche = new Date(aujourdhui);
             dernierDimanche.setDate(aujourdhui.getDate() - jourSemaine);
 
-            // Créer les options : 4 semaines passées, la semaine actuelle, et 5 semaines futures
             for (let i = -4; i <= 5; i++) {
                 const dimancheOption = new Date(dernierDimanche);
                 dimancheOption.setDate(dernierDimanche.getDate() + (i * 7));
@@ -276,40 +276,64 @@
                 option.value = dateString;
                 option.text = "Dimanche " + dateString;
                 
-                if (i === 0) option.selected = true; // Sélectionne par défaut la semaine en cours
-                
+                if (i === 0) option.selected = true;
                 select.appendChild(option);
             }
         }
-        
-        // Exécuter la génération des dates
         genererSemaines();
 
-        // Fonction d'impression modifiée (Tri par route amélioré)
         window.printList = function() {
             const printArea = document.getElementById("printSection");
             const period = document.getElementById("printPeriod").value;
             const periodText = period ? ` - Semaine du ${period}` : "";
             
-            // --- TRI PAR ROUTE INTELLIGENT ---
-            // Enlève le mot "route" pour comparer juste les numéros et règle les conflits d'espaces
+            // --- TRI PAR ROUTE (Nombres, puis R, C, T) ---
             const listeTriee = [...currentDisplayedEmployees].sort((a, b) => {
-                // On nettoie la chaîne : on retire "route" (insensible à la casse) et les espaces
-                const cleanRouteA = String(a.route || "").replace(/route\s*/i, "").trim();
-                const cleanRouteB = String(b.route || "").replace(/route\s*/i, "").trim();
-                
-                // On compare le résultat avec l'option numérique ("2" passera avant "10")
-                return cleanRouteA.localeCompare(cleanRouteB, 'fr', { numeric: true, sensitivity: 'base' });
+                const analyserRoute = (routeStr) => {
+                    let original = String(routeStr || "").toUpperCase().trim();
+                    let texte = original.replace(/ROUTE/g, "").replace(/RTE/g, "").trim();
+                    
+                    let categorie = 5; 
+                    let numero = 0;
+                    
+                    const matchNum = texte.match(/\d+/);
+                    if (matchNum) { numero = parseInt(matchNum[0], 10); }
+                    
+                    const aDesLettres = /[A-Z]/.test(texte);
+                    
+                    if (!aDesLettres && texte.length > 0) {
+                        categorie = 1; // Uniquement des chiffres
+                    } else if (texte.includes("R")) {
+                        categorie = 2; // Contient un R
+                    } else if (texte.includes("C")) {
+                        categorie = 3; // Contient un C
+                    } else if (texte.includes("T")) {
+                        categorie = 4; // Contient un T
+                    }
+                    
+                    return { categorie, numero, original };
+                };
+
+                const routeA = analyserRoute(a.route);
+                const routeB = analyserRoute(b.route);
+
+                if (routeA.categorie !== routeB.categorie) {
+                    return routeA.categorie - routeB.categorie;
+                }
+                if (routeA.numero !== routeB.numero) {
+                    return routeA.numero - routeB.numero;
+                }
+                return routeA.original.localeCompare(routeB.original);
             });
             
             let html = `<h2 class="print-title">Liste des Employés${periodText}</h2>`;
             html += `<table class="print-table">
                         <thead>
                             <tr>
-                                <th>Route</th>
-                                <th>Nom, Prénom</th>
-                                <th>ID</th>
-                                <th>Téléphone</th>
+                                <th style="width: 15%;">Route</th>
+                                <th style="width: 45%;">Nom, Prénom</th>
+                                <th style="width: 20%;">ID</th>
+                                <th style="width: 20%;">Téléphone</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -319,11 +343,17 @@
             } else {
                 listeTriee.forEach(emp => {
                     const status = emp.quitteDepot ? " (A quitté)" : "";
+                    
+                    // Récupération sécuritaire pour s'assurer que ça ne plante jamais
+                    let telephoneAffichage = emp.telephone && String(emp.telephone).trim() !== "" ? String(emp.telephone).trim() : "-";
+                    let routeAffichage = emp.route && String(emp.route).trim() !== "" ? String(emp.route).trim() : "-";
+                    let idAffichage = emp.idEmploye && String(emp.idEmploye).trim() !== "" ? String(emp.idEmploye).trim() : "-";
+                    
                     html += `<tr>
-                                <td><strong>${emp.route || 'N/A'}</strong></td>
+                                <td><strong>${routeAffichage}</strong></td>
                                 <td><strong>${emp.nom || ''}</strong>, ${emp.prenom || ''}${status}</td>
-                                <td>${emp.idEmploye || 'N/A'}</td>
-                                <td>${emp.telephone || 'N/A'}</td>
+                                <td>${idAffichage}</td>
+                                <td>${telephoneAffichage}</td>
                              </tr>`;
                 });
             }
@@ -395,17 +425,11 @@
             return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
 
-        // Afficher/Masquer la section CSV
         window.toggleCsvSection = function() {
             const section = document.getElementById("csvSection");
-            if (section.style.display === "none") {
-                section.style.display = "block";
-            } else {
-                section.style.display = "none";
-            }
+            section.style.display = section.style.display === "none" ? "block" : "none";
         }
 
-        // Logique d'importation et mise à jour CSV améliorée
         document.getElementById("btnUpdateCSV").addEventListener("click", async () => {
             const fileInput = document.getElementById("csvFileInput");
             const resultDiv = document.getElementById("csvResult");
@@ -428,48 +452,74 @@
                     return;
                 }
 
-                // Détecter automatiquement le séparateur
+                // Détecter le séparateur
                 let separator = ',';
                 if (rows[0].includes(';')) separator = ';';
                 else if (rows[0].includes('\t')) separator = '\t';
                 
+                // Analyse intelligente des colonnes depuis la ligne 0
+                const headRow = rows[0].toLowerCase();
+                const columnsTitle = headRow.split(separator).map(c => c.trim().replace(/["']/g, ''));
+                
+                let idIndex = 0;
+                let routeIndex = 1;
+                let telIndex = 2;
+                let startIndex = 0; // à quelle ligne commencer à lire les données
+
+                // Vérifier si la première ligne ressemble à des en-têtes
+                const isHeader = columnsTitle.some(col => col.includes('id') || col.includes('employ') || col.includes('route') || col.includes('tel') || col.includes('nom'));
+                
+                if (isHeader) {
+                    startIndex = 1; // On saute la ligne des titres
+                    
+                    // On cherche où sont rangés les éléments
+                    const idxId = columnsTitle.findIndex(c => c.includes('id') || c.includes('employ'));
+                    const idxRoute = columnsTitle.findIndex(c => c.includes('route'));
+                    const idxTel = columnsTitle.findIndex(c => c.includes('tel') || c.includes('tél'));
+                    
+                    if (idxId !== -1) idIndex = idxId;
+                    if (idxRoute !== -1) routeIndex = idxRoute;
+                    if (idxTel !== -1) telIndex = idxTel;
+                    
+                    console.log(`Détection : ID(col ${idIndex}), Route(col ${routeIndex}), Tel(col ${telIndex})`);
+                }
+
                 let updatedCount = 0;
                 let notFoundCount = 0;
                 resultDiv.style.color = "blue";
                 resultDiv.textContent = "Mise à jour en cours... Veuillez patienter.";
 
-                for (let i = 1; i < rows.length; i++) {
+                for (let i = startIndex; i < rows.length; i++) {
                     const columns = rows[i].split(separator).map(col => {
                         let cleaned = col.trim();
-                        // Enlève les guillemets qui peuvent entourer les IDs provenant d'Excel
                         if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
                             cleaned = cleaned.substring(1, cleaned.length - 1).trim();
                         }
                         return cleaned;
                     });
                     
-                    const csvId = columns[0];
-                    const csvRoute = columns[1] || "";
-                    const csvTel = columns[2] || "";
+                    const csvId = columns[idIndex] ? columns[idIndex] : "";
+                    const csvRoute = columns[routeIndex] ? columns[routeIndex] : "";
+                    const csvTel = columns[telIndex] ? columns[telIndex] : "";
 
                     if (!csvId) continue;
 
+                    // Chercher l'employé dans la liste locale chargée de Firebase
                     const matchedEmployee = allEmployees.find(emp => {
-                        const dbId = String(emp.idEmploye || "").trim().toLowerCase();
-                        const searchId = String(csvId).trim().toLowerCase();
-                        return dbId === searchId;
+                        return String(emp.idEmploye || "").trim() === String(csvId).trim();
                     });
 
                     if (matchedEmployee) {
                         let updates = {};
                         let needsUpdate = false;
 
-                        if (csvRoute !== "" && (!matchedEmployee.route || matchedEmployee.route === "")) {
+                        // On met à jour SEULEMENT si la donnée dans le CSV n'est pas vide
+                        if (csvRoute !== "") {
                             updates.route = csvRoute;
                             needsUpdate = true;
                         }
 
-                        if (csvTel !== "" && (!matchedEmployee.telephone || matchedEmployee.telephone === "")) {
+                        if (csvTel !== "") {
                             updates.telephone = csvTel;
                             needsUpdate = true;
                         }
@@ -489,7 +539,7 @@
                 }
 
                 resultDiv.style.color = "green";
-                resultDiv.textContent = `Terminé : ${updatedCount} employé(s) mis à jour. ${notFoundCount} ID(s) introuvables ou déjà à jour.`;
+                resultDiv.textContent = `Terminé : ${updatedCount} employé(s) mis à jour (Route/Téléphone). ${notFoundCount} ID(s) ignorés/introuvables.`;
                 
                 if (updatedCount > 0) {
                     loadEmployees(); 
