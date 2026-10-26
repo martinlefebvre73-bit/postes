@@ -10,7 +10,7 @@
         form, .search-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="email"], input[type="tel"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"], input[type="email"], input[type="tel"], select, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         .checkbox-group { display: flex; align-items: center; gap: 10px; }
         .checkbox-group input { width: 20px; height: 20px; }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
@@ -24,6 +24,7 @@
         .employee-info p { margin: 3px 0; color: #666; }
         .actions button { padding: 5px 10px; font-size: 14px; }
         .left-status { color: #d9534f; font-weight: bold; }
+        .risk-status { color: #ff9800; font-weight: bold; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-retour { background-color: #607d8b; text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px; font-size: 14px; display: inline-block; }
         .btn-retour:hover { background-color: #455a64; }
@@ -158,10 +159,22 @@
             <input type="email" id="email" >
         </div>
 
-        <div class="form-group checkbox-group">
+        <div class="form-group checkbox-group" style="margin-top: 15px;">
             <input type="checkbox" id="quitteDepot">
             <label for="quitteDepot" style="margin-bottom:0; cursor:pointer;">A quitté le dépôt</label>
         </div>
+
+        <!-- NOVEAU BLOC : SIGNALEMENT RISQUE -->
+        <div class="form-group checkbox-group" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 15px;">
+            <input type="checkbox" id="aRisque">
+            <label for="aRisque" style="margin-bottom:0; cursor:pointer; color: #ff9800;">⚠️ Marquer cet employé comme étant à risque</label>
+        </div>
+        
+        <div class="form-group" id="blocDetailRisque" style="display: none;">
+            <label for="detailRisque">Détail du risque :</label>
+            <textarea id="detailRisque" rows="3" placeholder="Expliquez pourquoi cet employé est à risque (ex: Comportement observé, suivis récents...)"></textarea>
+        </div>
+        <!-- FIN BLOC RISQUE -->
 
         <button type="submit" id="submitBtn">Ajouter l'employé</button>
         <button type="button" id="cancelBtn" class="btn-cancel" style="display:none;" onclick="resetForm()">Annuler</button>
@@ -214,6 +227,8 @@
         const formTitle = document.getElementById("formTitle");
         const submitBtn = document.getElementById("submitBtn");
         const cancelBtn = document.getElementById("cancelBtn");
+        const checkboxRisque = document.getElementById("aRisque");
+        const blocDetailRisque = document.getElementById("blocDetailRisque");
 
         let allEmployees = []; 
         let currentDisplayedEmployees = []; 
@@ -223,6 +238,11 @@
             "caroline.gauthier@canadapost.ca",
             "martin.lefebvre@canadapost.ca"
         ];
+
+        // Afficher/masquer le bloc de détail du risque
+        checkboxRisque.addEventListener('change', function() {
+            blocDetailRisque.style.display = this.checked ? 'block' : 'none';
+        });
 
         // Vérification de la session
         onAuthStateChanged(auth, (user) => {
@@ -269,6 +289,7 @@
 
             employees.forEach((emp) => {
                 const hasLeft = emp.quitteDepot || false;
+                const isAtRisk = emp.aRisque === true || emp.aRisque === "true";
                 
                 // Sécuriser l'affichage si la donnée est vide
                 const valRoute = emp.route ? emp.route : '<span style="color:#aaa;">Vide</span>';
@@ -285,9 +306,10 @@
                         <p><strong>Téléphone :</strong> ${valTel}</p>
                         <p><strong>Email :</strong> ${emp.email || ''}</p>
                         ${hasLeft ? '<p class="left-status">⚠️ A quitté le dépôt</p>' : ''}
+                        ${isAtRisk ? '<p class="risk-status">🛑 Signalé à risque</p>' : ''}
                     </div>
                     <div class="actions">
-                        <button onclick="prepareEdit('${emp.docId}', '${escapeHtml(emp.idEmploye || '')}', '${escapeHtml(emp.prenom || '')}', '${escapeHtml(emp.nom || '')}', '${escapeHtml(emp.route || '')}', '${escapeHtml(emp.anciennete || '')}', '${escapeHtml(emp.telephone || '')}', '${escapeHtml(emp.email || '')}', ${hasLeft})">Modifier</button>
+                        <button onclick="prepareEdit('${emp.docId}', '${escapeHtml(emp.idEmploye || '')}', '${escapeHtml(emp.prenom || '')}', '${escapeHtml(emp.nom || '')}', '${escapeHtml(emp.route || '')}', '${escapeHtml(emp.anciennete || '')}', '${escapeHtml(emp.telephone || '')}', '${escapeHtml(emp.email || '')}', ${hasLeft}, ${isAtRisk}, '${escapeHtml(emp.detailRisque || '')}')">Modifier</button>
                     </div>
                 `;
                 employeeListEl.appendChild(card);
@@ -432,15 +454,17 @@
             const telephone = document.getElementById("telephone").value;
             const email = document.getElementById("email").value;
             const quitteDepot = document.getElementById("quitteDepot").checked;
+            const aRisque = document.getElementById("aRisque").checked;
+            const detailRisque = document.getElementById("detailRisque").value;
 
             try {
                 if (docId) {
                     const empRef = doc(db, "employes", docId);
-                    await updateDoc(empRef, { idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot });
+                    await updateDoc(empRef, { idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot, aRisque, detailRisque });
                     alert("Employé mis à jour avec succès !");
                 } else {
                     await addDoc(collection(db, "employes"), {
-                        idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot, dateAjout: new Date()
+                        idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot, aRisque, detailRisque, dateAjout: new Date()
                     });
                     alert("Employé ajouté avec succès !");
                 }
@@ -452,7 +476,7 @@
             }
         });
 
-        window.prepareEdit = function(docId, idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot) {
+        window.prepareEdit = function(docId, idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot, aRisque, detailRisque) {
             document.getElementById("docId").value = docId;
             document.getElementById("idEmploye").value = idEmploye;
             document.getElementById("prenom").value = prenom;
@@ -461,7 +485,12 @@
             document.getElementById("anciennete").value = anciennete;
             document.getElementById("telephone").value = telephone;
             document.getElementById("email").value = email;
+            
             document.getElementById("quitteDepot").checked = quitteDepot;
+            document.getElementById("aRisque").checked = aRisque;
+            document.getElementById("detailRisque").value = detailRisque || '';
+            
+            blocDetailRisque.style.display = aRisque ? 'block' : 'none';
 
             formTitle.textContent = "Modifier l'employé";
             submitBtn.textContent = "Mettre à jour";
@@ -472,6 +501,9 @@
         window.resetForm = function() {
             form.reset();
             document.getElementById("docId").value = "";
+            document.getElementById("detailRisque").value = "";
+            blocDetailRisque.style.display = 'none';
+            
             formTitle.textContent = "Ajouter un employé";
             submitBtn.textContent = "Ajouter l'employé";
             cancelBtn.style.display = "none";
