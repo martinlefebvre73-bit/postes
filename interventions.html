@@ -252,6 +252,36 @@
                         <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté automatique">
                     </div>
                 </div>
+                <!-- Bloc d'intégration au Plan de Roulement -->
+<div class="mb-3 p-3 border border-info rounded bg-dark">
+    <label class="form-label text-info fw-bold mb-2">Associer au Plan de Roulement (Cochez pour marquer comme complété) :</label>
+    <div class="d-flex gap-4 flex-wrap" id="checkboxes-roulement">
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_extra" value="Extra">
+            <label class="form-check-label text-light" for="rl_extra">Extra</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_telematique" value="Télématique">
+            <label class="form-check-label text-light" for="rl_telematique">Télématique</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_nouveaux" value="Nouveaux employés">
+            <label class="form-check-label text-light" for="rl_nouveaux">Nouveaux employés</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_anomalies" value="Suivis anomalies">
+            <label class="form-check-label text-light" for="rl_anomalies">Suivis anomalies</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_securite" value="Sécurité routière">
+            <label class="form-check-label text-light" for="rl_securite">Sécurité routière</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_retour" value="Retour SST-PAICD">
+            <label class="form-check-label text-light" for="rl_retour">Retour SST-PAICD</label>
+        </div>
+    </div>
+</div>
 
                 <div class="row">
                     <div class="col-md-12 mb-3">
