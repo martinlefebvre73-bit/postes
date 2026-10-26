@@ -1221,11 +1221,29 @@
             const contenu = document.getElementById('contenu-zone');
             
             zone.classList.remove('d-none');
-            titre.textContent = "Analyse des Employés à Risque (Incidents SST)";
+            titre.textContent = "Analyse des Employés à Risque (SST & Signalements)";
             containerSelect.innerHTML = "";
-            contenu.innerHTML = "<p>Analyse des incidents SST en cours...</p>";
+            contenu.innerHTML = "<p>Analyse des risques en cours...</p>";
 
             try {
+                // 1. Récupérer les employés marqués manuellement dans leur fiche
+                const employesSnap = await getDocs(collection(db, "employes"));
+                let employesManuels = {};
+                
+                employesSnap.forEach(docSnap => {
+                    let data = docSnap.data();
+                    if (data.aRisque === true || data.aRisque === "true") {
+                        let idEmp = data.idEmploye || data.id || data.nom;
+                        employesManuels[idEmp] = {
+                            nom: data.nom || 'Inconnu',
+                            idEmploye: data.idEmploye || 'N/A',
+                            anciennete: data.anciennete || 'N/A',
+                            detailRisque: data.detailRisque || 'Signalement manuel sans détail fourni'
+                        };
+                    }
+                });
+
+                // 2. Récupérer l'historique des interventions SST
                 const querySnapshot = await getDocs(collection(db, "interventions"));
                 let sstParEmploye = {};
 
@@ -1254,7 +1272,9 @@
                 });
 
                 let profilsRisque = [];
+                let ajoutesDansRapport = new Set(); 
 
+                // 3. Analyser les employés ayant des incidents SST
                 for (let idEmp in sstParEmploye) {
                     let empData = sstParEmploye[idEmp];
                     empData.incidents.sort((a, b) => a.dateObj - b.dateObj);
@@ -1302,18 +1322,40 @@
                     }
 
                     if (datesAnniversaire) {
-                        motifsRisque.push(`🔄 Récurrence saisonnière/annuelle (incidents aux mêmes dates d'une année à l'autre)`);
+                        motifsRisque.push(`🔄 Récurrence saisonnière/annuelle`);
                     }
 
+                    // Si l'employé a été signalé manuellement, ajouter le motif
+                    if (employesManuels[idEmp]) {
+                        motifsRisque.push(`🛑 <strong>Signalement manuel :</strong> ${employesManuels[idEmp].detailRisque}`);
+                    }
+
+                    // Inclure si l'employé répond aux critères (incidents multiples ou flag manuel)
                     if (nbIncidents >= 2 || motifsRisque.length > 0) {
                         profilsRisque.push({
                             ...empData,
                             nbIncidents: nbIncidents,
                             motifs: motifsRisque.length > 0 ? motifsRisque.join('<br>') : `Suivi standard (${nbIncidents} incidents SST)`
                         });
+                        ajoutesDansRapport.add(idEmp);
                     }
                 }
 
+                // 4. Ajouter les employés marqués manuellement qui n'ont AUCUN incident SST
+                for (let idEmp in employesManuels) {
+                    if (!ajoutesDansRapport.has(idEmp)) {
+                        profilsRisque.push({
+                            nom: employesManuels[idEmp].nom,
+                            idEmploye: employesManuels[idEmp].idEmploye,
+                            anciennete: employesManuels[idEmp].anciennete,
+                            incidents: [],
+                            nbIncidents: 0,
+                            motifs: `🛑 <strong>Signalement manuel :</strong> ${employesManuels[idEmp].detailRisque}`
+                        });
+                    }
+                }
+
+                // 5. Trier et Afficher
                 profilsRisque.sort((a, b) => {
                     if (b.nbIncidents !== a.nbIncidents) {
                         return b.nbIncidents - a.nbIncidents;
@@ -1322,20 +1364,24 @@
                 });
 
                 if (profilsRisque.length === 0) {
-                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun employé identifié comme étant à risque élevé selon les critères SST actuels.</p>";
+                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun employé identifié comme étant à risque élevé.</p>";
                     return;
                 }
 
                 let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
                 html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
-                html += `<thead><tr><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Nombre d'incidents SST</th><th>Facteurs de Risque Identifiés</th><th>Détails des Dates, Gravité & Catégories</th></tr></thead><tbody>`;
+                html += `<thead><tr><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Incidents SST</th><th>Facteurs de Risque Identifiés</th><th>Détails des Incidents</th></tr></thead><tbody>`;
 
                 profilsRisque.forEach(item => {
-                    let listeDates = item.incidents.map(inc => {
-                        let badgeColor = inc.gravite === 'Majeur' ? 'text-danger fw-bold' : 'text-warning';
-                        let catTxt = inc.categories && inc.categories.length > 0 ? ` [${inc.categories.join(', ')}]` : '';
-                        return `<small>${inc.date} - <span class="${badgeColor}">[${inc.gravite}]</span>${catTxt} : ${inc.description}</small>`;
-                    }).join('<br>');
+                    let listeDates = "<span class='text-muted'>Aucun incident SST enregistré</span>";
+                    
+                    if (item.incidents && item.incidents.length > 0) {
+                        listeDates = item.incidents.map(inc => {
+                            let badgeColor = inc.gravite === 'Majeur' ? 'text-danger fw-bold' : 'text-warning';
+                            let catTxt = inc.categories && inc.categories.length > 0 ? ` [${inc.categories.join(', ')}]` : '';
+                            return `<small>${inc.date} - <span class="${badgeColor}">[${inc.gravite}]</span>${catTxt} : ${inc.description}</small>`;
+                        }).join('<br><hr style="margin:4px 0; border-color:#415a77;">');
+                    }
 
                     html += `<tr>
                         <td><strong>${item.nom}</strong></td>
