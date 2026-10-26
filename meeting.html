@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting de Plancher - SST & Opérations | Postes Canada</title>
+    <!-- CSS Externe requis -->
+    <link rel="stylesheet" href="style4.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="brand-title">
+                <div class="brand-logo">POSTES CANADA</div>
+                <div class="brand-text">
+                    <h1>Meeting de Plancher - SST & Opérations</h1>
+                    <p>Fiche d'affichage officielle pour facteurs et agents de livraison au dépôt</p>
+                </div>
+            </div>
+
+            <div class="header-actions no-print">
+                <button type="button" onclick="resetMeetingForm()" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-file-circle-plus"></i> Nouveau
+                </button>
+                <button type="button" onclick="openSearchModal()" class="btn btn-navy btn-sm">
+                    <i class="fa-solid fa-magnifying-glass"></i> Recherche
+                </button>
+                <button type="button" onclick="enrichEntireDocumentWithCopilot()" class="btn btn-copilot btn-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Enrichir Tout (Copilot)
+                </button>
+                <button type="button" onclick="saveMeetingToFirebase()" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> <span id="saveBtnLabel">Enregistrer</span>
+                </button>
+                <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-print"></i> Imprimer
+                </button>
+            </div>
+        </header>
+
+        <!-- ACTIVE DOCUMENT EDITING BANNER -->
+        <div id="editingBanner" class="no-print" style="display: none; background-color: #fff7ed; border: 1px solid #fdba74; padding: 10px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.88rem; color: #9a3412;">
+            <i class="fa-solid fa-pen-to-square"></i> Modification du meeting enregistré sous l'ID : <strong id="editingDocId">--</strong>
+            <button onclick="resetMeetingForm()" style="background: none; border: none; text-decoration: underline; color: #9a3412; cursor: pointer; margin-left: 15px; font-weight: 600;">Créer un nouveau meeting</button>
+        </div>
+
+        <!-- FORM METADATA GRID -->
+        <div class="meta-grid">
+            <div class="form-group">
+                <label for="meetingDate">Date du Meeting</label>
+                <input type="date" id="meetingDate" class="form-control" onchange="handleDateChange(this.value)">
+            </div>
+            <div class="form-group">
+                <label for="presenterName">Présentateur / Superviseur</label>
+                <input type="text" id="presenterName" class="form-control" placeholder="Nom du superviseur..." value="Superviseur des Opérations">
+            </div>
+            <div class="form-group">
+                <label for="depotSector">Dépôt Postal & Secteur</label>
+                <input type="text" id="depotSector" class="form-control" placeholder="Secteur de livraison..." value="Facteurs à pied, Relais, BPC & BML">
+            </div>
+        </div>
+
+        <!-- SECTION 1: SUJETS SST -->
+        <div class="section-block">
+            <div class="section-header sst">
+                <span><i class="fa-solid fa-shield-halved"></i> 1. Santé et Sécurité au Travail (SST)</span>
+                <button type="button" onclick="addTopic('sst')" class="btn btn-primary btn-sm no-print">
+                    <i class="fa-solid fa-plus"></i> Ajouter Sujet SST
+                </button>
+            </div>
+            <div id="sstTopicList" class="topic-list">
+                <!-- Target for SST Topic Cards -->
+            </div>
+        </div>
+
+        <!-- SECTION 2: SUJETS VARIABLES / OPÉRATIONS -->
+        <div class="section-block">
+            <div class="section-header variable">
+                <span><i class="fa-solid fa-boxes-packing"></i> 2. Consignes Variables & Opérations</span>
+                <button type="button" onclick="addTopic('variable')" class="btn btn-navy btn-sm no-print">
+                    <i class="fa-solid fa-plus"></i> Ajouter Sujet Opérationnel
+                </button>
+            </div>
+            <div id="variableTopicList" class="topic-list">
+                <!-- Target for Variable Topic Cards -->
+            </div>
+        </div>
+
+        <!-- FOOTER SIGNATURES (FOR PRINT) -->
+        <div class="print-only" style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; font-size: 0.85rem;">
+            <div style="border-top: 1px dashed #000; padding-top: 8px;">
+                <strong>Signature du Superviseur :</strong>
+            </div>
+            <div style="border-top: 1px dashed #000; padding-top: 8px;">
+                <strong>Représentant SST Dépôt :</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SEARCH MODAL (FIRESTORE) -->
+    <div id="searchModal" class="modal-overlay no-print">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color: var(--cp-navy); font-weight: 700; font-size: 1.2rem;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--cp-red);"></i> Rechercher une Réunion de Plancher
+                </h3>
+                <button type="button" onclick="closeSearchModal()" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="meta-grid" style="margin-bottom: 0;">
+                <div class="form-group">
+                    <label for="searchDateInput">Filtrer par Date</label>
+                    <input type="date" id="searchDateInput" class="form-control" onchange="executeSearch()">
+                </div>
+                <div class="form-group">
+                    <label for="searchKeywordInput">Mot-clé (Sujet, Verglas, BPC, Chien)</label>
+                    <input type="text" id="searchKeywordInput" class="form-control" placeholder="Rechercher..." oninput="executeSearch()">
+                </div>
+            </div>
+
+            <div id="searchResultsList" class="search-results-list">
+                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Chargement des réunions enregistrées...</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                <span id="searchCountBadge" style="font-size: 0.82rem; color: var(--text-muted);">0 réunion(s) trouvée(s)</span>
+                <button type="button" onclick="closeSearchModal()" class="btn btn-secondary btn-sm">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">
+        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">Notification</span>
+    </div>
+
+    <!-- APPLICATION CODE & FIREBASE SDK MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuration Firebase officielle fournie
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        // Initialisation de Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // État principal de l'application
+        let currentMeeting = {
+            date: new Date().toISOString().split('T')[0],
+            presenter: "Superviseur des Opérations",
+            depot: "Facteurs à pied, Relais, BPC & BML",
+            sujetsSST: [],
+            sujetsVariables: []
+        };
+
+        let loadedDocId = null;
+        let allMeetingsCache = [];
+
+        // Prise en charge de la dictée vocale (Web Speech API)
+        let recognition = null;
+        let activeDictationTarget = null; // { type: 'sst'|'variable', index: number, field: 'title'|'point', pointIndex?: number }
+
+        // Prompt Système de référence pour IA Copilote
+        const COPILOT_SYSTEM_PROMPT = `Tu es un expert en Santé et Sécurité au Travail (SST) et en Opérations chez Postes Canada.
+Public cible : Facteurs effectuant la livraison à pied, relais, boîtes aux lettres communautaires (BPC/CMB), boîtes réceptrices de bâtiment (BML) et colis.
+Inclus des consignes concrètes de terrain : prévention des glissades (verglas, crampons), escaliers, morsures de chien, ergonomie du sac postal (charge équilibrée max 35 lbs), numérisation à 100% au point de remise, cartes d'avis 15/15, courrier recommandé et clés de BPC.
+
+Pour le sujet fourni, génère de 3 à 5 points explicatifs synthétiques et directifs.
+Format JSON strict obligatoire :
+{
+  "explications": [
+    "Point explicatif 1...",
+    "Point explicatif 2...",
+    "Point explicatif 3..."
+  ]
+}`;
+
+        // Initialisation globale
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await signInAnonymously(auth);
+            } catch (err) {
+                console.warn("Auth Firebase note:", err);
+            }
+
+            document.getElementById('meetingDate').value = currentMeeting.date;
+            setupSpeechRecognition();
+
+            // Charger quelques exemples de départ si vide
+            if (currentMeeting.sujetsSST.length === 0) {
+                currentMeeting.sujetsSST.push({
+                    id: generateId(),
+                    titre: "Prévention des glissades sur glace et accès sécurisé aux BPC / BML",
+                    explications: [
+                        "Ajuster et porter obligatoirement les crampons d'expérience dès présence de verglas.",
+                        "Conserver les trois points de contact lors du franchissement des marches résidentielles.",
+                        "Signaler immédiatement toute boîte communautaire (BPC) non déneigée ou glacée."
+                    ]
+                });
+            }
+
+            if (currentMeeting.sujetsVariables.length === 0) {
+                currentMeeting.sujetsVariables.push({
+                    id: generateId(),
+                    titre: "Numérisation à 100% au point de remise et exactitude des avis 15/15",
+                    explications: [
+                        "Procéder au balayage du code à barres exactement devant la porte ou le casier du client.",
+                        "Compléter lisiblement l'avis de livraison avec l'heure exacte et le numéro du casier de dépôt."
+                    ]
+                });
+            }
+
+            renderAll();
+        });
+
+        // Gestionnaires d'événements des métadonnées
+        window.handleDateChange = (val) => {
+            currentMeeting.date = val;
+        };
+
+        // Gestion dynamique des sujets
+        window.addTopic = (type) => {
+            const newItem = {
+                id: generateId(),
+                titre: "",
+                explications: [""]
+            };
+            if (type === 'sst') {
+                currentMeeting.sujetsSST.push(newItem);
+            } else {
+                currentMeeting.sujetsVariables.push(newItem);
+            }
+            renderAll();
+        };
+
+        window.removeTopic = (type, index) => {
+            if (type === 'sst') {
+                currentMeeting.sujetsSST.splice(index, 1);
+            } else {
+                currentMeeting.sujetsVariables.splice(index, 1);
+            }
+            renderAll();
+        };
+
+        window.updateTitle = (type, index, value) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            if (list[index]) {
+                list[index].titre = value;
+            }
+        };
+
+        window.addPoint = (type, topicIndex) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            if (list[topicIndex]) {
+                list[topicIndex].explications.push("");
+                renderAll();
+            }
+        };
+
+        window.updatePoint = (type, topicIndex, pointIndex, value) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            if (list[topicIndex] && list[topicIndex].explications[pointIndex] !== undefined) {
+                list[topicIndex].explications[pointIndex] = value;
+            }
+        };
+
+        window.removePoint = (type, topicIndex, pointIndex) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            if (list[topicIndex] && list[topicIndex].explications.length > 1) {
+                list[topicIndex].explications.splice(pointIndex, 1);
+                renderAll();
+            }
+        };
+
+        // Reconstitution et Réinitialisation
+        window.resetMeetingForm = () => {
+            loadedDocId = null;
+            document.getElementById('editingBanner').style.display = 'none';
+            document.getElementById('saveBtnLabel').textContent = "Enregistrer";
+
+            currentMeeting = {
+                date: new Date().toISOString().split('T')[0],
+                presenter: "Superviseur des Opérations",
+                depot: "Facteurs à pied, Relais, BPC & BML",
+                sujetsSST: [{ id: generateId(), titre: "", explications: [""] }],
+                sujetsVariables: [{ id: generateId(), titre: "", explications: [""] }]
+            };
+
+            document.getElementById('meetingDate').value = currentMeeting.date;
+            document.getElementById('presenterName').value = currentMeeting.presenter;
+            document.getElementById('depotSector').value = currentMeeting.depot;
+
+            renderAll();
+            showToast("Nouveau formulaire de réunion réinitialisé.", "success");
+        };
+
+        // Rendu UI principal avec les classes de style4.css
+        function renderAll() {
+            renderSection('sst', currentMeeting.sujetsSST, 'sstTopicList');
+            renderSection('variable', currentMeeting.sujetsVariables, 'variableTopicList');
+        }
+
+        function renderSection(type, list, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (list.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-style: italic; text-align: center; padding: 15px;">Aucun sujet défini dans cette section. Cliquez sur "+ Ajouter" pour commencer.</p>`;
+                return;
+            }
+
+            list.forEach((item, topicIdx) => {
+                const card = document.createElement('div');
+                card.className = 'topic-card';
+
+                // Génération des lignes de points explicatifs
+                let pointsHtml = '';
+                item.explications.forEach((pointText, ptIdx) => {
+                    const isMicActive = activeDictationTarget && 
+                                       activeDictationTarget.type === type && 
+                                       activeDictationTarget.index === topicIdx && 
+                                       activeDictationTarget.field === 'point' && 
+                                       activeDictationTarget.pointIndex === ptIdx;
+
+                    pointsHtml += `
+                        <div class="point-row">
+                            <span style="color: ${type === 'sst' ? 'var(--cp-red)' : 'var(--cp-navy)'}; font-weight: bold;">•</span>
+                            <input type="text" class="form-control" value="${escapeHtml(pointText)}"
+                                   placeholder="Point explicatif conique..."
+                                   oninput="updatePoint('${type}', ${topicIdx}, ${ptIdx}, this.value)">
+                            <button type="button" onclick="toggleDictation('${type}', ${topicIdx}, 'point', ${ptIdx})"
+                                    class="mic-btn ${isMicActive ? 'recording' : ''} no-print" title="Dicter ce point">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                            ${item.explications.length > 1 ? `
+                                <button type="button" onclick="removePoint('${type}', ${topicIdx}, ${ptIdx})" class="btn btn-outline btn-sm no-print" style="color: #ef4444;" title="Supprimer ce point">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                const isTitleMicActive = activeDictationTarget && 
+                                         activeDictationTarget.type === type && 
+                                         activeDictationTarget.index === topicIdx && 
+                                         activeDictationTarget.field === 'title';
+
+                card.innerHTML = `
+                    <div class="topic-header-input">
+                        <span style="font-weight: 700; color: var(--cp-navy); min-width: 80px;">#${topicIdx + 1} ${type.toUpperCase()}</span>
+                        <input type="text" class="form-control topic-title-input" value="${escapeHtml(item.titre)}"
+                               placeholder="Sujet principal (ex: Morsures de chiens ou qualité de balayage...)"
+                               oninput="updateTitle('${type}', ${topicIdx}, this.value)">
+                        <button type="button" onclick="toggleDictation('${type}', ${topicIdx}, 'title')"
+                                class="mic-btn ${isTitleMicActive ? 'recording' : ''} no-print" title="Dicter le titre">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                    </div>
+
+                    <div class="points-container">
+                        ${pointsHtml}
+                    </div>
+
+                    <button type="button" onclick="addPoint('${type}', ${topicIdx})" class="add-point-btn no-print">
+                        <i class="fa-solid fa-plus"></i> Ajouter un point explicatif
+                    </button>
+
+                    <div class="topic-actions no-print">
+                        <button type="button" onclick="enrichTopicWithCopilot('${type}', ${topicIdx})" class="btn btn-copilot btn-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot IA
+                        </button>
+                        <button type="button" onclick="copyM365Prompt('${type}', ${topicIdx})" class="btn btn-outline btn-sm" title="Copier le prompt préparé pour Microsoft Copilot M365">
+                            <i class="fa-solid fa-copy"></i> Prompt M365
+                        </button>
+                        <button type="button" onclick="removeTopic('${type}', ${topicIdx})" class="btn btn-danger btn-sm">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+
+                if (type === 'sst') {
+                    document.getElementById('sstTopicList').appendChild(card);
+                } else {
+                    document.getElementById('variableTopicList').appendChild(card);
+                }
+            });
+        }
+
+        // Dictée Vocale (Web Speech API)
+        function setupSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'fr-CA';
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                if (activeDictationTarget) {
+                    const { type, index, field, pointIndex } = activeDictationTarget;
+                    const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+
+                    if (list[index]) {
+                        if (field === 'title') {
+                            list[index].titre = text;
+                        } else if (field === 'point' && pointIndex !== undefined) {
+                            list[index].explications[pointIndex] = text;
+                        }
+                        showToast(`Dicté : "${text}"`, "success");
+                    }
+                }
+                stopDictation();
+            };
+
+            recognition.onerror = () => stopDictation();
+            recognition.onend = () => stopDictation();
+        }
+
+        window.toggleDictation = (type, index, field, pointIndex) => {
+            if (!recognition) {
+                showToast("La dictée vocale n'est pas disponible sur votre navigateur.", "error");
+                return;
+            }
+
+            if (activeDictationTarget && 
+                activeDictationTarget.type === type && 
+                activeDictationTarget.index === index && 
+                activeDictationTarget.field === field && 
+                activeDictationTarget.pointIndex === pointIndex) {
+                stopDictation();
+            } else {
+                stopDictation();
+                activeDictationTarget = { type, index, field, pointIndex };
+                renderAll();
+                try {
+                    recognition.start();
+                    showToast("Dictée vocale démarrée (parlez en français)...", "success");
+                } catch(e) {
+                    stopDictation();
+                }
+            }
+        };
+
+        function stopDictation() {
+            activeDictationTarget = null;
+            renderAll();
+        }
+
+        // Moteur Copilot / Gemini IA
+        async function callCopilotIA(promptText) {
+            const apiKey = ""; // Clé injectée automatiquement par l'environnement
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }],
+                    systemInstruction: { parts: [{ text: COPILOT_SYSTEM_PROMPT }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "explications": {
+                                    "type": "ARRAY",
+                                    "items": { "type": "STRING" }
+                                }
+                            },
+                            "propertyOrdering": ["explications"]
+                        }
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error("Erreur réponse API Copilot");
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            return JSON.parse(text);
+        }
+
+        window.enrichTopicWithCopilot = async (type, index) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            const item = list[index];
+
+            if (!item || !item.titre.trim()) {
+                showToast("Veuillez d'abord saisir ou dicter un titre de sujet.", "error");
+                return;
+            }
+
+            showToast("Copilot analyse et génère les points explicatifs...", "success");
+
+            try {
+                const prompt = `Section : ${type.toUpperCase()}\nSujet : "${item.titre}"\nGénère les consignes SST ou opérationnelles pour les facteurs.`;
+                const res = await callCopilotIA(prompt);
+
+                if (res && res.explications && Array.isArray(res.explications)) {
+                    item.explications = res.explications;
+                    renderAll();
+                    showToast("Sujet enrichi par Copilot IA !", "success");
+                }
+            } catch (err) {
+                console.error("Copilot Error:", err);
+                showToast("Erreur lors de l'enrichissement Copilot.", "error");
+            }
+        };
+
+        window.enrichEntireDocumentWithCopilot = async () => {
+            showToast("Enrichissement global du meeting par Copilot...", "success");
+            let total = 0;
+
+            for (let i = 0; i < currentMeeting.sujetsSST.length; i++) {
+                if (currentMeeting.sujetsSST[i].titre.trim()) {
+                    try {
+                        const res = await callCopilotIA(`SST: ${currentMeeting.sujetsSST[i].titre}`);
+                        if (res?.explications) {
+                            currentMeeting.sujetsSST[i].explications = res.explications;
+                            total++;
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            for (let i = 0; i < currentMeeting.sujetsVariables.length; i++) {
+                if (currentMeeting.sujetsVariables[i].titre.trim()) {
+                    try {
+                        const res = await callCopilotIA(`Opérations: ${currentMeeting.sujetsVariables[i].titre}`);
+                        if (res?.explications) {
+                            currentMeeting.sujetsVariables[i].explications = res.explications;
+                            total++;
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            renderAll();
+            showToast(`${total} sujet(s) enrichi(s) avec succès !`, "success");
+        };
+
+        // Copier le Prompt pour Microsoft Copilot (M365)
+        window.copyM365Prompt = (type, index) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            const item = list[index];
+            const title = item ? item.titre : "Consignes de livraison";
+
+            const promptText = `Rôle : Spécialiste SST et Superviseur des Opérations chez Postes Canada.
+Propose 3 à 5 points explicatifs courts et clairs pour les facteurs à pied et boîtes postales communautaires (BPC/CMB).
+Thème : ${type === 'sst' ? 'Santé et Sécurité au Travail (SST)' : 'Consignes Opérationnelles Variables'}
+Sujet : "${title}"
+Inclus consignes terrain : verglas, chiens, crampons, sac postal, numérisation 100%.`;
+
+            copyTextToClipboard(promptText);
+            showToast("Prompt Microsoft Copilot M365 copié dans le presse-papiers !", "success");
+        };
+
+        function copyTextToClipboard(text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        }
+
+        // Intégration Firebase Firestore (Collection 'meeting')
+        window.saveMeetingToFirebase = async () => {
+            currentMeeting.presenter = document.getElementById('presenterName').value || "Superviseur";
+            currentMeeting.depot = document.getElementById('depotSector').value || "Dépôt Postal";
+
+            if (!currentMeeting.date) {
+                showToast("Veuillez spécifier une date pour la réunion.", "error");
+                return;
+            }
+
+            const docId = loadedDocId || currentMeeting.date;
+
+            const payload = {
+                id: docId,
+                date: currentMeeting.date,
+                presenter: currentMeeting.presenter,
+                depot: currentMeeting.depot,
+                sujetsSST: currentMeeting.sujetsSST.map(s => ({
+                    id: s.id || generateId(),
+                    titre: s.titre || '',
+                    explications: s.explications.filter(p => p.trim().length > 0)
+                })),
+                sujetsVariables: currentMeeting.sujetsVariables.map(s => ({
+                    id: s.id || generateId(),
+                    titre: s.titre || '',
+                    explications: s.explications.filter(p => p.trim().length > 0)
+                })),
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                showToast("Enregistrement dans Firestore...", "success");
+                const docRef = doc(db, 'meeting', docId);
+                await setDoc(docRef, payload, { merge: true });
+
+                loadedDocId = docId;
+                document.getElementById('editingBanner').style.display = 'block';
+                document.getElementById('editingDocId').textContent = docId;
+                document.getElementById('saveBtnLabel').textContent = "Mettre à jour";
+
+                showToast("Meeting sauvegardé dans Firestore !", "success");
+            } catch (err) {
+                console.error("Firebase Save Error:", err);
+                showToast("Erreur d'enregistrement dans Firestore.", "error");
+            }
+        };
+
+        // Modal de Recherche & Récupération
+        window.openSearchModal = async () => {
+            document.getElementById('searchModal').classList.add('active');
+            await loadAllMeetingsFromFirestore();
+        };
+
+        window.closeSearchModal = () => {
+            document.getElementById('searchModal').classList.remove('active');
+        };
+
+        async function loadAllMeetingsFromFirestore() {
+            const listContainer = document.getElementById('searchResultsList');
+            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des données Firestore...</p>';
+
+            try {
+                const querySnap = await getDocs(collection(db, 'meeting'));
+                allMeetingsCache = [];
+                querySnap.forEach((docSnap) => {
+                    allMeetingsCache.push({
+                        docId: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                allMeetingsCache.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                executeSearch();
+            } catch (err) {
+                console.error("Search fetch error:", err);
+                listContainer.innerHTML = '<p style="color: var(--cp-red); text-align: center; padding: 20px;">Erreur de connexion à Firestore.</p>';
+            }
+        }
+
+        window.executeSearch = () => {
+            const dateFilter = document.getElementById('searchDateInput').value;
+            const keywordFilter = document.getElementById('searchKeywordInput').value.toLowerCase().trim();
+            const listContainer = document.getElementById('searchResultsList');
+
+            const filtered = allMeetingsCache.filter(item => {
+                let matchDate = true;
+                let matchKeyword = true;
+
+                if (dateFilter) matchDate = (item.date === dateFilter);
+
+                if (keywordFilter) {
+                    const fullText = [
+                        item.date || '',
+                        item.presenter || '',
+                        item.depot || '',
+                        ...(item.sujetsSST || []).map(s => s.titre + " " + (s.explications || []).join(" ")),
+                        ...(item.sujetsVariables || []).map(s => s.titre + " " + (s.explications || []).join(" "))
+                    ].join(" ").toLowerCase();
+
+                    matchKeyword = fullText.includes(keywordFilter);
+                }
+
+                return matchDate && matchKeyword;
+            });
+
+            document.getElementById('searchCountBadge').textContent = `${filtered.length} réunion(s) trouvée(s)`;
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">Aucune réunion trouvée.</p>';
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            filtered.forEach(item => {
+                const sstTitles = (item.sujetsSST || []).map(s => s.titre).filter(Boolean).join(" • ");
+                const varTitles = (item.sujetsVariables || []).map(s => s.titre).filter(Boolean).join(" • ");
+
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.onclick = () => loadMeetingIntoForm(item.docId);
+
+                div.innerHTML = `
+                    <div>
+                        <strong style="color: var(--cp-navy); font-size: 0.95rem;">Réunion du ${item.date || 'Sans date'}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                            <strong>SST :</strong> ${escapeHtml(sstTitles || 'Aucun sujet')}
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            <strong>Opérations :</strong> ${escapeHtml(varTitles || 'Aucun sujet')}
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-folder-open"></i> Éditer
+                    </button>
+                `;
+                listContainer.appendChild(div);
+            });
+        };
+
+        window.loadMeetingIntoForm = (docId) => {
+            const found = allMeetingsCache.find(m => m.docId === docId);
+            if (found) {
+                loadedDocId = found.docId;
+                currentMeeting = {
+                    date: found.date || new Date().toISOString().split('T')[0],
+                    presenter: found.presenter || "Superviseur des Opérations",
+                    depot: found.depot || "Dépôt Postal",
+                    sujetsSST: found.sujetsSST || [],
+                    sujetsVariables: found.sujetsVariables || []
+                };
+
+                document.getElementById('meetingDate').value = currentMeeting.date;
+                document.getElementById('presenterName').value = currentMeeting.presenter;
+                document.getElementById('depotSector').value = currentMeeting.depot;
+
+                document.getElementById('editingBanner').style.display = 'block';
+                document.getElementById('editingDocId').textContent = docId;
+                document.getElementById('saveBtnLabel').textContent = "Mettre à jour";
+
+                renderAll();
+                closeSearchModal();
+                showToast(`Meeting du ${currentMeeting.date} chargé pour modification.`, "success");
+            }
+        };
+
+        // Utilitaires généraux
+        function generateId() {
+            return 'id_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = message;
+            toast.className = `toast ${type} visible`;
+
+            setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
