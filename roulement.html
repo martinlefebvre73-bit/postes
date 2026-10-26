@@ -252,6 +252,37 @@
                         <option value="issue">⚠️ Problème / Anomalie</option>
                     </select>
                 </div>
+                
+                <!-- Bloc d'intégration au Plan de Roulement -->
+<div class="mb-3 p-3 border border-info rounded bg-dark">
+    <label class="form-label text-info fw-bold mb-2">Associer au Plan de Roulement (Cochez pour marquer comme complété) :</label>
+    <div class="d-flex gap-4 flex-wrap" id="checkboxes-roulement">
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_extra" value="Extra">
+            <label class="form-check-label text-light" for="rl_extra">Extra</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_telematique" value="Télématique">
+            <label class="form-check-label text-light" for="rl_telematique">Télématique</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_nouveaux" value="Nouveaux employés">
+            <label class="form-check-label text-light" for="rl_nouveaux">Nouveaux employés</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_anomalies" value="Suivis anomalies">
+            <label class="form-check-label text-light" for="rl_anomalies">Suivis anomalies</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_securite" value="Sécurité routière">
+            <label class="form-check-label text-light" for="rl_securite">Sécurité routière</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input roulement-cb" type="checkbox" id="rl_retour" value="Retour SST-PAICD">
+            <label class="form-check-label text-light" for="rl_retour">Retour SST-PAICD</label>
+        </div>
+    </div>
+</div>
                 <div>
                     <label for="modal-notes" class="block-label">Détails et notes sur l'action faite</label>
                     <textarea id="modal-notes" rows="4" placeholder="Entrez les détails des activités réalisées, observations..."></textarea>
