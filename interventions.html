@@ -839,7 +839,7 @@
             });
         };
 
-        // --- GESTION DE LA SAUVEGARDE MULTI-PROJETS ---
+        // --- GESTION DE LA SAUVEGARDE MULTI-PROJETS ET EXPORT PRESSE-PAPIER SST ---
         document.getElementById('formIntervention').addEventListener('submit', async (e) => {
             e.preventDefault();
             const dateStr = document.getElementById('dateIntervention').value;
@@ -939,7 +939,17 @@
                     }
                 }
 
-                alert("Intervention enregistrée et synchronisée avec succès !");
+                // 3. Préparer et copier les informations de l'employé & la description dans le presse-papier
+                const texteAExporter = `Date de l'observation : ${dateStr}\nNom de l'employé : ${nomEmployeSaisi}\nNuméro / ID de l'employé : ${idEmployeSaisi}\n\nDescription :\n${nouvelleIntervention.description}`;
+
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(texteAExporter);
+                }
+
+                // 4. Ouvrir automatiquement le formulaire Observation SST
+                window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank');
+
+                alert("Intervention enregistrée avec succès !\n\nLes données (Date, Nom, ID et Description) ont été copiées dans le presse-papier et le formulaire Observation SST a été ouvert.");
                 document.getElementById('formIntervention').reset();
                 retourAccueil();
             } catch (erreur) {
