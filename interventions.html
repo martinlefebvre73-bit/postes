@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #0d1b2a; /* Fond bleu foncé professionnel */
+            background-color: #0d1b2a;
             color: #e0e1dd;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -41,7 +41,6 @@
         .table-bordered td, .table-bordered th {
             border-color: #415a77;
         }
-        /* Style pour des boutons de grandeur égale */
         .btn-menu-egal {
             flex: 1;
             min-width: 160px;
@@ -50,53 +49,17 @@
             font-weight: 600;
         }
 
-        /* --- CONFIGURATION DE L'IMPRESSION EN MODE PAYSAGE --- */
         @media print {
-            @page {
-                size: landscape;
-                margin: 1cm;
-            }
-            body {
-                background-color: #ffffff !important;
-                color: #000000 !important;
-            }
-            #vue-accueil, .btn, form, h1, #select-type-container {
-                display: none !important;
-            }
-            #zone-affichage {
-                display: block !important;
-                background-color: #ffffff !important;
-                color: #000000 !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            #zone-affichage h3 {
-                color: #000000 !important;
-                font-size: 1.5rem;
-                margin-bottom: 20px;
-            }
-            .table {
-                color: #000000 !important;
-                border-color: #000000 !important;
-                width: 100% !important;
-                font-size: 0.9rem;
-            }
-            .table-striped > tbody > tr:nth-of-type(odd) {
-                background-color: rgba(0, 0, 0, 0.05) !important;
-                color: #000000 !important;
-            }
-            .table-bordered td, .table-bordered th {
-                border-color: #000000 !important;
-            }
-            .text-danger {
-                color: #dc3545 !important;
-                font-weight: bold;
-            }
-            .text-info {
-                color: #0d6efd !important;
-            }
+            @page { size: landscape; margin: 1cm; }
+            body { background-color: #ffffff !important; color: #000000 !important; }
+            #vue-accueil, .btn, form, h1, #select-type-container { display: none !important; }
+            #zone-affichage { display: block !important; background-color: #ffffff !important; color: #000000 !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            #zone-affichage h3 { color: #000000 !important; font-size: 1.5rem; margin-bottom: 20px; }
+            .table { color: #000000 !important; border-color: #000000 !important; width: 100% !important; font-size: 0.9rem; }
+            .table-striped > tbody > tr:nth-of-type(odd) { background-color: rgba(0, 0, 0, 0.05) !important; color: #000000 !important; }
+            .table-bordered td, .table-bordered th { border-color: #000000 !important; }
+            .text-danger { color: #dc3545 !important; font-weight: bold; }
+            .text-info { color: #0d6efd !important; }
         }
     </style>
 </head>
@@ -109,10 +72,7 @@
             <div></div>
         </div>
 
-        <!-- PAGE D'ACCUEIL -->
         <div id="vue-accueil">
-            
-            <!-- TABLEAU SUPPLÉMENTAIRE - MODE CHEF (Observations de la semaine par superviseur) -->
             <div id="cardModeChef" class="card shadow-lg p-4 mb-4 border-warning d-none">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h4 class="text-warning m-0">👑 Mode Chef : Observations de la Semaine en Cours (Lun - Ven)</h4>
@@ -127,19 +87,14 @@
                             </tr>
                         </thead>
                         <tbody id="tableau-chef-observations">
-                            <tr>
-                                <td colspan="2" class="text-muted">Chargement des données...</td>
-                            </tr>
+                            <tr><td colspan="2" class="text-muted">Chargement des données...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- TABLEAU DES STATISTIQUES (KPIs) -->
             <div class="card shadow-lg p-4 mb-4">
                 <h4 class="text-light mb-3 text-center">État Global du Suivi</h4>
-                
-                <!-- SÉLECTEUR DE PÉRIODE POUR LES STATISTIQUES -->
                 <div class="row g-2 mb-4 justify-content-center align-items-end bg-dark p-3 rounded border border-secondary">
                     <div class="col-md-4">
                         <label class="form-label text-light small fw-bold">Période du :</label>
@@ -173,7 +128,6 @@
                     </table>
                 </div>
 
-                <!-- SOUS-TABLEAU DES TYPES D'INTERVENTIONS -->
                 <h6 class="text-light mt-3 mb-2 text-center text-muted">Détail par Type d'Intervention</h6>
                 <div class="table-responsive">
                     <table class="table table-bordered text-center align-middle mb-0 small">
@@ -197,7 +151,6 @@
                 </div>
             </div>
 
-            <!-- BOUTONS DE NAVIGATION DE GRANDEUR ÉGALE -->
             <div class="card shadow-lg p-4 text-center">
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Saisie intervention</button>
@@ -211,7 +164,6 @@
             </div>
         </div>
 
-        <!-- ZONE D'AFFICHAGE DYNAMIQUE (Rapports imprimables) -->
         <div id="zone-affichage" class="card shadow-sm p-4 mt-4 d-none">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 id="titre-zone" class="m-0"></h3>
@@ -221,7 +173,6 @@
             <div id="contenu-zone"></div>
         </div>
 
-        <!-- VUE PAGE COMPLÈTE : SAISIE INTERVENTION -->
         <div id="vue-saisie" class="card shadow-lg p-5 d-none">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-light">Nouvelle Intervention</h2>
@@ -252,36 +203,6 @@
                         <input type="text" class="form-control" id="ancienneteEmploye" readonly placeholder="Ancienneté automatique">
                     </div>
                 </div>
-                <!-- Bloc d'intégration au Plan de Roulement -->
-<div class="mb-3 p-3 border border-info rounded bg-dark">
-    <label class="form-label text-info fw-bold mb-2">Associer au Plan de Roulement (Cochez pour marquer comme complété) :</label>
-    <div class="d-flex gap-4 flex-wrap" id="checkboxes-roulement">
-        <div class="form-check">
-            <input class="form-check-input roulement-cb" type="checkbox" id="rl_extra" value="Extra">
-            <label class="form-check-label text-light" for="rl_extra">Extra</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input roulement-cb" type="checkbox" id="rl_telematique" value="Télématique">
-            <label class="form-check-label text-light" for="rl_telematique">Télématique</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input roulement-cb" type="checkbox" id="rl_nouveaux" value="Nouveaux employés">
-            <label class="form-check-label text-light" for="rl_nouveaux">Nouveaux employés</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input roulement-cb" type="checkbox" id="rl_anomalies" value="Suivis anomalies">
-            <label class="form-check-label text-light" for="rl_anomalies">Suivis anomalies</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input roulement-cb" type="checkbox" id="rl_securite" value="Sécurité routière">
-            <label class="form-check-label text-light" for="rl_securite">Sécurité routière</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input roulement-cb" type="checkbox" id="rl_retour" value="Retour SST-PAICD">
-            <label class="form-check-label text-light" for="rl_retour">Retour SST-PAICD</label>
-        </div>
-    </div>
-</div>
 
                 <div class="row">
                     <div class="col-md-12 mb-3">
@@ -296,7 +217,6 @@
                     </div>
                 </div>
 
-                <!-- Bloc optionnel pour SST -->
                 <div id="blocSstOptions" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
                     <label class="form-label text-warning fw-bold mb-2">Gravité de l'incident SST :</label>
                     <div class="d-flex gap-4 mb-3">
@@ -327,7 +247,6 @@
                     </div>
                 </div>
 
-                <!-- Bloc optionnel pour Observation -->
                 <div id="blocObservationOptions" class="mb-3 d-none p-3 border border-secondary rounded bg-dark">
                     <label class="form-label text-warning fw-bold mb-2">Statut de l'observation :</label>
                     <div class="d-flex gap-4 flex-wrap">
@@ -346,12 +265,42 @@
                     </div>
                 </div>
 
-                <!-- Description -->
                 <div class="mb-3">
                     <label class="form-label">Description (Dictée vocale possible)</label>
                     <div class="input-group">
                         <textarea class="form-control" id="description" rows="4" placeholder="Cliquez sur le micro pour dicter..."></textarea>
                         <button type="button" class="btn btn-outline-light" onclick="demarrerDictee()">🎤 Dicter</button>
+                    </div>
+                </div>
+
+                <!-- Bloc d'intégration au Plan de Roulement -->
+                <div class="mb-3 p-3 border border-info rounded bg-dark">
+                    <label class="form-label text-info fw-bold mb-2">Associer au Plan de Roulement (Cochez pour marquer comme complété) :</label>
+                    <div class="d-flex gap-4 flex-wrap" id="checkboxes-roulement">
+                        <div class="form-check">
+                            <input class="form-check-input roulement-cb" type="checkbox" id="rl_extra" value="Extra">
+                            <label class="form-check-label text-light" for="rl_extra">Extra</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input roulement-cb" type="checkbox" id="rl_telematique" value="Télématique">
+                            <label class="form-check-label text-light" for="rl_telematique">Télématique</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input roulement-cb" type="checkbox" id="rl_nouveaux" value="Nouveaux employés">
+                            <label class="form-check-label text-light" for="rl_nouveaux">Nouveaux employés</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input roulement-cb" type="checkbox" id="rl_anomalies" value="Suivis anomalies">
+                            <label class="form-check-label text-light" for="rl_anomalies">Suivis anomalies</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input roulement-cb" type="checkbox" id="rl_securite" value="Sécurité routière">
+                            <label class="form-check-label text-light" for="rl_securite">Sécurité routière</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input roulement-cb" type="checkbox" id="rl_retour" value="Retour SST-PAICD">
+                            <label class="form-check-label text-light" for="rl_retour">Retour SST-PAICD</label>
+                        </div>
                     </div>
                 </div>
 
@@ -502,9 +451,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+        // Configuration pour Interventions (Projet principal)
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
             authDomain: "postesst.firebaseapp.com",
@@ -513,13 +463,41 @@
             messagingSenderId: "39362155503",
             appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // NOUVELLE Configuration pour accéder au Roulement (Projet secondaire)
+        const firebaseConfigRoulement = {
+            apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+            authDomain: "postes-26884.firebaseapp.com",
+            projectId: "postes-26884",
+            storageBucket: "postes-26884.firebasestorage.app",
+            messagingSenderId: "75974397689",
+            appId: "1:75974397689:web:5fd12942788612c62b1c28",
+            measurementId: "G-83YPF62ET5"
+        };
+        const appRoulement = initializeApp(firebaseConfigRoulement, "RoulementApp");
+        const dbRoulement = getFirestore(appRoulement);
+
+        const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
+
         let listeEmployesMemoire = [];
         let estModeChef = false;
+
+        // --- FONCTION UTILITAIRE POUR TROUVER LA SEMAINE ---
+        function getWeekKeyFromDate(dateString) {
+            const d = new Date(dateString + "T00:00:00");
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajuster au lundi
+            const monday = new Date(d.setDate(diff));
+            
+            const year = monday.getFullYear();
+            const month = String(monday.getMonth() + 1).padStart(2, '0');
+            const dateDay = String(monday.getDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${dateDay}`;
+        }
 
         // --- GESTION DU MODE CHEF ET DES ACCÈS ---
         window.addEventListener('DOMContentLoaded', () => {
@@ -602,13 +580,11 @@
             }
         };
 
-        // --- CALCUL DES OBSERVATIONS DE LA SEMAINE EN COURS (LUNDI AU VENDREDI) POUR LE MODE CHEF ---
         window.chargerTableauChefObservationsSemaine = async () => {
             const tbody = document.getElementById('tableau-chef-observations');
             try {
-                // Déterminer le Lundi et le Vendredi de la semaine en cours
                 const maintenant = new Date();
-                const jourSemaine = maintenant.getDay(); // 0 = Dimanche, 1 = Lundi, ...
+                const jourSemaine = maintenant.getDay(); 
                 const distanceLundi = jourSemaine === 0 ? -6 : 1 - jourSemaine;
                 
                 const lundi = new Date(maintenant);
@@ -616,10 +592,9 @@
                 lundi.setHours(0, 0, 0, 0);
 
                 const vendredi = new Date(lundi);
-                vendredi.setDate(lundi.getDate() + 4); // Lundi + 4 jours = Vendredi
+                vendredi.setDate(lundi.getDate() + 4);
                 vendredi.setHours(23, 59, 59, 999);
 
-                // Récupérer toutes les interventions
                 const querySnapshot = await getDocs(collection(db, "interventions"));
                 let observationsParSuperviseur = {};
 
@@ -627,11 +602,9 @@
                     let data = docSnap.data();
                     let typeIntervention = (data.typeIntervention || '').trim().toLowerCase();
 
-                    // Vérifier si c'est une "Observation"
                     if (typeintervEstObservation(typeIntervention) && data.date) {
                         let dateInterv = new Date(data.date + "T00:00:00");
                         
-                        // Filtrer pour la semaine en cours (Lundi au Vendredi)
                         if (dateInterv >= lundi && dateInterv <= vendredi) {
                             let sup = data.superviseurEmail || 'Non assigné';
                             observationsParSuperviseur[sup] = (observationsParSuperviseur[sup] || 0) + 1;
@@ -866,6 +839,7 @@
             });
         };
 
+        // --- GESTION DE LA SAUVEGARDE MULTI-PROJETS ---
         document.getElementById('formIntervention').addEventListener('submit', async (e) => {
             e.preventDefault();
             const dateStr = document.getElementById('dateIntervention').value;
@@ -926,13 +900,51 @@
             };
 
             try {
+                // 1. Sauvegarder dans la base Interventions
                 await addDoc(collection(db, "interventions"), nouvelleIntervention);
-                alert("Intervention enregistrée avec succès !");
+                
+                // 2. Vérifier si des cases du roulement sont cochées et sauvegarder dans l'autre base
+                const activitesCochees = Array.from(document.querySelectorAll('.roulement-cb:checked')).map(cb => cb.value);
+                
+                if (activitesCochees.length > 0) {
+                    const weekKey = getWeekKeyFromDate(dateStr);
+                    const roulementDocRef = doc(dbRoulement, 'roulement', weekKey);
+                    
+                    const roulementSnap = await getDoc(roulementDocRef);
+                    
+                    if (roulementSnap.exists()) {
+                        let roulementData = roulementSnap.data();
+                        let logs = roulementData.logs || {};
+                        
+                        activitesCochees.forEach(activite => {
+                            const supIndex = roulementData.assignments.indexOf(activite);
+                            if (supIndex !== -1) {
+                                const supName = SUPERVISORS[supIndex];
+                                
+                                let noteActuelle = logs[supName]?.notes ? logs[supName].notes + "\n\n" : "";
+                                let nouvelleNote = noteActuelle + `[Copie Intervention - Employé: ${nomEmployeSaisi}] : ${nouvelleIntervention.description}`;
+                                
+                                logs[supName] = {
+                                    status: 'completed',
+                                    notes: nouvelleNote,
+                                    updatedAt: new Date().toISOString()
+                                };
+                            }
+                        });
+                        
+                        // Mettre à jour Firebase Roulement
+                        await setDoc(roulementDocRef, { logs: logs }, { merge: true });
+                    } else {
+                        console.warn("La semaine correspondante n'existe pas encore dans le plan de roulement.");
+                    }
+                }
+
+                alert("Intervention enregistrée et synchronisée avec succès !");
                 document.getElementById('formIntervention').reset();
                 retourAccueil();
             } catch (erreur) {
                 console.error("Erreur : ", erreur);
-                alert("Erreur lors de l'enregistrement.");
+                alert("Erreur lors de l'enregistrement ou de la synchronisation.");
             }
         });
 
@@ -1091,13 +1103,11 @@
                     let data = docSnap.data();
                     let matchType = !typeChoisi || typeChoisi === "Toutes" || (data.typeIntervention || '').trim().toLowerCase() === typeChoisi.toLowerCase();
                     
-                    // CALCUL DE L'ANCIENNETÉ PAR ÉCART AVEC LA DATE DU JOUR
                     let matchAnciennete = true;
                     if (filtreAnciennete) {
                         let strAnc = (data.anciennete || '').trim().toLowerCase();
                         let valAnciennete = 0;
                         
-                        // 1. Si la valeur est une Date d'embauche (ex: YYYY-MM-DD ou DD/MM/YYYY)
                         let dateEmbauche = null;
                         if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(strAnc)) {
                             dateEmbauche = new Date(strAnc.replace(/\//g, '-'));
@@ -1111,7 +1121,6 @@
                             let diffMs = aujourdHui - dateEmbauche;
                             valAnciennete = diffMs > 0 ? diffMs / (1000 * 60 * 60 * 24 * 365.25) : 0;
                         } 
-                        // 2. Si la valeur est déjà textuelle ("6 mois", "2 ans", "2.5")
                         else if (strAnc.includes('mois') && !isNaN(parseFloat(strAnc))) {
                             valAnciennete = parseFloat(strAnc) / 12;
                         } else {
@@ -1119,7 +1128,6 @@
                             if (isNaN(valAnciennete)) valAnciennete = 0;
                         }
 
-                        // Application des tranches d'ancienneté
                         if (filtreAnciennete === "1 ans") matchAnciennete = valAnciennete <= 1;
                         else if (filtreAnciennete === "2 ans") matchAnciennete = valAnciennete > 1 && valAnciennete <= 2;
                         else if (filtreAnciennete === "3 ans") matchAnciennete = valAnciennete > 2 && valAnciennete <= 3;
