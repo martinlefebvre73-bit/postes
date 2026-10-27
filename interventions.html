@@ -6,6 +6,8 @@
     <title>Suivi des Interventions - Professionnel</title>
     <!-- Bootstrap CSS pour l'interface -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bibliothèque SheetJS pour lire les fichiers Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body {
             background-color: #0d1b2a;
@@ -67,7 +69,7 @@
 
     <div class="container my-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <button class="btn btn-outline-light btn-sm" onclick="location.href='index.html'">← Retour au menu principal</button>
+            <button class="btn btn-outline-light btn-sm" onclick="naviguerVersIndex()">← Retour au menu principal</button>
             <h1 class="text-center text-white fw-bold m-0">Tableau de Bord - Suivi des Interventions</h1>
             <div></div>
         </div>
@@ -152,8 +154,12 @@
             </div>
 
             <div class="card shadow-lg p-4 text-center">
+                <!-- Champ fichier masqué pour l'import Excel -->
+                <input type="file" id="inputExcelFile" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcel(event)">
+
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Saisie intervention</button>
+                    <button class="btn btn-outline-success btn-menu-egal text-light" onclick="document.getElementById('inputExcelFile').click()">📂 Importer Excel</button>
                     <button class="btn btn-warning btn-menu-egal text-dark" onclick="afficherRetards()">Retard</button>
                     <button class="btn btn-secondary btn-menu-egal text-light" onclick="afficherSuivisSemaine()">Semaine en cours</button>
                     <button class="btn btn-success btn-menu-egal" onclick="genererRapportOuverts()">Rapport Ouverts</button>
@@ -341,6 +347,35 @@
         </div>
     </div>
 
+    <!-- NOTIFICATION TOAST -->
+    <div id="notification-toast" class="toast align-items-center text-white bg-primary border-0 position-fixed bottom-0 end-0 p-3 m-3" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 1090;">
+        <div class="d-flex">
+            <div class="toast-body" id="notification-message">
+                Notification
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fermer"></button>
+        </div>
+    </div>
+
+    <!-- MODAL : CONFIRMATION -->
+    <div class="modal fade" id="modalConfirmation" tabindex="-1" style="z-index: 1080;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="titreConfirmation">Confirmation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-light" id="messageConfirmation">
+                    Êtes-vous sûr de vouloir effectuer cette action ?
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="btnValiderConfirmation">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL : RECHERCHE -->
     <div class="modal fade" id="modalRecherche" tabindex="-1">
         <div class="modal-dialog">
@@ -383,7 +418,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Employé</label>
+                                <label class="form-label">Émployé</label>
                                 <input type="text" class="form-control" id="editNom" readonly>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -485,6 +520,56 @@
         let listeEmployesMemoire = [];
         let estModeChef = false;
 
+        // --- GESTION DES NOTIFICATIONS ET DIALOGUES SANS ALERT/CONFIRM ---
+        window.afficherNotification = (message, type = 'info') => {
+            const toastEl = document.getElementById('notification-toast');
+            const toastMsg = document.getElementById('notification-message');
+            if (toastEl && toastMsg) {
+                toastMsg.innerHTML = message;
+                toastEl.className = `toast align-items-center text-white bg-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning text-dark' : type === 'success' ? 'success' : 'primary'} border-0 position-fixed bottom-0 end-0 p-3 m-3`;
+                const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+                toast.show();
+            }
+        };
+
+        window.demanderConfirmation = (message, onConfirm) => {
+            const modalEl = document.getElementById('modalConfirmation');
+            document.getElementById('messageConfirmation').textContent = message;
+            const btnValider = document.getElementById('btnValiderConfirmation');
+            
+            const bsModal = new bootstrap.Modal(modalEl);
+            
+            const newBtn = btnValider.cloneNode(true);
+            btnValider.parentNode.replaceChild(newBtn, btnValider);
+            
+            newBtn.addEventListener('click', () => {
+                bsModal.hide();
+                onConfirm();
+            });
+            
+            bsModal.show();
+        };
+
+        // --- GESTION DES ERREURS DE NAVIGATION / EMBEDDED IFRAME ---
+        window.addEventListener('unhandledrejection', (event) => {
+            if (event.reason && (event.reason.toString().includes("Location") || event.reason.toString().includes("href") || event.reason.toString().includes("URL"))) {
+                event.preventDefault();
+                console.warn("Promesse rejetée interceptée (navigation/location):", event.reason);
+            }
+        });
+
+        window.naviguerVersIndex = () => {
+            try {
+                if (window.location && window.location.origin && window.location.origin !== "null" && !window.location.href.startsWith("blob:") && !window.location.href.startsWith("data:")) {
+                    window.location.href = "index.html";
+                } else {
+                    console.warn("Navigation vers index.html ignorée en environnement de prévisualisation.");
+                }
+            } catch (e) {
+                console.warn("Impossible de naviguer vers index.html :", e);
+            }
+        };
+
         // --- FONCTION UTILITAIRE POUR TROUVER LA SEMAINE ---
         function getWeekKeyFromDate(dateString) {
             const d = new Date(dateString + "T00:00:00");
@@ -512,9 +597,17 @@
             if (user) {
                 initialiserDonnees();
             } else {
-                alert("Veuillez vous connecter pour accéder au suivi des interventions.");
-                window.location.href = "index.html";
+                console.warn("Utilisateur non connecté ou session indisponible.");
+                if (window.location && window.location.protocol && window.location.protocol.startsWith('http') && window.location.origin !== 'null') {
+                    afficherNotification("Veuillez vous connecter pour accéder au suivi des interventions.", "warning");
+                    setTimeout(() => window.naviguerVersIndex(), 1500);
+                } else {
+                    initialiserDonnees();
+                }
             }
+        }, (error) => {
+            console.error("Erreur Firebase Auth:", error);
+            initialiserDonnees();
         });
 
         window.afficherPageSaisie = () => {
@@ -817,7 +910,7 @@
         window.demarrerDictee = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert("La dictée vocale n'est pas supportée par votre navigateur.");
+                afficherNotification("La dictée vocale n'est pas supportée par votre navigateur.", "warning");
                 return;
             }
             const reconnaissance = new SpeechRecognition();
@@ -833,9 +926,10 @@
             
             navigator.clipboard.writeText(descriptionText).then(() => {
                 window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank');
+                afficherNotification("Description copiée dans le presse-papier !", "success");
             }).catch(err => {
                 console.error('Erreur lors de la copie dans le presse-papier : ', err);
-                alert("Impossible de copier la description dans le presse-papier.");
+                afficherNotification("Impossible de copier la description dans le presse-papier.", "danger");
             });
         };
 
@@ -849,7 +943,7 @@
             const nomEmployeSaisi = document.getElementById('nomEmploye').value.trim();
 
             if (!idEmployeSaisi || !nomEmployeSaisi) {
-                alert("Veuillez sélectionner un employé par son nom ou saisir un ID valide.");
+                afficherNotification("Veuillez sélectionner un employé par son nom ou saisir un ID valide.", "warning");
                 return;
             }
             
@@ -932,7 +1026,6 @@
                             }
                         });
                         
-                        // Mettre à jour Firebase Roulement
                         await setDoc(roulementDocRef, { logs: logs }, { merge: true });
                     } else {
                         console.warn("La semaine correspondante n'existe pas encore dans le plan de roulement.");
@@ -949,30 +1042,31 @@
                 // 4. Ouvrir automatiquement le formulaire Observation SST
                 window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank');
 
-                alert("Intervention enregistrée avec succès !\n\nLes données (Date, Nom, ID et Description) ont été copiées dans le presse-papier et le formulaire Observation SST a été ouvert.");
+                afficherNotification("Intervention enregistrée avec succès ! Données copiées et formulaire SST ouvert.", "success");
                 document.getElementById('formIntervention').reset();
                 retourAccueil();
             } catch (erreur) {
                 console.error("Erreur : ", erreur);
-                alert("Erreur lors de l'enregistrement ou de la synchronisation.");
+                afficherNotification("Erreur lors de l'enregistrement ou de la synchronisation.", "danger");
             }
         });
 
-        window.basculerStatutDossier = async (idDoc, nouveauStatut) => {
+        window.basculerStatutDossier = (idDoc, nouveauStatut) => {
             let messageConfirm = nouveauStatut === "Fermé" 
                 ? "Voulez-vous vraiment fermer ce dossier de suivi ?" 
                 : "Voulez-vous vraiment rouvrir ce dossier de suivi ?";
             
-            if (!confirm(messageConfirm)) return;
-            try {
-                const docRef = doc(db, "interventions", idDoc);
-                await updateDoc(docRef, { statut: nouveauStatut });
-                alert(`Dossier ${nouveauStatut === "Fermé" ? "fermé" : "rouvert"} avec succès !`);
-                retourAccueil();
-            } catch (e) {
-                console.error("Erreur lors de la mise à jour du statut du dossier :", e);
-                alert("Erreur lors de la modification du statut.");
-            }
+            demanderConfirmation(messageConfirm, async () => {
+                try {
+                    const docRef = doc(db, "interventions", idDoc);
+                    await updateDoc(docRef, { statut: nouveauStatut });
+                    afficherNotification(`Dossier ${nouveauStatut === "Fermé" ? "fermé" : "rouvert"} avec succès !`, "success");
+                    retourAccueil();
+                } catch (e) {
+                    console.error("Erreur lors de la mise à jour du statut du dossier :", e);
+                    afficherNotification("Erreur lors de la modification du statut.", "danger");
+                }
+            });
         };
 
         window.preparerModification = (id, date, nom, idEmploye, anciennete, typeIntervention, description, prochainRdvJours, superviseurEmail, dateEcheance, graviteSst) => {
@@ -1029,12 +1123,12 @@
             try {
                 const docRef = doc(db, "interventions", idDoc);
                 await updateDoc(docRef, champsMisAJour);
-                alert("Intervention modifiée avec succès !");
+                afficherNotification("Intervention modifiée avec succès !", "success");
                 bootstrap.Modal.getInstance(document.getElementById('modalModification')).hide();
                 retourAccueil();
             } catch (erreur) {
                 console.error("Erreur lors de la modification :", erreur);
-                alert("Erreur lors de la mise à jour de l'intervention.");
+                afficherNotification("Erreur lors de la mise à jour de l'intervention.", "danger");
             }
         });
 
@@ -1236,7 +1330,6 @@
             contenu.innerHTML = "<p>Analyse des risques en cours...</p>";
 
             try {
-                // 1. Charger tous les employés pour construire un dictionnaire "ID -> Prénom Nom" et filtrer les signalements manuels
                 const employesSnap = await getDocs(collection(db, "employes"));
                 let mapEmployes = {};
                 let employesManuels = {};
@@ -1245,7 +1338,6 @@
                     let data = docSnap.data();
                     let idEmpKey = String(data.idEmploye || data.id || '').trim().toLowerCase();
                     
-                    // Concaténer Prénom et Nom de la fiche employé
                     let prenom = (data.prenom || '').trim();
                     let nom = (data.nom || '').trim();
                     let nomComplet = `${prenom} ${nom}`.trim();
@@ -1266,7 +1358,6 @@
                     }
                 });
 
-                // 2. Récupérer l'historique des interventions SST
                 const querySnapshot = await getDocs(collection(db, "interventions"));
                 let sstParEmploye = {};
 
@@ -1278,7 +1369,6 @@
                         let idEmp = String(data.idEmploye || '').trim();
                         let key = idEmp ? idEmp.toLowerCase() : (data.nom || 'inconnu').toLowerCase();
                         
-                        // Récupérer Prénom Nom depuis la fiche employé (mapEmployes)
                         let nomAffichage = mapEmployes[key] || data.nom || 'Inconnu';
 
                         if (!sstParEmploye[key]) {
@@ -1302,7 +1392,6 @@
                 let profilsRisque = [];
                 let ajoutesDansRapport = new Set(); 
 
-                // 3. Analyser les employés ayant des incidents SST
                 for (let key in sstParEmploye) {
                     let empData = sstParEmploye[key];
                     empData.incidents.sort((a, b) => a.dateObj - b.dateObj);
@@ -1353,12 +1442,10 @@
                         motifsRisque.push(`🔄 Récurrence saisonnière/annuelle`);
                     }
 
-                    // Si l'employé a été signalé manuellement, ajouter le motif
                     if (employesManuels[key]) {
                         motifsRisque.push(`🛑 <strong>Signalement manuel :</strong> ${employesManuels[key].detailRisque}`);
                     }
 
-                    // Inclure si l'employé répond aux critères (incidents multiples ou flag manuel)
                     if (nbIncidents >= 2 || motifsRisque.length > 0) {
                         profilsRisque.push({
                             ...empData,
@@ -1369,7 +1456,6 @@
                     }
                 }
 
-                // 4. Ajouter les employés marqués manuellement qui n'ont AUCUN incident SST
                 for (let key in employesManuels) {
                     if (!ajoutesDansRapport.has(key)) {
                         profilsRisque.push({
@@ -1383,7 +1469,6 @@
                     }
                 }
 
-                // 5. Trier et Afficher
                 profilsRisque.sort((a, b) => {
                     if (b.nbIncidents !== a.nbIncidents) {
                         return b.nbIncidents - a.nbIncidents;
@@ -1691,7 +1776,7 @@
                 html += `<h5 class="mt-4 text-light">Expédier les rapports aux superviseurs :</h5>`;
                 for (let [email, details] of Object.entries(retardsParSuperviseur)) {
                     let corpsMessage = `Bonjour,%0A%0AVoici la liste de vos employés en situation de retard de suivi :%0A%0A${details}%0AMerci de régulariser ces dossiers.`;
-                    html += `<button class="btn btn-danger m-1" onclick="window.location.href='mailto:${email}?subject=Rapport des retards de suivi&body=${corpsMessage}'">Envoyer à ${email}</button> `;
+                    html += `<button class="btn btn-danger m-1" onclick="window.open('mailto:${email}?subject=Rapport des retards de suivi&body=${corpsMessage}', '_self')">Envoyer à ${email}</button> `;
                 }
                 contenu.innerHTML = html;
 
@@ -1704,7 +1789,7 @@
         window.executerRecherche = async () => {
             const critere = document.getElementById('critereRecherche').value.trim().toLowerCase();
             if (!critere) {
-                alert("Veuillez entrer un nom ou un ID.");
+                afficherNotification("Veuillez entrer un nom ou un ID.", "warning");
                 return;
             }
 
@@ -1802,6 +1887,122 @@
                 console.error("Erreur lors de la recherche :", e);
                 contenu.innerHTML = "<p class='text-danger'>Erreur lors du chargement des données de recherche.</p>";
             }
+        };
+
+        // --- FONCTION DE FORMATAGE DE DATE EXCEL ---
+        function formaterDateExcel(dateRaw) {
+            if (!dateRaw) return new Date().toISOString().split('T')[0];
+            
+            if (typeof dateRaw === 'number') {
+                const dateObj = XLSX.SSF.parse_date_code(dateRaw);
+                const aaaa = dateObj.y;
+                const mm = String(dateObj.m).padStart(2, '0');
+                const jj = String(dateObj.d).padStart(2, '0');
+                return `${aaaa}-${mm}-${jj}`;
+            }
+            
+            if (typeof dateRaw === 'string') {
+                const parties = dateRaw.trim().split(/[\/\-\.]/);
+                if (parties.length === 3) {
+                    if (parties[0].length === 4) { // YYYY-MM-DD
+                        return `${parties[0]}-${parties[1].padStart(2, '0')}-${parties[2].padStart(2, '0')}`;
+                    } else if (parties[2].length === 4) { // DD/MM/YYYY
+                        return `${parties[2]}-${parties[1].padStart(2, '0')}-${parties[0].padStart(2, '0')}`;
+                    }
+                }
+                const d = new Date(dateRaw);
+                if (!isNaN(d.getTime())) {
+                    return d.toISOString().split('T')[0];
+                }
+            }
+            
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // --- FONCTION D'IMPORTATION DES FICHIERS EXCEL ---
+        window.importerFichierExcel = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheetName = workbook.SheetNames[0];
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+
+                    if (rows.length === 0) {
+                        afficherNotification("Le fichier Excel est vide.", "warning");
+                        return;
+                    }
+
+                    let compteImportations = 0;
+
+                    for (const row of rows) {
+                        const getValeurColonne = (regex) => {
+                            const key = Object.keys(row).find(k => regex.test(k.trim().toLowerCase()));
+                            return key ? String(row[key]).trim() : "";
+                        };
+
+                        const nDemandeCat = getValeurColonne(/n.*demande.*cat|demande.*cat/i);
+                        const dateEvenementRaw = getValeurColonne(/date.*ev|date/i);
+                        const numEmploye = getValeurColonne(/num.*emp|no.*emp|id.*emp|numero.*employe/i);
+                        const superviseur = getValeurColonne(/superviseur|responsable/i);
+                        const description = getValeurColonne(/description|detail|commentaire|evenement/i) || "Importé automatiquement depuis le fichier Excel";
+
+                        if (!numEmploye) continue;
+
+                        // RÈGLE : Si 'n de demande cat' contient un numéro/valeur = SST Majeur, sinon SST Mineur
+                        const graviteSst = (nDemandeCat !== "") ? "Majeur" : "Mineur";
+
+                        const dateInterv = formaterDateExcel(dateEvenementRaw);
+
+                        let empTrouve = listeEmployesMemoire.find(emp => {
+                            let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).trim();
+                            return idEmp === numEmploye;
+                        });
+
+                        let nomEmp = empTrouve ? `${empTrouve.prenom || ''} ${empTrouve.nom || ''}`.trim() : `Employé ID ${numEmploye}`;
+                        let ancienneteEmp = empTrouve ? (empTrouve.anciennete || 'Non spécifiée') : 'Non spécifiée';
+
+                        const delaiJours = 14;
+                        let dateEchObj = new Date(dateInterv + "T00:00:00");
+                        dateEchObj.setDate(dateEchObj.getDate() + delaiJours);
+                        let dateEcheance = dateEchObj.toISOString().split('T')[0];
+
+                        const nouvelleIntervention = {
+                            date: dateInterv,
+                            nom: nomEmp,
+                            idEmploye: numEmploye,
+                            anciennete: ancienneteEmp,
+                            typeIntervention: "SST",
+                            graviteSst: graviteSst,
+                            categoriesSst: [],
+                            statutsObservation: [],
+                            description: nDemandeCat ? `[N° CAT: ${nDemandeCat}] ${description}` : description,
+                            prochainRdvJours: delaiJours,
+                            dateEcheance: dateEcheance,
+                            superviseurEmail: superviseur,
+                            inspecteur: "",
+                            statut: "Ouvert"
+                        };
+
+                        await addDoc(collection(db, "interventions"), nouvelleIntervention);
+                        compteImportations++;
+                    }
+
+                    afficherNotification(`Importation réussie : ${compteImportations} fiche(s) d'intervention SST enregistrée(s) !`, "success");
+                    chargerStatistiques();
+
+                } catch (erreur) {
+                    console.error("Erreur lors de l'importation Excel :", erreur);
+                    afficherNotification("Une erreur s'est produite lors de l'importation du fichier Excel.", "danger");
+                } finally {
+                    event.target.value = "";
+                }
+            };
+            reader.readAsArrayBuffer(file);
         };
     </script>
 </body>
