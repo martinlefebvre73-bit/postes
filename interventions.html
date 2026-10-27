@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -160,6 +160,7 @@
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Saisie intervention</button>
                     <button class="btn btn-outline-success btn-menu-egal text-light" onclick="document.getElementById('inputExcelFile').click()">📂 Importer Excel</button>
+                    <button class="btn btn-outline-danger btn-menu-egal text-light" onclick="annulerImportationAujourdhui()">↩️ Annuler import du jour</button>
                     <button class="btn btn-warning btn-menu-egal text-dark" onclick="afficherRetards()">Retard</button>
                     <button class="btn btn-secondary btn-menu-egal text-light" onclick="afficherSuivisSemaine()">Semaine en cours</button>
                     <button class="btn btn-success btn-menu-egal" onclick="genererRapportOuverts()">Rapport Ouverts</button>
@@ -486,7 +487,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // Configuration pour Interventions (Projet principal)
@@ -1958,12 +1959,14 @@
 
                         const dateInterv = formaterDateExcel(dateEvenementRaw);
 
+                        // Recherche de l'employé par ID dans la liste d'employés
                         let empTrouve = listeEmployesMemoire.find(emp => {
-                            let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).trim();
-                            return idEmp === numEmploye;
+                            let idEmp = String(emp.id !== undefined ? emp.id : (emp.idEmploye !== undefined ? emp.idEmploye : '')).trim().toLowerCase();
+                            return idEmp === String(numEmploye).trim().toLowerCase();
                         });
 
                         let nomEmp = empTrouve ? `${empTrouve.prenom || ''} ${empTrouve.nom || ''}`.trim() : `Employé ID ${numEmploye}`;
+                        if (!nomEmp) nomEmp = empTrouve ? empTrouve.nom || 'Sans nom' : `Employé ID ${numEmploye}`;
                         let ancienneteEmp = empTrouve ? (empTrouve.anciennete || 'Non spécifiée') : 'Non spécifiée';
 
                         const delaiJours = 14;
@@ -1985,7 +1988,10 @@
                             dateEcheance: dateEcheance,
                             superviseurEmail: superviseur,
                             inspecteur: "",
-                            statut: "Ouvert"
+                            statut: "Ouvert",
+                            source: "import_excel",
+                            dateImportation: new Date().toISOString().split('T')[0],
+                            timestampImportation: new Date().toISOString()
                         };
 
                         await addDoc(collection(db, "interventions"), nouvelleIntervention);
@@ -2003,6 +2009,44 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        };
+
+        // --- FONCTION D'ANNULATION DES IMPORTATIONS DU JOUR ---
+        window.annulerImportationAujourdhui = async () => {
+            const aujourdHui = new Date().toISOString().split('T')[0];
+            
+            demanderConfirmation(`Voulez-vous vraiment annuler et supprimer toutes les interventions importées via Excel aujourd'hui (${aujourdHui}) ?`, async () => {
+                try {
+                    const q = query(
+                        collection(db, "interventions"),
+                        where("source", "==", "import_excel"),
+                        where("dateImportation", "==", aujourdHui)
+                    );
+                    
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (querySnapshot.empty) {
+                        afficherNotification("Aucune intervention importée aujourd'hui n'a été trouvée.", "warning");
+                        return;
+                    }
+
+                    let compteSuppressions = 0;
+                    const promessesSuppression = [];
+                    
+                    querySnapshot.forEach((docSnap) => {
+                        promessesSuppression.push(deleteDoc(doc(db, "interventions", docSnap.id)));
+                        compteSuppressions++;
+                    });
+
+                    await Promise.all(promessesSuppression);
+
+                    afficherNotification(`Annulation réussie : ${compteSuppressions} intervention(s) importée(s) aujourd'hui ont été supprimées.`, "success");
+                    chargerStatistiques();
+                } catch (erreur) {
+                    console.error("Erreur lors de l'annulation de l'importation :", erreur);
+                    afficherNotification("Erreur lors de la suppression des interventions importées.", "danger");
+                }
+            });
         };
     </script>
 </body>
