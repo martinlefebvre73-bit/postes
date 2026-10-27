@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meeting de Plancher - SST & Opérations | Postes Canada</title>
-    <!-- CSS Externe requis -->
+    <!-- CSS Externe principal -->
     <link rel="stylesheet" href="style4.css">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- MAIN CONTAINER -->
+    <!-- CONTENEUR PRINCIPAL -->
     <div class="container">
 
-        <!-- HEADER -->
+        <!-- EN-TÊTE -->
         <header class="app-header">
             <div class="brand-title">
                 <div class="brand-logo">POSTES CANADA</div>
@@ -43,13 +43,13 @@
             </div>
         </header>
 
-        <!-- ACTIVE DOCUMENT EDITING BANNER -->
+        <!-- BANNIÈRE DE MODIFICATION D'UN MEETING EXISTANT -->
         <div id="editingBanner" class="no-print" style="display: none; background-color: #fff7ed; border: 1px solid #fdba74; padding: 10px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.88rem; color: #9a3412;">
             <i class="fa-solid fa-pen-to-square"></i> Modification du meeting enregistré sous l'ID : <strong id="editingDocId">--</strong>
             <button onclick="resetMeetingForm()" style="background: none; border: none; text-decoration: underline; color: #9a3412; cursor: pointer; margin-left: 15px; font-weight: 600;">Créer un nouveau meeting</button>
         </div>
 
-        <!-- FORM METADATA GRID -->
+        <!-- MÉTADONNÉES DU MEETING -->
         <div class="meta-grid">
             <div class="form-group">
                 <label for="meetingDate">Date du Meeting</label>
@@ -74,7 +74,7 @@
                 </button>
             </div>
             <div id="sstTopicList" class="topic-list">
-                <!-- Target for SST Topic Cards -->
+                <!-- Emplacement dynamique des cartes SST -->
             </div>
         </div>
 
@@ -87,11 +87,11 @@
                 </button>
             </div>
             <div id="variableTopicList" class="topic-list">
-                <!-- Target for Variable Topic Cards -->
+                <!-- Emplacement dynamique des cartes Variables -->
             </div>
         </div>
 
-        <!-- FOOTER SIGNATURES (FOR PRINT) -->
+        <!-- SIGNATURES POUR IMPRESSION -->
         <div class="print-only" style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; font-size: 0.85rem;">
             <div style="border-top: 1px dashed #000; padding-top: 8px;">
                 <strong>Signature du Superviseur :</strong>
@@ -103,7 +103,7 @@
 
     </div>
 
-    <!-- SEARCH MODAL (FIRESTORE) -->
+    <!-- MODAL DE RECHERCHE FIRESTORE -->
     <div id="searchModal" class="modal-overlay no-print">
         <div class="modal-content">
             <div class="modal-header">
@@ -143,13 +143,13 @@
         <span id="toastMsg">Notification</span>
     </div>
 
-    <!-- APPLICATION CODE & FIREBASE SDK MODULE -->
+    <!-- CODE SCRIPT & INTÉGRATION FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuration Firebase officielle fournie
+        // Configuration Firebase officielle du projet postesst
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
             authDomain: "postesst.firebaseapp.com",
@@ -164,6 +164,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Clé API Gemini (Optionnelle pour l'enrichissement direct par API Google)
+        const GEMINI_API_KEY = "";
+
         // État principal de l'application
         let currentMeeting = {
             date: new Date().toISOString().split('T')[0],
@@ -176,11 +179,11 @@
         let loadedDocId = null;
         let allMeetingsCache = [];
 
-        // Prise en charge de la dictée vocale (Web Speech API)
+        // Dictée vocale (Web Speech API)
         let recognition = null;
         let activeDictationTarget = null; // { type: 'sst'|'variable', index: number, field: 'title'|'point', pointIndex?: number }
 
-        // Prompt Système de référence pour IA Copilote
+        // Prompt Système de référence pour l'IA Copilote
         const COPILOT_SYSTEM_PROMPT = `Tu es un expert en Santé et Sécurité au Travail (SST) et en Opérations chez Postes Canada.
 Public cible : Facteurs effectuant la livraison à pied, relais, boîtes aux lettres communautaires (BPC/CMB), boîtes réceptrices de bâtiment (BML) et colis.
 Inclus des consignes concrètes de terrain : prévention des glissades (verglas, crampons), escaliers, morsures de chien, ergonomie du sac postal (charge équilibrée max 35 lbs), numérisation à 100% au point de remise, cartes d'avis 15/15, courrier recommandé et clés de BPC.
@@ -206,7 +209,7 @@ Format JSON strict obligatoire :
             document.getElementById('meetingDate').value = currentMeeting.date;
             setupSpeechRecognition();
 
-            // Charger quelques exemples de départ si vide
+            // Exemples par défaut au premier chargement
             if (currentMeeting.sujetsSST.length === 0) {
                 currentMeeting.sujetsSST.push({
                     id: generateId(),
@@ -233,12 +236,11 @@ Format JSON strict obligatoire :
             renderAll();
         });
 
-        // Gestionnaires d'événements des métadonnées
+        // Gestionnaires d'événements
         window.handleDateChange = (val) => {
             currentMeeting.date = val;
         };
 
-        // Gestion dynamique des sujets
         window.addTopic = (type) => {
             const newItem = {
                 id: generateId(),
@@ -292,7 +294,6 @@ Format JSON strict obligatoire :
             }
         };
 
-        // Reconstitution et Réinitialisation
         window.resetMeetingForm = () => {
             loadedDocId = null;
             document.getElementById('editingBanner').style.display = 'none';
@@ -314,7 +315,7 @@ Format JSON strict obligatoire :
             showToast("Nouveau formulaire de réunion réinitialisé.", "success");
         };
 
-        // Rendu UI principal avec les classes de style4.css
+        // Rendu UI principal
         function renderAll() {
             renderSection('sst', currentMeeting.sujetsSST, 'sstTopicList');
             renderSection('variable', currentMeeting.sujetsVariables, 'variableTopicList');
@@ -333,7 +334,6 @@ Format JSON strict obligatoire :
                 const card = document.createElement('div');
                 card.className = 'topic-card';
 
-                // Génération des lignes de points explicatifs
                 let pointsHtml = '';
                 item.explications.forEach((pointText, ptIdx) => {
                     const isMicActive = activeDictationTarget && 
@@ -346,7 +346,7 @@ Format JSON strict obligatoire :
                         <div class="point-row">
                             <span style="color: ${type === 'sst' ? 'var(--cp-red)' : 'var(--cp-navy)'}; font-weight: bold;">•</span>
                             <input type="text" class="form-control" value="${escapeHtml(pointText)}"
-                                   placeholder="Point explicatif conique..."
+                                   placeholder="Point explicatif concret..."
                                    oninput="updatePoint('${type}', ${topicIdx}, ${ptIdx}, this.value)">
                             <button type="button" onclick="toggleDictation('${type}', ${topicIdx}, 'point', ${ptIdx})"
                                     class="mic-btn ${isMicActive ? 'recording' : ''} no-print" title="Dicter ce point">
@@ -390,7 +390,7 @@ Format JSON strict obligatoire :
                         <button type="button" onclick="enrichTopicWithCopilot('${type}', ${topicIdx})" class="btn btn-copilot btn-sm">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot IA
                         </button>
-                        <button type="button" onclick="copyM365Prompt('${type}', ${topicIdx})" class="btn btn-outline btn-sm" title="Copier le prompt préparé pour Microsoft Copilot M365">
+                        <button type="button" onclick="copyM365Prompt('${type}', ${topicIdx})" class="btn btn-outline btn-sm" title="Copier le prompt et ouvrir Microsoft Copilot M365">
                             <i class="fa-solid fa-copy"></i> Prompt M365
                         </button>
                         <button type="button" onclick="removeTopic('${type}', ${topicIdx})" class="btn btn-danger btn-sm">
@@ -441,7 +441,7 @@ Format JSON strict obligatoire :
 
         window.toggleDictation = (type, index, field, pointIndex) => {
             if (!recognition) {
-                showToast("La dictée vocale n'est pas disponible sur votre navigateur.", "error");
+                showToast("La dictée vocale n'est pas disponible sur ce navigateur.", "error");
                 return;
             }
 
@@ -457,7 +457,7 @@ Format JSON strict obligatoire :
                 renderAll();
                 try {
                     recognition.start();
-                    showToast("Dictée vocale démarrée (parlez en français)...", "success");
+                    showToast("Dictée vocale activée (parlez en français)...", "success");
                 } catch(e) {
                     stopDictation();
                 }
@@ -469,10 +469,13 @@ Format JSON strict obligatoire :
             renderAll();
         }
 
-        // Moteur Copilot / Gemini IA
+        // Appel direct API IA (Optionnel)
         async function callCopilotIA(promptText) {
-            const apiKey = ""; // Clé injectée automatiquement par l'environnement
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            if (!GEMINI_API_KEY) {
+                throw new Error("Clé API absente. Utilisez le bouton 'Prompt M365' pour générer via Microsoft Copilot.");
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -496,7 +499,7 @@ Format JSON strict obligatoire :
                 })
             });
 
-            if (!response.ok) throw new Error("Erreur réponse API Copilot");
+            if (!response.ok) throw new Error("Erreur de réponse de l'API Copilot");
             const result = await response.json();
             const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
             return JSON.parse(text);
@@ -511,6 +514,12 @@ Format JSON strict obligatoire :
                 return;
             }
 
+            if (!GEMINI_API_KEY) {
+                // Redirection vers l'option Prompt M365 si aucune clé n'est configurée
+                copyM365Prompt(type, index);
+                return;
+            }
+
             showToast("Copilot analyse et génère les points explicatifs...", "success");
 
             try {
@@ -520,15 +529,20 @@ Format JSON strict obligatoire :
                 if (res && res.explications && Array.isArray(res.explications)) {
                     item.explications = res.explications;
                     renderAll();
-                    showToast("Sujet enrichi par Copilot IA !", "success");
+                    showToast("Sujet enrichi par Copilot !", "success");
                 }
             } catch (err) {
                 console.error("Copilot Error:", err);
-                showToast("Erreur lors de l'enrichissement Copilot.", "error");
+                showToast(err.message || "Erreur lors de l'enrichissement.", "error");
             }
         };
 
         window.enrichEntireDocumentWithCopilot = async () => {
+            if (!GEMINI_API_KEY) {
+                showToast("Veuillez utiliser le bouton 'Prompt M365' pour chaque sujet ou configurer une clé API.", "error");
+                return;
+            }
+
             showToast("Enrichissement global du meeting par Copilot...", "success");
             let total = 0;
 
@@ -560,23 +574,50 @@ Format JSON strict obligatoire :
             showToast(`${total} sujet(s) enrichi(s) avec succès !`, "success");
         };
 
-        // Copier le Prompt pour Microsoft Copilot (M365)
+        // Option 100% Fonctionnelle avec Bouton Prompt Microsoft Copilot (M365)
         window.copyM365Prompt = (type, index) => {
             const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
             const item = list[index];
-            const title = item ? item.titre : "Consignes de livraison";
+            const title = (item && item.titre.trim()) ? item.titre : "Consignes de livraison";
 
-            const promptText = `Rôle : Spécialiste SST et Superviseur des Opérations chez Postes Canada.
-Propose 3 à 5 points explicatifs courts et clairs pour les facteurs à pied et boîtes postales communautaires (BPC/CMB).
+            const promptText = `Rôle : Expert SST et Superviseur des Opérations chez Postes Canada.
+Secteur : Facteurs à pied, relais, boîtes aux lettres communautaires (BPC/CMB) et boîtes réceptrices de bâtiment (BML).
 Thème : ${type === 'sst' ? 'Santé et Sécurité au Travail (SST)' : 'Consignes Opérationnelles Variables'}
 Sujet : "${title}"
-Inclus consignes terrain : verglas, chiens, crampons, sac postal, numérisation 100%.`;
 
-            copyTextToClipboard(promptText);
-            showToast("Prompt Microsoft Copilot M365 copié dans le presse-papiers !", "success");
+Instruction : Génère exactement 3 à 4 points explicatifs courts, directifs et concrets pour le meeting de plancher.
+Consignes spécifiques à inclure si pertinent :
+- Prévention des glissades, verglas, port des crampons, 3 points de contact.
+- Maintien du sac postal équilibré (charge maximale 35 lbs).
+- Balayage/numérisation à 100 % au point de remise.
+- Sécurité face aux chiens et accès aux boîtes communautaires.
+
+Format attendu :
+• Point 1...
+• Point 2...
+• Point 3...`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(promptText).then(() => {
+                    handlePromptCopied();
+                }).catch(() => {
+                    fallbackCopyText(promptText);
+                    handlePromptCopied();
+                });
+            } else {
+                fallbackCopyText(promptText);
+                handlePromptCopied();
+            }
         };
 
-        function copyTextToClipboard(text) {
+        function handlePromptCopied() {
+            showToast("Prompt M365 copié ! Ouverture de Copilot...", "success");
+            setTimeout(() => {
+                window.open('https://copilot.microsoft.com/', '_blank');
+            }, 600);
+        }
+
+        function fallbackCopyText(text) {
             const el = document.createElement('textarea');
             el.value = text;
             document.body.appendChild(el);
@@ -585,7 +626,7 @@ Inclus consignes terrain : verglas, chiens, crampons, sac postal, numérisation 
             document.body.removeChild(el);
         }
 
-        // Intégration Firebase Firestore (Collection 'meeting')
+        // Firestore : Enregistrement dans la collection 'meeting'
         window.saveMeetingToFirebase = async () => {
             currentMeeting.presenter = document.getElementById('presenterName').value || "Superviseur";
             currentMeeting.depot = document.getElementById('depotSector').value || "Dépôt Postal";
@@ -625,14 +666,14 @@ Inclus consignes terrain : verglas, chiens, crampons, sac postal, numérisation 
                 document.getElementById('editingDocId').textContent = docId;
                 document.getElementById('saveBtnLabel').textContent = "Mettre à jour";
 
-                showToast("Meeting sauvegardé dans Firestore !", "success");
+                showToast("Meeting sauvegardé sous le nom / date : " + docId, "success");
             } catch (err) {
                 console.error("Firebase Save Error:", err);
                 showToast("Erreur d'enregistrement dans Firestore.", "error");
             }
         };
 
-        // Modal de Recherche & Récupération
+        // Recherche & Récupération Firestore
         window.openSearchModal = async () => {
             document.getElementById('searchModal').classList.add('active');
             await loadAllMeetingsFromFirestore();
@@ -644,7 +685,7 @@ Inclus consignes terrain : verglas, chiens, crampons, sac postal, numérisation 
 
         async function loadAllMeetingsFromFirestore() {
             const listContainer = document.getElementById('searchResultsList');
-            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des données Firestore...</p>';
+            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des réunions...</p>';
 
             try {
                 const querySnap = await getDocs(collection(db, 'meeting'));
@@ -750,7 +791,7 @@ Inclus consignes terrain : verglas, chiens, crampons, sac postal, numérisation 
             }
         };
 
-        // Utilitaires généraux
+        // Fonctions utilitaires
         function generateId() {
             return 'id_' + Math.random().toString(36).substr(2, 9);
         }
