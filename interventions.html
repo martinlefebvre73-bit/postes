@@ -1962,32 +1962,50 @@
                         const nDemandeCat = getValeurColonne(/n.*demande.*cat|demande.*cat|n.*demande|num.*demande/i);
                         const dateEvenementRaw = getValeurColonne(/date.*ev|date/i);
                         const numEmploye = getValeurColonne(/num.*emp|no.*emp|id.*emp|numero.*employe/i);
+                        const nomEmployeExcel = getValeurColonne(/nom.*emp/i);
                         const superviseur = getValeurColonne(/superviseur|responsable/i);
                         const descriptionDetail = getValeurColonne(/description|detail|commentaire|evenement/i);
 
-                        if (!numEmploye) continue;
+                        if (!numEmploye && !nomEmployeExcel) continue;
 
                         const dateInterv = formaterDateExcel(dateEvenementRaw);
-                        const cleVerification = `${String(numEmploye).trim().toLowerCase()}_${dateInterv}`;
+
+                        // 1. Remplissage / Récupération de l'ID employé
+                        const idEmployeSaisi = String(numEmploye).trim();
+
+                        // 2. Jumelage automatique : Recherche dans la liste des employés (par ID d'abord, sinon par Nom)
+                        let empTrouve = null;
+
+                        if (idEmployeSaisi) {
+                            empTrouve = listeEmployesMemoire.find(emp => {
+                                let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).trim().toLowerCase();
+                                return idEmp === idEmployeSaisi.toLowerCase();
+                            });
+                        }
+
+                        if (!empTrouve && nomEmployeExcel) {
+                            empTrouve = listeEmployesMemoire.find(emp => {
+                                let nomComplet = `${emp.prenom || ''} ${emp.nom || ''}`.trim().toLowerCase();
+                                let nomSeul = (emp.nom || '').trim().toLowerCase();
+                                let searchNom = nomEmployeExcel.trim().toLowerCase();
+                                return nomComplet === searchNom || nomSeul === searchNom || searchNom.includes(nomSeul);
+                            });
+                        }
+
+                        // Détermination de l'ID, du nom et de l'ancienneté à partir de la fiche trouvée ou des données Excel
+                        const idFinal = empTrouve ? (empTrouve.idEmploye !== undefined ? String(empTrouve.idEmploye) : (empTrouve.id !== undefined ? String(empTrouve.id) : idEmployeSaisi)) : idEmployeSaisi;
+                        
+                        let nomEmp = empTrouve ? `${empTrouve.prenom || ''} ${empTrouve.nom || ''}`.trim() : (nomEmployeExcel || `Employé ID ${idFinal}`);
+                        if (!nomEmp) nomEmp = empTrouve ? empTrouve.nom || 'Sans nom' : (nomEmployeExcel || `Employé ID ${idFinal}`);
+                        
+                        const ancienneteEmp = empTrouve ? (empTrouve.anciennete || 'Non spécifiée') : 'Non spécifiée';
 
                         // VÉRIFICATION D'UNICITÉ : Ignorer si une intervention SST existe déjà pour cet employé à cette date
+                        const cleVerification = `${String(idFinal).trim().toLowerCase()}_${dateInterv}`;
                         if (interventionsSstExistantes.has(cleVerification)) {
                             compteIgnores++;
                             continue;
                         }
-
-                        // 1. Remplissage du numéro d'employé dans la fiche 'id'
-                        const idEmployeSaisi = String(numEmploye).trim();
-
-                        // 2. Jumelage du nom et de l'ancienneté depuis la liste des employés
-                        let empTrouve = listeEmployesMemoire.find(emp => {
-                            let idEmp = String(emp.id !== undefined ? emp.id : (emp.idEmploye !== undefined ? emp.idEmploye : '')).trim().toLowerCase();
-                            return idEmp === idEmployeSaisi.toLowerCase();
-                        });
-
-                        let nomEmp = empTrouve ? `${empTrouve.prenom || ''} ${empTrouve.nom || ''}`.trim() : `Employé ID ${idEmployeSaisi}`;
-                        if (!nomEmp) nomEmp = empTrouve ? empTrouve.nom || 'Sans nom' : `Employé ID ${idEmployeSaisi}`;
-                        let ancienneteEmp = empTrouve ? (empTrouve.anciennete || 'Non spécifiée') : 'Non spécifiée';
 
                         // 3. Numéro de demande placé dans le champ 'description'
                         let descriptionFinale = nDemandeCat ? `N° de demande : ${nDemandeCat}` : (descriptionDetail || "Importé automatiquement depuis Excel");
@@ -2005,7 +2023,7 @@
                         const nouvelleIntervention = {
                             date: dateInterv,
                             nom: nomEmp,
-                            idEmploye: idEmployeSaisi,
+                            idEmploye: idFinal,
                             anciennete: ancienneteEmp,
                             typeIntervention: "SST",
                             graviteSst: graviteSst,
