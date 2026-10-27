@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -1938,7 +1938,20 @@
                         return;
                     }
 
+                    // Chargement de l'historique des interventions SST pour vérifier les doublons (1 SST max par employé par date)
+                    const snapshotExistants = await getDocs(collection(db, "interventions"));
+                    const interventionsSstExistantes = new Set();
+                    
+                    snapshotExistants.forEach((docSnap) => {
+                        const dataDoc = docSnap.data();
+                        if ((dataDoc.typeIntervention || '').toUpperCase() === 'SST' && dataDoc.idEmploye && dataDoc.date) {
+                            const cleUnique = `${String(dataDoc.idEmploye).trim().toLowerCase()}_${dataDoc.date}`;
+                            interventionsSstExistantes.add(cleUnique);
+                        }
+                    });
+
                     let compteImportations = 0;
+                    let compteIgnores = 0;
 
                     for (const row of rows) {
                         const getValeurColonne = (regex) => {
@@ -1946,59 +1959,82 @@
                             return key ? String(row[key]).trim() : "";
                         };
 
-                        const nDemandeCat = getValeurColonne(/n.*demande.*cat|demande.*cat/i);
+                        const nDemandeCat = getValeurColonne(/n.*demande.*cat|demande.*cat|n.*demande|num.*demande/i);
                         const dateEvenementRaw = getValeurColonne(/date.*ev|date/i);
                         const numEmploye = getValeurColonne(/num.*emp|no.*emp|id.*emp|numero.*employe/i);
                         const superviseur = getValeurColonne(/superviseur|responsable/i);
-                        const description = getValeurColonne(/description|detail|commentaire|evenement/i) || "Importé automatiquement depuis le fichier Excel";
+                        const descriptionDetail = getValeurColonne(/description|detail|commentaire|evenement/i);
 
                         if (!numEmploye) continue;
 
-                        // RÈGLE : Si 'n de demande cat' contient un numéro/valeur = SST Majeur, sinon SST Mineur
-                        const graviteSst = (nDemandeCat !== "") ? "Majeur" : "Mineur";
-
                         const dateInterv = formaterDateExcel(dateEvenementRaw);
+                        const cleVerification = `${String(numEmploye).trim().toLowerCase()}_${dateInterv}`;
 
-                        // Recherche de l'employé par ID dans la liste d'employés
+                        // VÉRIFICATION D'UNICITÉ : Ignorer si une intervention SST existe déjà pour cet employé à cette date
+                        if (interventionsSstExistantes.has(cleVerification)) {
+                            compteIgnores++;
+                            continue;
+                        }
+
+                        // 1. Remplissage du numéro d'employé dans la fiche 'id'
+                        const idEmployeSaisi = String(numEmploye).trim();
+
+                        // 2. Jumelage du nom et de l'ancienneté depuis la liste des employés
                         let empTrouve = listeEmployesMemoire.find(emp => {
                             let idEmp = String(emp.id !== undefined ? emp.id : (emp.idEmploye !== undefined ? emp.idEmploye : '')).trim().toLowerCase();
-                            return idEmp === String(numEmploye).trim().toLowerCase();
+                            return idEmp === idEmployeSaisi.toLowerCase();
                         });
 
-                        let nomEmp = empTrouve ? `${empTrouve.prenom || ''} ${empTrouve.nom || ''}`.trim() : `Employé ID ${numEmploye}`;
-                        if (!nomEmp) nomEmp = empTrouve ? empTrouve.nom || 'Sans nom' : `Employé ID ${numEmploye}`;
+                        let nomEmp = empTrouve ? `${empTrouve.prenom || ''} ${empTrouve.nom || ''}`.trim() : `Employé ID ${idEmployeSaisi}`;
+                        if (!nomEmp) nomEmp = empTrouve ? empTrouve.nom || 'Sans nom' : `Employé ID ${idEmployeSaisi}`;
                         let ancienneteEmp = empTrouve ? (empTrouve.anciennete || 'Non spécifiée') : 'Non spécifiée';
 
-                        const delaiJours = 14;
-                        let dateEchObj = new Date(dateInterv + "T00:00:00");
-                        dateEchObj.setDate(dateEchObj.getDate() + delaiJours);
-                        let dateEcheance = dateEchObj.toISOString().split('T')[0];
+                        // 3. Numéro de demande placé dans le champ 'description'
+                        let descriptionFinale = nDemandeCat ? `N° de demande : ${nDemandeCat}` : (descriptionDetail || "Importé automatiquement depuis Excel");
+                        if (nDemandeCat && descriptionDetail) {
+                            descriptionFinale = `N° de demande : ${nDemandeCat} - ${descriptionDetail}`;
+                        }
+
+                        const graviteSst = (nDemandeCat !== "") ? "Majeur" : "Mineur";
+
+                        // 4. Prochaine observation = Aucune (0 jour, dossier fermé, pas d'échéance)
+                        const delaiJours = 0;
+                        const dateEcheance = "";
+                        const statutDossier = "Fermé";
 
                         const nouvelleIntervention = {
                             date: dateInterv,
                             nom: nomEmp,
-                            idEmploye: numEmploye,
+                            idEmploye: idEmployeSaisi,
                             anciennete: ancienneteEmp,
                             typeIntervention: "SST",
                             graviteSst: graviteSst,
                             categoriesSst: [],
                             statutsObservation: [],
-                            description: nDemandeCat ? `[N° CAT: ${nDemandeCat}] ${description}` : description,
+                            description: descriptionFinale,
                             prochainRdvJours: delaiJours,
                             dateEcheance: dateEcheance,
                             superviseurEmail: superviseur,
                             inspecteur: "",
-                            statut: "Ouvert",
+                            statut: statutDossier,
                             source: "import_excel",
                             dateImportation: new Date().toISOString().split('T')[0],
                             timestampImportation: new Date().toISOString()
                         };
 
                         await addDoc(collection(db, "interventions"), nouvelleIntervention);
+                        
+                        // Mettre à jour le registre local pour bloquer tout doublon au sein du même fichier
+                        interventionsSstExistantes.add(cleVerification);
                         compteImportations++;
                     }
 
-                    afficherNotification(`Importation réussie : ${compteImportations} fiche(s) d'intervention SST enregistrée(s) !`, "success");
+                    let messageStatut = `Importation réussie : ${compteImportations} fiche(s) SST enregistrée(s).`;
+                    if (compteIgnores > 0) {
+                        messageStatut += ` (${compteIgnores} doublon(s) SST ignoré(s) pour la même date)`;
+                    }
+
+                    afficherNotification(messageStatut, "success");
                     chargerStatistiques();
 
                 } catch (erreur) {
