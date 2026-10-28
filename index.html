@@ -78,6 +78,9 @@
 
         <!-- Bouton Risque consolidé -->
         <button onclick="location.href='risqueConsolide.html'" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-orange-600/30 transition-all cursor-pointer flex items-center justify-center text-center">Risque consolidé</button>
+
+        <!-- Bouton Gestion Firebase (Accessible seulement pour martin.lefebvre@canadapost.ca) -->
+        <button id="btnGestionFirebase" onclick="location.href='gestion firebase.html'" class="col-span-2 w-full min-h-[64px] py-4 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs tracking-widest uppercase shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex items-center justify-center text-center hidden">Gestion Firebase</button>
       </div>
 
       <button onclick="deconnecterUtilisateur()" class="w-full py-3 px-6 rounded-xl bg-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs tracking-widest uppercase transition-all mt-6 cursor-pointer">Déconnexion</button>
@@ -234,6 +237,7 @@
     onAuthStateChanged(auth, (user) => {
         const btnChef = document.getElementById('btnChef');
         const btnBooker = document.getElementById('btnBooker');
+        const btnGestionFirebase = document.getElementById('btnGestionFirebase');
 
         if (user) {
             document.getElementById('vue-connexion').classList.add('hidden');
@@ -253,12 +257,20 @@
                 btnBooker.classList.add('hidden');
             }
 
+            // Affichage réservé exclusivement à martin.lefebvre@canadapost.ca
+            if (user.email && user.email.toLowerCase().trim() === "martin.lefebvre@canadapost.ca") {
+                btnGestionFirebase.classList.remove('hidden');
+            } else {
+                btnGestionFirebase.classList.add('hidden');
+            }
+
         } else {
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('vue-connexion').classList.remove('hidden');
             
             btnChef.classList.add('hidden');
             btnBooker.classList.add('hidden');
+            if (btnGestionFirebase) btnGestionFirebase.classList.add('hidden');
         }
     });
   </script>
