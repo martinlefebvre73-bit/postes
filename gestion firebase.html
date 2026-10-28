@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PostesST - Firebase Manager</title>
-
-  <!-- Feuille de style principale PostesST (Hors Ligne / Locale) -->
+  <title>PostesST - Gestionnaire & Purge Firebase</title>
+  
+  <!-- Feuille de style personnalisée -->
   <link rel="stylesheet" href="style5.css">
 
   <!-- Google Fonts & Font Awesome Icons -->
@@ -15,718 +15,425 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    /* Reset & CSS Custom Properties */
+    /* Styles complémentaires pour mise en page fluide sans Tailwind */
     :root {
       --bg-dark: #0B0F17;
       --card-bg: rgba(17, 24, 39, 0.85);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text-main: #F3F4F6;
-      --text-muted: #9CA3AF;
-      --accent-rose: #e11d48;
-      --accent-rose-hover: #be123c;
-      --accent-blue: #2563eb;
-      --accent-blue-hover: #1d4ed8;
-      --accent-emerald: #059669;
-      --accent-amber: #d97706;
-      --input-bg: #030712;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --rose-primary: #e11d48;
+      --rose-hover: #f43f5e;
+      --emerald-accent: #10b981;
+      --amber-accent: #f59e0b;
+      --sky-accent: #0284c7;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Inter', sans-serif;
       background-color: var(--bg-dark);
       color: var(--text-main);
+      margin: 0;
+      padding: 20px;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 1.5rem;
+      box-sizing: border-box;
     }
 
-    .app-container {
+    .container {
       max-width: 1280px;
       margin: 0 auto;
       width: 100%;
     }
 
-    /* Header Styling */
     .app-header {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       justify-content: space-between;
-      align-items: flex-start;
-      padding-bottom: 1.5rem;
-      margin-bottom: 2rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      gap: 1rem;
+      align-items: center;
+      padding-bottom: 20px;
+      margin-bottom: 25px;
+      border-bottom: 1px solid var(--border-color);
+      gap: 15px;
     }
 
-    @media (min-width: 768px) {
-      .app-header {
-        flex-direction: row;
-        align-items: center;
-      }
-    }
-
-    .header-brand {
+    .brand-title {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 12px;
     }
 
     .brand-icon {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 0.75rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       background: linear-gradient(135deg, #e11d48, #f97316);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 15px -3px rgba(225, 29, 72, 0.3);
+      font-size: 24px;
       color: #fff;
-      font-size: 1.5rem;
-    }
-
-    .brand-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
     }
 
     .brand-badge {
-      font-size: 0.7rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 9999px;
-      background-color: rgba(225, 29, 72, 0.2);
-      color: #fb7185;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(225, 29, 72, 0.2);
+      color: #fda4af;
       border: 1px solid rgba(225, 29, 72, 0.3);
-    }
-
-    .brand-subtitle {
-      font-size: 0.75rem;
-      color: var(--text-muted);
     }
 
     .header-controls {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.75rem;
-    }
-
-    /* Badges & Pills */
-    .control-pill {
-      background-color: #111827;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .control-pill select {
-      background: transparent;
-      color: #ffffff;
-      border: none;
-      font-weight: 600;
-      outline: none;
-      cursor: pointer;
+      gap: 10px;
     }
 
     .status-badge {
-      padding: 0.35rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
       border: 1px solid transparent;
     }
 
-    .status-badge.pending {
-      background-color: rgba(217, 119, 6, 0.1);
-      color: #fbbf24;
-      border-color: rgba(217, 119, 6, 0.2);
-    }
-
-    .status-badge.success {
-      background-color: rgba(5, 150, 105, 0.1);
-      color: #34d399;
-      border-color: rgba(5, 150, 105, 0.2);
-    }
-
-    .status-badge.danger {
-      background-color: rgba(225, 29, 72, 0.1);
-      color: #f87171;
+    .status-disconnected {
+      background: rgba(225, 29, 72, 0.1);
+      color: #fda4af;
       border-color: rgba(225, 29, 72, 0.2);
     }
 
+    .status-connected {
+      background: rgba(16, 185, 129, 0.1);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
     .status-dot {
-      width: 0.5rem;
-      height: 0.5rem;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background-color: currentColor;
     }
 
-    /* Main Grid Layout */
-    .main-grid {
+    .grid-layout {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 1.5rem;
+      gap: 20px;
     }
 
     @media (min-width: 1024px) {
-      .main-grid {
+      .grid-layout {
         grid-template-columns: 5fr 7fr;
       }
     }
 
-    /* Card Panels */
     .glass-panel {
       background: var(--card-bg);
       backdrop-filter: blur(12px);
-      border: 1px solid var(--card-border);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
     }
 
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .panel-title {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .collection-input-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      background-color: #030712;
-      padding: 0.25rem 0.6rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 0.75rem;
-    }
-
-    .collection-input-wrapper input {
-      background: transparent;
-      border: none;
-      color: #f43f5e;
-      font-family: monospace;
-      outline: none;
-      width: 6.5rem;
-      text-align: right;
-    }
-
-    /* Form Controls */
     .form-group {
-      margin-bottom: 1rem;
+      margin-bottom: 16px;
     }
 
     .form-label {
       display: block;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--text-main);
-      margin-bottom: 0.375rem;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
     }
 
-    .form-select, .form-input, .form-textarea {
+    .form-select, .form-input {
       width: 100%;
-      background-color: var(--input-bg);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.75rem;
-      color: var(--text-main);
+      padding: 10px 12px;
+      background: #030712;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 13px;
+      box-sizing: border-box;
       outline: none;
       transition: border-color 0.2s;
     }
 
-    .form-select:focus, .form-input:focus, .form-textarea:focus {
-      border-color: var(--accent-rose);
+    .form-select:focus, .form-input:focus {
+      border-color: var(--rose-primary);
     }
 
-    .date-range-grid {
+    .flex-row-gap {
+      display: flex;
+      gap: 10px;
+    }
+
+    .metrics-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .metric-card {
       background: rgba(3, 7, 18, 0.6);
-      padding: 0.75rem;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      margin-top: 0.5rem;
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 10px;
     }
 
-    .date-range-grid.hidden {
-      display: none;
-    }
-
-    .input-icon-wrapper {
-      position: relative;
-    }
-
-    .input-icon-wrapper i {
-      position: absolute;
-      left: 0.75rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
-
-    .input-icon-wrapper input {
-      padding-left: 2rem;
-    }
-
-    .form-hint {
-      font-size: 0.625rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-      background-color: rgba(3, 7, 18, 0.8);
-      border-radius: 0.75rem;
-      padding: 0.75rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
+    .metric-title {
+      font-size: 11px;
       color: var(--text-muted);
       display: block;
-      margin-bottom: 0.25rem;
+      margin-bottom: 4px;
     }
 
-    .stat-value {
-      font-size: 1.25rem;
+    .metric-value {
+      font-size: 20px;
       font-weight: 700;
-      color: #e5e7eb;
     }
 
-    .stat-value.highlight {
-      color: #fb7185;
-    }
-
-    /* Buttons */
     .btn {
       width: 100%;
-      padding: 0.75rem 1rem;
-      border-radius: 0.75rem;
-      font-size: 0.875rem;
-      font-weight: 500;
+      padding: 12px;
+      border-radius: 10px;
       border: none;
+      font-weight: 600;
+      font-size: 13px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 8px;
       transition: all 0.2s;
     }
 
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed !important;
-    }
-
     .btn-secondary {
-      background-color: #1f2937;
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #1f2937;
+      color: #fff;
+      border: 1px solid #374151;
     }
 
-    .btn-secondary:hover:not(:disabled) {
-      background-color: #374151;
+    .btn-secondary:hover {
+      background: #374151;
     }
 
     .btn-danger {
-      background: linear-gradient(to right, #e11d48, #dc2626);
-      color: #ffffff;
-      box-shadow: 0 10px 15px -3px rgba(225, 29, 72, 0.3);
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
     }
 
-    .btn-danger:hover:not(:disabled) {
-      background: linear-gradient(to right, #f43f5e, #ef4444);
+    .btn-danger:hover {
+      background: var(--rose-hover);
+    }
+
+    .btn-danger:disabled {
+      background: rgba(225, 29, 72, 0.2);
+      color: #6b7280;
+      cursor: not-allowed;
+      box-shadow: none;
     }
 
     .btn-emerald {
-      background-color: rgba(5, 150, 105, 0.15);
+      background: rgba(16, 185, 129, 0.15);
       color: #6ee7b7;
-      border: 1px solid rgba(5, 150, 105, 0.3);
-      font-size: 0.75rem;
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
-    .btn-emerald:hover:not(:disabled) {
-      background-color: rgba(5, 150, 105, 0.25);
+    .btn-emerald:hover {
+      background: rgba(16, 185, 129, 0.25);
     }
 
-    .btn-blue {
-      background-color: var(--accent-blue);
-      color: #ffffff;
-    }
-
-    .btn-blue:hover:not(:disabled) {
-      background-color: var(--accent-blue-hover);
-    }
-
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    /* Preview Doc List */
-    .doc-list-container {
-      max-height: 14rem;
+    .doc-list {
+      max-height: 220px;
       overflow-y: auto;
-      border-radius: 0.75rem;
-      background-color: rgba(3, 7, 18, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      background: rgba(3, 7, 18, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px;
     }
 
-    .doc-item-card {
+    .doc-item {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      padding: 0.625rem;
-      border-radius: 0.5rem;
-      background-color: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.75rem;
-    }
-
-    .doc-item-info {
-      display: flex;
       align-items: center;
-      gap: 0.75rem;
-      overflow: hidden;
+      padding: 8px 12px;
+      background: #111827;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
     }
 
-    .doc-title {
-      font-weight: 500;
-      color: #e5e7eb;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .doc-meta {
-      font-size: 0.625rem;
-      color: var(--text-muted);
+    .terminal-console {
+      background: #030712;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
       font-family: monospace;
-    }
-
-    /* Terminal Console */
-    .terminal-wrapper {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 280px;
-    }
-
-    .terminal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
-    }
-
-    .terminal-dots {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-    }
-
-    .dot {
-      width: 0.625rem;
-      height: 0.625rem;
-      border-radius: 50%;
-    }
-
-    .dot-red { background-color: rgba(239, 68, 68, 0.8); }
-    .dot-yellow { background-color: rgba(245, 158, 11, 0.8); }
-    .dot-green { background-color: rgba(16, 185, 129, 0.8); }
-
-    .terminal-box {
-      flex: 1;
-      background-color: #030712;
-      border-radius: 0.75rem;
-      padding: 1rem;
-      font-family: monospace;
-      font-size: 0.75rem;
+      font-size: 11px;
+      height: 200px;
       overflow-y: auto;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #e5e7eb;
-      max-height: 320px;
     }
 
-    .log-line {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
-      line-height: 1.5;
-      margin-bottom: 0.375rem;
-    }
-
-    .log-time {
-      color: #4b5563;
-      flex-shrink: 0;
-    }
-
-    /* Modals */
-    .modal-backdrop {
+    .modal-overlay {
       position: fixed;
       inset: 0;
-      background-color: rgba(3, 7, 18, 0.85);
+      background: rgba(3, 7, 18, 0.85);
       backdrop-filter: blur(8px);
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      z-index: 50;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-    }
-
-    .modal-backdrop.active {
-      opacity: 1;
-      pointer-events: auto;
+      padding: 16px;
+      z-index: 1000;
     }
 
     .modal-card {
-      background-color: #111827;
-      border: 1px solid rgba(225, 29, 72, 0.3);
-      border-radius: 1rem;
-      max-width: 28rem;
+      background: #111827;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      max-width: 420px;
       width: 100%;
-      padding: 1.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-      transform: scale(0.95);
-      transition: transform 0.2s;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     }
 
-    .modal-backdrop.active .modal-card {
-      transform: scale(1);
-    }
-
-    .modal-icon {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 50%;
-      background-color: rgba(225, 29, 72, 0.1);
-      border: 1px solid rgba(225, 29, 72, 0.3);
-      color: #f43f5e;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-    }
-
-    .modal-title {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 0.5rem;
-    }
-
-    .modal-body {
-      font-size: 0.875rem;
-      color: #d1d5db;
-      line-height: 1.5;
-      margin-bottom: 1rem;
-    }
-
-    .modal-summary-box {
-      background-color: #030712;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      margin-bottom: 1.5rem;
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .modal-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.75rem;
-    }
-
-    .footer {
-      max-width: 1280px;
-      margin: 2rem auto 0 auto;
-      width: 100%;
-      padding-top: 1.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      text-align: center;
-      font-size: 0.75rem;
-      color: #6b7280;
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
 
-  <!-- Application Header -->
-  <div class="app-container">
+  <div class="container">
+    <!-- Header Application -->
     <header class="app-header">
-      <div class="header-brand">
+      <div class="brand-title">
         <div class="brand-icon">
           <i class="fa-solid fa-fire"></i>
         </div>
         <div>
-          <h1 class="brand-title">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700;">
             PostesST <span class="brand-badge">Firebase Manager</span>
           </h1>
-          <p class="brand-subtitle">Purge groupée & gestion des collections Firestore (Accès Superviseur)</p>
+          <span style="font-size: 12px; color: var(--text-muted);">Purge & Gestion des Collections Firestore</span>
         </div>
       </div>
 
-      <!-- Config & Status -->
       <div class="header-controls">
-        <!-- Project Selector -->
-        <div class="control-pill">
-          <i class="fa-solid fa-database" style="color: #fb7185;"></i>
-          <span style="color: #9ca3af;">Projet:</span>
-          <select id="projectSelect">
-            <option value="postesst">postesst</option>
-            <option value="postes-26884">postes-26884</option>
+        <!-- Sélection de Projet -->
+        <div style="background: #111827; padding: 4px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 12px;">
+          <i class="fa-solid fa-database" style="color: var(--rose-primary); margin-right: 6px;"></i>
+          <span style="color: var(--text-muted);">Projet:</span>
+          <select id="projectSelect" style="background: transparent; color: #fff; border: none; font-weight: 600; cursor: pointer;">
+            <option value="postesst" style="background: #111827;">postesst</option>
+            <option value="postes-26884" style="background: #111827;">postes-26884</option>
           </select>
         </div>
 
-        <!-- Status Badge -->
-        <div id="statusBadge" class="status-badge pending">
+        <!-- Badge de Statut Auth -->
+        <div id="statusBadge" class="status-badge status-disconnected">
           <span class="status-dot"></span>
-          <span id="statusBadgeText">Vérification de l'authentification...</span>
+          <span id="statusText">Non connecté</span>
         </div>
 
-        <!-- User Profile / Auth Action Button -->
-        <button id="btnAuthToggle" class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;">
-          <i class="fa-solid fa-user-shield" style="color: #38bdf8;"></i>
+        <!-- Bouton Connexion / Déconnexion -->
+        <button id="btnAuthToggle" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 12px;">
+          <i class="fa-solid fa-user" style="color: var(--sky-accent);"></i>
           <span id="userEmailDisplay">Se connecter</span>
         </button>
 
-        <div class="control-pill">
-          <i class="fa-regular fa-calendar" style="color: #9ca3af;"></i>
+        <div style="font-size: 12px; color: var(--text-muted); background: #1f2937; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-color);">
+          <i class="fa-regular fa-calendar" style="margin-right: 4px;"></i>
           <span id="currentDateDisplay">Date...</span>
         </div>
       </div>
     </header>
 
-    <!-- Main Content Grid -->
-    <main class="main-grid">
+    <!-- Grille Principale -->
+    <main class="grid-layout">
       
-      <!-- Left Column: Settings & Filter Controls -->
+      <!-- Colonne Gauche : Filtres & Actions -->
       <section>
         
-        <!-- Multi-criteria Filter & Purge Card -->
         <div class="glass-panel">
-          <div class="panel-header">
-            <h2 class="panel-title">
-              <i class="fa-solid fa-filter" style="color: #f43f5e;"></i>
-              Critères de Purge
-            </h2>
-            <div class="collection-input-wrapper">
-              <span style="color: #9ca3af;">Collection:</span>
-              <input type="text" id="collectionNameInput" value="interventions">
-            </div>
+          <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-filter" style="color: var(--rose-primary);"></i>
+            Critères de Recherche & Purge
+          </h2>
+
+          <div class="form-group">
+            <label class="form-label" for="collectionSelect">
+              <i class="fa-solid fa-layer-group" style="margin-right: 4px;"></i> 1. Choisir la Collection Firestore
+            </label>
+            <select id="collectionSelect" class="form-select">
+              <option value="interventions" selected>interventions (Fiches Interventions SST)</option>
+              <option value="employes">employes (Gestion de la liste du personnel)</option>
+              <option value="rapports">rapports (Problèmes de livraison)</option>
+              <option value="roulement">roulement (Plan de roulement)</option>
+              <option value="vehicules">vehicules (Assignation camions)</option>
+              <option value="custom">+ Saisir une collection personnalisée...</option>
+            </select>
+            <input type="text" id="customCollectionInput" class="form-input hidden" placeholder="Nom exact de la collection..." style="margin-top: 8px;">
           </div>
 
-          <!-- Filter Form -->
-          <div style="margin-bottom: 1.5rem;">
-            
-            <!-- Date Filter Mode -->
-            <div class="form-group">
-              <label class="form-label">1. Filtrer par Date de création</label>
-              <select id="dateModeSelect" class="form-select">
-                <option value="today">Créées Aujourd'hui uniquement</option>
-                <option value="range">Plage de dates (Du / Au)</option>
-                <option value="all">Toutes les dates (Ignorer la date)</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label class="form-label">2. Filtre par Date de Création</label>
+            <select id="dateModeSelect" class="form-select">
+              <option value="today">Créées Aujourd'hui uniquement</option>
+              <option value="range">Plage de dates (Du / Au)</option>
+              <option value="all">Toutes les dates (Ignorer la date)</option>
+            </select>
+          </div>
 
-            <!-- Custom Date Range Inputs -->
-            <div id="dateRangeContainer" class="date-range-grid hidden">
-              <div>
-                <label class="form-label" style="font-size: 0.625rem; color: #9ca3af;">Date Début (Inclus)</label>
+          <!-- Plage de Dates (Masqué par défaut) -->
+          <div id="dateRangeContainer" class="form-group hidden">
+            <div class="flex-row-gap">
+              <div style="flex: 1;">
+                <label class="form-label">Date Début</label>
                 <input type="date" id="startDateInput" class="form-input">
               </div>
-              <div>
-                <label class="form-label" style="font-size: 0.625rem; color: #9ca3af;">Date Fin (Inclus)</label>
+              <div style="flex: 1;">
+                <label class="form-label">Date Fin</label>
                 <input type="date" id="endDateInput" class="form-input">
               </div>
             </div>
-
-            <!-- Keyword Filter Input -->
-            <div class="form-group" style="margin-top: 1rem;">
-              <label class="form-label">2. Filtrer par Mot-clé dans la fiche</label>
-              <div class="input-icon-wrapper">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="keywordInput" placeholder="Ex: urgent, technicien-01, maintenance..." class="form-input">
-              </div>
-              <p class="form-hint">Recherche dans tous les champs textuels (titre, nom, description, notes, statut...).</p>
-            </div>
-
           </div>
 
-          <!-- Metrics Summary -->
-          <div class="stats-grid">
-            <div class="stat-card">
-              <span class="stat-label">Fiches en base</span>
-              <span id="totalDocsCount" class="stat-value">--</span>
+          <!-- Mot-clé -->
+          <div class="form-group">
+            <label class="form-label">3. Mot-clé dans la fiche</label>
+            <input type="text" id="keywordInput" class="form-input" placeholder="Ex: urgent, technicien, inspection, 205...">
+          </div>
+
+          <!-- Statistiques -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-title">Fiches en base</span>
+              <span id="totalDocsCount" class="metric-value">--</span>
             </div>
-            <div class="stat-card">
-              <span class="stat-label">Fiches ciblées</span>
-              <span id="targetDocsCount" class="stat-value highlight">--</span>
+            <div class="metric-card">
+              <span class="metric-title">Fiches ciblées</span>
+              <span id="targetDocsCount" class="metric-value" style="color: var(--rose-primary);">--</span>
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="btn-group">
-            <button id="btnScan" disabled class="btn btn-secondary">
-              <i class="fa-solid fa-rotate" style="color: #38bdf8;"></i>
-              <span>Analyser avec les filtres</span>
+          <!-- Boutons d'action -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btnScan" class="btn btn-secondary">
+              <i class="fa-solid fa-rotate" style="color: var(--sky-accent);"></i>
+              <span>Analyser la collection</span>
             </button>
 
             <button id="btnDelete" disabled class="btn btn-danger">
@@ -736,17 +443,16 @@
           </div>
         </div>
 
-        <!-- Testing Tools / Seed Card -->
+        <!-- Simulation -->
         <div class="glass-panel">
-          <h3 style="font-size: 0.875rem; font-weight: 600; color: #d1d5db; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fa-solid fa-vial" style="color: #fbbf24;"></i>
-            Simulation de Données
+          <h3 style="font-size: 14px; margin-top: 0; margin-bottom: 8px;">
+            <i class="fa-solid fa-vial" style="color: var(--amber-accent); margin-right: 6px;"></i>
+            Outil de Simulation
           </h3>
-          <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 1rem;">
-            Générez des fiches de test avec des dates et mots-clés variés pour valider le fonctionnement des filtres.
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            Injecte des données de test dans la collection active pour tester vos critères de filtre.
           </p>
-
-          <button id="btnCreateTest" disabled class="btn btn-emerald">
+          <button id="btnCreateTest" class="btn btn-emerald">
             <i class="fa-solid fa-plus"></i>
             <span>Injecter des fiches de test</span>
           </button>
@@ -754,131 +460,105 @@
 
       </section>
 
-      <!-- Right Column: Data Preview & Real-time Console Log -->
+      <!-- Colonne Droite : Aperçu & Terminal -->
       <section>
         
-        <!-- Document List Preview -->
+        <!-- Liste de prévisualisation -->
         <div class="glass-panel">
-          <div class="panel-header">
-            <h2 class="panel-title">
-              <i class="fa-solid fa-list-check" style="color: #38bdf8;"></i>
-              Fiches correspondant aux critères
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-list-check" style="color: var(--sky-accent);"></i>
+              Fiches ciblées
             </h2>
-            <span id="previewBadge" class="brand-badge" style="background-color: #1f2937; color: #d1d5db; border-color: rgba(255,255,255,0.1);">0 élément(s)</span>
+            <span id="previewBadge" style="font-size: 11px; font-family: monospace; padding: 2px 8px; background: #1f2937; border-radius: 12px;">0 élément(s)</span>
           </div>
 
-          <!-- Document List Container -->
-          <div id="docListContainer" class="doc-list-container">
-            <div style="text-align: center; padding: 1.5rem; color: #6b7280; font-size: 0.75rem; font-style: italic;">
-              Vérification de l'authentification...
+          <div id="docListContainer" class="doc-list">
+            <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px; font-style: italic;">
+              Cliquez sur "Analyser la collection" pour faire la recherche.
             </div>
           </div>
         </div>
 
-        <!-- Terminal Output Log -->
-        <div class="glass-panel terminal-wrapper">
-          <div class="terminal-header">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <div class="terminal-dots">
-                <span class="dot dot-red"></span>
-                <span class="dot dot-yellow"></span>
-                <span class="dot dot-green"></span>
-              </div>
-              <span style="font-size: 0.75rem; font-family: monospace; color: #9ca3af; margin-left: 0.5rem;">Journal d'exécution (Console)</span>
-            </div>
-            <button id="btnClearLog" style="background: none; border: none; color: #6b7280; font-size: 0.75rem; cursor: pointer;">
+        <!-- Console Terminal -->
+        <div class="glass-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-family: monospace; color: var(--text-muted);">
+              <i class="fa-solid fa-terminal" style="margin-right: 6px;"></i> Console d'Exécution
+            </span>
+            <button id="btnClearLog" style="background: transparent; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer;">
               <i class="fa-solid fa-eraser"></i> Effacer
             </button>
           </div>
 
-          <!-- Terminal Box -->
-          <div id="logConsole" class="terminal-box"></div>
+          <div id="logConsole" class="terminal-console">
+          </div>
         </div>
 
       </section>
     </main>
   </div>
 
-  <!-- Supervisor Login Modal -->
-  <div id="loginModal" class="modal-backdrop">
-    <div class="modal-card" style="border-color: rgba(37, 99, 235, 0.3);">
-      
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div class="modal-icon" style="margin: 0 auto 0.75rem auto; background-color: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.3); color: #60a5fa;">
-          <i class="fa-solid fa-user-shield"></i>
+  <!-- Modal de Connexion Superviseur -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto;">
+          <i class="fa-solid fa-user-shield" style="font-size: 20px; color: var(--sky-accent);"></i>
         </div>
-        <h3 class="modal-title">Connexion Superviseur</h3>
-        <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">Postes Canada &bull; Projet <span id="loginProjectName" style="color: #60a5fa; font-family: monospace;">postesst</span></p>
+        <h3 style="margin: 0; font-size: 18px; color: #fff;">Connexion Superviseur</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Accès restreint aux superviseurs autorisés</p>
       </div>
 
-      <form id="formConnexionModal" style="display: flex; flex-direction: column; gap: 1rem;">
-        <div>
-          <label class="form-label" style="text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.05em; color: #9ca3af;">Courriel</label>
+      <form id="formConnexionModal">
+        <div class="form-group">
+          <label class="form-label">Courriel Superviseur</label>
           <input type="email" id="emailConnexion" required placeholder="nom@canadapost.ca" class="form-input">
         </div>
-        <div>
-          <label class="form-label" style="text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.05em; color: #9ca3af;">Mot de passe</label>
-          <input type="password" id="passwordConnexion" required placeholder="Mot de passe" class="form-input">
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" id="passwordConnexion" required placeholder="••••••••" class="form-input">
         </div>
 
-        <div id="loginErrorMsg" style="display: none; font-size: 0.75rem; color: #f87171; background-color: rgba(225, 29, 72, 0.1); border: 1px solid rgba(225, 29, 72, 0.2); padding: 0.625rem; border-radius: 0.5rem; text-align: center; font-weight: 500;">
-          Erreur de connexion : Identifiants incorrects.
+        <div id="loginErrorMsg" class="hidden" style="background: rgba(225, 29, 72, 0.1); border: 1px solid rgba(225, 29, 72, 0.2); color: #fda4af; padding: 8px; border-radius: 8px; font-size: 12px; text-align: center; margin-bottom: 12px;">
+          Identifiants incorrects ou accès non autorisé.
         </div>
 
-        <div class="modal-actions" style="margin-top: 0.5rem;">
-          <button type="button" id="btnCancelLoginModal" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem;">
-            Fermer
-          </button>
-          <button type="submit" class="btn btn-blue" style="width: auto; padding: 0.5rem 1.25rem; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;">
-            <i class="fa-solid fa-right-to-bracket"></i>
-            <span>Se connecter</span>
-          </button>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" id="btnCancelLoginModal" class="btn btn-secondary" style="width: auto;">Annuler</button>
+          <button type="submit" class="btn btn-danger" style="width: auto;">Se connecter</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Custom Deletion Confirmation Modal -->
-  <div id="confirmModal" class="modal-backdrop">
+  <!-- Modal de Confirmation de Suppression -->
+  <div id="confirmModal" class="modal-overlay">
     <div class="modal-card">
-      
-      <div class="modal-icon">
-        <i class="fa-solid fa-triangle-exclamation"></i>
+      <div style="text-align: center; margin-bottom: 16px;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 32px; color: var(--rose-primary);"></i>
+        <h3 style="margin: 10px 0 4px 0; font-size: 18px; color: #fff;">Confirmer la suppression</h3>
       </div>
 
-      <h3 class="modal-title">Confirmer la suppression irréversible</h3>
-      
-      <p class="modal-body">
-        Vous allez supprimer définitivement <strong id="modalDocCount" style="color: #f43f5e;">0 fiche(s)</strong> correspondant aux critères suivants :
+      <p style="font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 16px;">
+        Vous allez supprimer définitivement <strong id="modalDocCount" style="color: var(--rose-primary);">0 fiche(s)</strong>.
       </p>
 
-      <div class="modal-summary-box">
-        <div>Projet : <span id="modalProject" style="color: #e5e7eb;">postesst</span></div>
-        <div>Collection : <span id="modalCollection" style="color: #e5e7eb;">interventions</span></div>
-        <div>Filtre Date : <span id="modalDateFilter" style="color: #fcd34d;">Aujourd'hui</span></div>
-        <div>Mot-clé : <span id="modalKeywordFilter" style="color: #38bdf8;">Aucun</span></div>
-        <div>Superviseur Autorisé : <span id="modalUserEmail" style="color: #34d399; font-weight: 700;">Non spécifié</span></div>
-        <div>Action : <span style="color: #f43f5e; font-weight: 700;">DELETE_BATCH</span></div>
+      <div style="background: #030712; padding: 12px; border-radius: 8px; font-size: 11px; font-family: monospace; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6;">
+        <div>Projet : <span id="modalProject" style="color: #fff;">--</span></div>
+        <div>Collection : <span id="modalCollection" style="color: var(--sky-accent);">--</span></div>
+        <div>Filtre Date : <span id="modalDateFilter" style="color: var(--amber-accent);">--</span></div>
+        <div>Mot-clé : <span id="modalKeywordFilter" style="color: #fff;">--</span></div>
       </div>
 
-      <div class="modal-actions">
-        <button id="btnCancelModal" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.75rem;">
-          Annuler
-        </button>
-        <button id="btnConfirmDelete" class="btn btn-danger" style="width: auto; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600;">
-          <i class="fa-solid fa-trash"></i>
-          <span>Oui, tout supprimer</span>
-        </button>
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button id="btnCancelModal" class="btn btn-secondary" style="width: auto;">Annuler</button>
+        <button id="btnConfirmDelete" class="btn btn-danger" style="width: auto;">Oui, supprimer</button>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    Firebase SDK v11.6.1 &bull; Panneau d'Administration & Purge par Lot &bull; Postes Canada
-  </footer>
-
-  <!-- Firebase & Application Logic -->
+  <!-- Firebase JavaScript Module -->
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
@@ -898,14 +578,7 @@
       onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    // 1. Liste stricte des utilisateurs autorisés (Même liste que gestionListe.html)
-    const utilisateursAutorises = [
-      "sandra.dostie@canadapost.ca",
-      "caroline.gauthier@canadapost.ca",
-      "martin.lefebvre@canadapost.ca"
-    ];
-
-    // 2. Configurations Firebase
+    // Firebase Configurations
     const configs = {
       "postesst": {
         apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -926,17 +599,24 @@
       }
     };
 
+    // Liste des courriels autorisés selon gestionListe
+    const utilisateursAutorises = [
+      "sandra.dostie@canadapost.ca",
+      "caroline.gauthier@canadapost.ca",
+      "martin.lefebvre@canadapost.ca"
+    ];
+
     let currentApp = null;
     let db = null;
     let auth = null;
     let currentProjectKey = "postesst";
     let currentUser = null;
-    let isAuthorized = false;
     let unsubscribeAuth = null;
 
     // DOM Elements
     const projectSelect = document.getElementById('projectSelect');
-    const collectionNameInput = document.getElementById('collectionNameInput');
+    const collectionSelect = document.getElementById('collectionSelect');
+    const customCollectionInput = document.getElementById('customCollectionInput');
     const dateModeSelect = document.getElementById('dateModeSelect');
     const dateRangeContainer = document.getElementById('dateRangeContainer');
     const startDateInput = document.getElementById('startDateInput');
@@ -944,7 +624,7 @@
     const keywordInput = document.getElementById('keywordInput');
 
     const statusBadge = document.getElementById('statusBadge');
-    const statusBadgeText = document.getElementById('statusBadgeText');
+    const statusText = document.getElementById('statusText');
     const btnAuthToggle = document.getElementById('btnAuthToggle');
     const userEmailDisplay = document.getElementById('userEmailDisplay');
 
@@ -959,23 +639,20 @@
     const docListContainer = document.getElementById('docListContainer');
     const previewBadge = document.getElementById('previewBadge');
 
-    // Login Modal Elements
+    // Modals
     const loginModal = document.getElementById('loginModal');
-    const loginProjectName = document.getElementById('loginProjectName');
     const formConnexionModal = document.getElementById('formConnexionModal');
     const emailConnexion = document.getElementById('emailConnexion');
     const passwordConnexion = document.getElementById('passwordConnexion');
     const loginErrorMsg = document.getElementById('loginErrorMsg');
     const btnCancelLoginModal = document.getElementById('btnCancelLoginModal');
 
-    // Confirm Modal Elements
     const confirmModal = document.getElementById('confirmModal');
     const modalDocCount = document.getElementById('modalDocCount');
     const modalProject = document.getElementById('modalProject');
     const modalCollection = document.getElementById('modalCollection');
     const modalDateFilter = document.getElementById('modalDateFilter');
     const modalKeywordFilter = document.getElementById('modalKeywordFilter');
-    const modalUserEmail = document.getElementById('modalUserEmail');
     const btnCancelModal = document.getElementById('btnCancelModal');
     const btnConfirmDelete = document.getElementById('btnConfirmDelete');
 
@@ -991,41 +668,50 @@
     const dateFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' });
     currentDateDisplay.textContent = dateFormatter.format(todayObj);
 
-    // Logging Utility
-    function log(message, type = 'info') {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('fr-FR');
-      
-      let badgeColor = '#38bdf8';
-      let icon = 'fa-info-circle';
-      
-      if (type === 'success') {
-        badgeColor = '#34d399';
-        icon = 'fa-circle-check';
-      } else if (type === 'warn') {
-        badgeColor = '#fbbf24';
-        icon = 'fa-triangle-exclamation';
-      } else if (type === 'error') {
-        badgeColor = '#f87171';
-        icon = 'fa-circle-xmark';
-      } else if (type === 'action') {
-        badgeColor = '#c084fc';
-        icon = 'fa-bolt';
+    // Fonction de récupération du nom de collection actif
+    function getActiveCollectionName() {
+      if (collectionSelect.value === 'custom') {
+        return customCollectionInput.value.trim() || 'interventions';
       }
+      return collectionSelect.value;
+    }
+
+    // Logger Utility
+    function log(message, type = 'info') {
+      const timeStr = new Date().toLocaleTimeString('fr-FR');
+      let icon = 'fa-info-circle';
+      let color = '#38bdf8';
+      
+      if (type === 'success') { icon = 'fa-circle-check'; color = '#34d399'; }
+      if (type === 'warn') { icon = 'fa-triangle-exclamation'; color = '#fbbf24'; }
+      if (type === 'error') { icon = 'fa-circle-xmark'; color = '#f87171'; }
+      if (type === 'action') { icon = 'fa-bolt'; color = '#c084fc'; }
 
       const logLine = document.createElement('div');
-      logLine.className = 'log-line';
-      logLine.innerHTML = `
-        <span class="log-time">[${timeStr}]</span>
-        <i class="fa-solid ${icon}" style="color: ${badgeColor}; margin-top: 0.15rem; flex-shrink: 0;"></i>
-        <span style="color: ${type === 'error' ? '#fca5a5' : '#e5e7eb'}; font-weight: ${type === 'error' ? '600' : '400'};">${message}</span>
-      `;
+      logLine.style.marginBottom = '4px';
+      logLine.innerHTML = `<span style="color:#6b7280;">[${timeStr}]</span> <i class="fa-solid ${icon}" style="color:${color}; margin:0 4px;"></i> <span>${message}</span>`;
 
       logConsole.appendChild(logLine);
       logConsole.scrollTop = logConsole.scrollHeight;
     }
 
-    // Toggle Date Range inputs display
+    // Gestion de l'affichage de la collection personnalisée
+    collectionSelect.addEventListener('change', () => {
+      if (collectionSelect.value === 'custom') {
+        customCollectionInput.classList.remove('hidden');
+        customCollectionInput.focus();
+      } else {
+        customCollectionInput.classList.add('hidden');
+        scanCollection();
+      }
+    });
+
+    customCollectionInput.addEventListener('change', () => {
+      if (collectionSelect.value === 'custom') {
+        scanCollection();
+      }
+    });
+
     dateModeSelect.addEventListener('change', () => {
       if (dateModeSelect.value === 'range') {
         dateRangeContainer.classList.remove('hidden');
@@ -1034,37 +720,24 @@
       }
     });
 
-    // Login Modal Control
     function openLoginModal() {
-      loginProjectName.textContent = currentProjectKey;
-      loginErrorMsg.style.display = 'none';
-      loginModal.classList.add('active');
+      loginErrorMsg.classList.add('hidden');
+      loginModal.style.display = 'flex';
     }
 
     function closeLoginModal() {
-      loginModal.classList.remove('active');
+      loginModal.style.display = 'none';
     }
 
-    // Check email against authorized list
-    function checkUserAuthorization(user) {
-      if (!user || !user.email) return false;
-      const cleanEmail = user.email.toLowerCase().trim();
-      return utilisateursAutorises.includes(cleanEmail);
-    }
-
-    // Initialize Firebase Connection & Auth Listener
+    // Initialisation Firebase avec vérification d'autorisation stricte
     async function initFirebase(projectKey) {
       currentProjectKey = projectKey;
-      log(`Initialisation de Firebase pour le projet [${projectKey}]...`, "action");
+      log(`Initialisation du projet [${projectKey}]...`, "action");
 
       if (unsubscribeAuth) unsubscribeAuth();
 
-      btnScan.disabled = true;
-      btnCreateTest.disabled = true;
-      btnDelete.disabled = true;
-
-      statusBadge.className = "status-badge pending";
-      statusBadgeText.textContent = `Vérification session...`;
+      statusBadge.className = "status-badge status-disconnected";
+      statusText.textContent = "Connexion...";
 
       try {
         const existingApps = getApps();
@@ -1074,102 +747,59 @@
         db = getFirestore(currentApp);
         auth = getAuth(currentApp);
 
-        // Session listener matching gestionListe.html logic
         unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
           currentUser = user;
 
-          if (user) {
-            isAuthorized = checkUserAuthorization(user);
+          if (user && user.email && utilisateursAutorises.includes(user.email.toLowerCase().trim())) {
+            statusBadge.className = "status-badge status-connected";
+            statusText.textContent = `Connecté: ${projectKey}`;
+            userEmailDisplay.textContent = user.email.split('@')[0];
 
-            if (isAuthorized) {
-              statusBadge.className = "status-badge success";
-              statusBadgeText.textContent = `Connecté & Autorisé`;
-              
-              userEmailDisplay.textContent = user.email.split('@')[0];
-              btnAuthToggle.title = `Déconnexion (${user.email})`;
-
-              log(`Authentification réussie : Superviseur autorisé [${user.email}].`, "success");
-              
-              closeLoginModal();
-
-              btnScan.disabled = false;
-              btnCreateTest.disabled = false;
-
-              await scanCollection();
-
-            } else {
-              // User logged in BUT NOT authorized
-              statusBadge.className = "status-badge danger";
-              statusBadgeText.textContent = `Accès Refusé`;
-
-              userEmailDisplay.textContent = "Déconnexion";
-              
-              const errorText = "Accès refusé. Veuillez vous connecter avec un compte autorisé.";
-              log(`❌ ${errorText} Courriel non autorisé : [${user.email}]`, "error");
-
-              docListContainer.innerHTML = `
-                <div style="text-align: center; padding: 1.5rem; color: #f87171; font-size: 0.75rem; font-weight: 600;">
-                  <i class="fa-solid fa-circle-xmark" style="font-size: 1.125rem; margin-bottom: 0.25rem; display: block;"></i>
-                  ${errorText}
-                </div>
-              `;
-
-              btnScan.disabled = true;
-              btnCreateTest.disabled = true;
-              btnDelete.disabled = true;
-            }
+            log(`Session autorisée pour [${user.email}] sur ${projectKey}`, "success");
+            closeLoginModal();
+            await scanCollection();
 
           } else {
-            // User NOT logged in
-            isAuthorized = false;
-            statusBadge.className = "status-badge pending";
-            statusBadgeText.textContent = `Non connecté`;
-
+            statusBadge.className = "status-badge status-disconnected";
+            statusText.textContent = "Non autorisé";
             userEmailDisplay.textContent = "Se connecter";
-
-            docListContainer.innerHTML = `
-              <div style="text-align: center; padding: 1.5rem; color: #6b7280; font-size: 0.75rem; font-style: italic;">
-                Vous n'êtes pas connecté. Veuillez vous connecter.
-              </div>
-            `;
-
-            log("Vous n'êtes pas connecté. Veuillez vous connecter avec vos identifiants.", "warn");
+            
+            if (user && user.email) {
+              log(`Accès refusé pour [${user.email}] : utilisateur non autorisé.`, "error");
+            } else {
+              log(`Connexion requise pour accéder à Firestore sur [${projectKey}].`, "warn");
+            }
             openLoginModal();
           }
         });
 
       } catch (err) {
-        log(`Erreur initialisation Firebase (${projectKey}) : ${err.message}`, "error");
+        log(`Erreur d'initialisation : ${err.message}`, "error");
       }
     }
 
-    // Submit Supervisor Credentials
+    // Soumission du formulaire de connexion
     formConnexionModal.addEventListener('submit', async (e) => {
       e.preventDefault();
-      loginErrorMsg.style.display = 'none';
+      loginErrorMsg.classList.add('hidden');
 
       const email = emailConnexion.value.trim();
       const password = passwordConnexion.value;
 
       try {
-        log(`Connexion en cours pour ${email}...`, "action");
+        log(`Connexion en cours (${email})...`, "action");
         await signInWithEmailAndPassword(auth, email, password);
         formConnexionModal.reset();
       } catch (err) {
-        log(`Erreur de connexion : Identifiants incorrects (${err.message}).`, "error");
-        loginErrorMsg.style.display = 'block';
+        log(`Erreur de connexion : ${err.message}`, "error");
+        loginErrorMsg.classList.remove('hidden');
       }
     });
 
-    // Toggle Login / Logout
     btnAuthToggle.addEventListener('click', async () => {
       if (currentUser) {
-        try {
-          await signOut(auth);
-          log("Déconnexion de l'utilisateur effectuée.", "info");
-        } catch (err) {
-          log(`Erreur lors de la déconnexion : ${err.message}`, "error");
-        }
+        await signOut(auth);
+        log("Déconnexion effectuée.", "info");
       } else {
         openLoginModal();
       }
@@ -1187,27 +817,19 @@
         const matched = dateVal.match(/\d{4}-\d{2}-\d{2}/);
         return matched ? matched[0] : dateVal;
       }
-      if (typeof dateVal === 'number') {
-        const d = new Date(dateVal > 1e11 ? dateVal : dateVal * 1000);
-        return d.toISOString().split('T')[0];
-      }
       return null;
     }
 
     function extractReadableDate(docData) {
       const dateVal = docData.date || docData.createdAt || docData.timestamp || docData.dateIntervention;
       if (!dateVal) return 'Sans date';
-
       if (typeof dateVal.toDate === 'function') return dateVal.toDate().toLocaleString('fr-FR');
-      if (typeof dateVal === 'string') return dateVal;
-      if (typeof dateVal === 'number') return new Date(dateVal).toLocaleString('fr-FR');
       return String(dateVal);
     }
 
     function matchesKeyword(docData, keyword) {
       if (!keyword || keyword.trim() === '') return true;
       const searchKey = keyword.trim().toLowerCase();
-
       return Object.values(docData).some(val => {
         if (typeof val === 'string') return val.toLowerCase().includes(searchKey);
         if (typeof val === 'object' && val !== null) return JSON.stringify(val).toLowerCase().includes(searchKey);
@@ -1223,28 +845,23 @@
       if (!docISO) return false;
 
       if (mode === 'today') return docISO === todayISO;
-
       if (mode === 'range') {
-        const start = startDateInput.value;
-        const end = endDateInput.value;
-        if (!start || !end) return true;
-        return docISO >= start && docISO <= end;
+        return docISO >= startDateInput.value && docISO <= endDateInput.value;
       }
-
       return true;
     }
 
-    // Scan Firestore Collection
     async function scanCollection() {
-      if (!currentUser || !isAuthorized) {
-        log("Opération ignorée : Utilisateur non authentifié ou non autorisé.", "error");
+      if (!currentUser || !currentUser.email || !utilisateursAutorises.includes(currentUser.email.toLowerCase().trim())) {
+        log("Accès refusé : Veuillez vous connecter avec un compte autorisé.", "error");
+        openLoginModal();
         return;
       }
 
-      const colName = collectionNameInput.value.trim() || "interventions";
+      const colName = getActiveCollectionName();
       const keyword = keywordInput.value.trim();
 
-      log(`Analyse de la collection '${colName}' sur [${currentProjectKey}]...`, "action");
+      log(`Lecture de la collection '${colName}'...`, "action");
       btnScan.disabled = true;
 
       try {
@@ -1265,20 +882,16 @@
 
         if (targetDocs.length > 0) {
           btnDelete.disabled = false;
-          log(`Analyse terminée : ${targetDocs.length} fiche(s) ciblée(s) sur ${allCollectionDocs.length} au total.`, "warn");
+          log(`Analyse terminée : ${targetDocs.length} fiche(s) ciblée(s) dans '${colName}'.`, "warn");
         } else {
           btnDelete.disabled = true;
-          log(`Analyse terminée : Aucune fiche ne correspond aux critères dans '${colName}'.`, "info");
+          log(`Analyse terminée : Aucune fiche correspondante dans '${colName}'.`, "info");
         }
 
         renderPreviewList();
 
       } catch (err) {
-        if (err.code === 'permission-denied') {
-          log(`ERREUR PERMISSION FIRESTORE : Accès refusé pour [${currentUser.email}].`, "error");
-        } else {
-          log(`Erreur de lecture : ${err.message}`, "error");
-        }
+        log(`Erreur lors de la lecture de '${colName}' : ${err.message}`, "error");
       } finally {
         btnScan.disabled = false;
       }
@@ -1288,69 +901,51 @@
       docListContainer.innerHTML = '';
 
       if (targetDocs.length === 0) {
-        docListContainer.innerHTML = `
-          <div style="text-align: center; padding: 1.5rem; color: #6b7280; font-size: 0.75rem; font-style: italic;">
-            Aucune fiche ne correspond à vos critères.
-          </div>
-        `;
+        docListContainer.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px; font-style:italic;">Aucune fiche trouvée.</div>`;
         return;
       }
 
       targetDocs.forEach((item) => {
         const card = document.createElement('div');
-        card.className = "doc-item-card";
+        card.className = "doc-item";
         
-        const title = item.data.titre || item.data.nom || item.data.technicien || item.data.description || 'Fiche sans titre';
+        const title = item.data.titre || item.data.nom || item.data.technicien || item.data.description || item.data.idEmploye || 'Fiche sans titre';
         const dateFormatted = extractReadableDate(item.data);
 
         card.innerHTML = `
-          <div class="doc-item-info">
-            <i class="fa-solid fa-file-lines" style="color: #fb7185; flex-shrink: 0;"></i>
-            <div style="overflow: hidden;">
-              <div class="doc-title">${title}</div>
-              <div class="doc-meta">ID: ${item.id} &bull; ${dateFormatted}</div>
-            </div>
+          <div>
+            <div style="font-weight:600; color:#fff;">${title}</div>
+            <div style="font-size:10px; color:var(--text-muted); font-family:monospace;">ID: ${item.id} &bull; ${dateFormatted}</div>
           </div>
-          <span class="brand-badge" style="background-color: rgba(225,29,72,0.1); color: #fb7185; border-color: rgba(225,29,72,0.2);">
-            Cible
-          </span>
+          <span style="font-size:10px; padding:2px 6px; background:rgba(225,29,72,0.1); color:#fda4af; border:1px solid rgba(225,29,72,0.2); border-radius:4px;">Cible</span>
         `;
         docListContainer.appendChild(card);
       });
     }
 
     function openModal() {
-      if (!currentUser || !isAuthorized) {
-        openLoginModal();
-        return;
-      }
-
-      const colName = collectionNameInput.value.trim() || "interventions";
-      const dateMode = dateModeSelect.options[dateModeSelect.selectedIndex].text;
-      const keyword = keywordInput.value.trim() || "Aucun";
+      if (!currentUser) return openLoginModal();
 
       modalDocCount.textContent = `${targetDocs.length} fiche(s)`;
       modalProject.textContent = currentProjectKey;
-      modalCollection.textContent = colName;
-      modalDateFilter.textContent = dateMode;
-      modalKeywordFilter.textContent = keyword;
-      modalUserEmail.textContent = currentUser.email;
+      modalCollection.textContent = getActiveCollectionName();
+      modalDateFilter.textContent = dateModeSelect.options[dateModeSelect.selectedIndex].text;
+      modalKeywordFilter.textContent = keywordInput.value.trim() || "Aucun";
 
-      confirmModal.classList.add('active');
+      confirmModal.style.display = 'flex';
     }
 
     function closeModal() {
-      confirmModal.classList.remove('active');
+      confirmModal.style.display = 'none';
     }
 
-    // Execute Batch Delete
     async function executeBatchDelete() {
       closeModal();
-      if (!currentUser || !isAuthorized || targetDocs.length === 0) return;
+      if (!currentUser || targetDocs.length === 0) return;
 
-      const colName = collectionNameInput.value.trim() || "interventions";
-      log(`Suppression de ${targetDocs.length} fiche(s) par [${currentUser.email}]...`, "action");
-      
+      const colName = getActiveCollectionName();
+      log(`Suppression de ${targetDocs.length} fiche(s) dans '${colName}'...`, "action");
+
       btnDelete.disabled = true;
       btnScan.disabled = true;
 
@@ -1359,28 +954,16 @@
 
       for (let i = 0; i < targetDocs.length; i += chunkSize) {
         const chunk = targetDocs.slice(i, i + chunkSize);
-        
         try {
           const batch = writeBatch(db);
           chunk.forEach((item) => {
-            const docRef = doc(db, colName, item.id);
-            batch.delete(docRef);
+            batch.delete(doc(db, colName, item.id));
           });
-
           await batch.commit();
           totalDeleted += chunk.length;
-          log(`Lot (${totalDeleted}/${targetDocs.length}) supprimé par ${currentUser.email}.`, "success");
-
+          log(`Lot (${totalDeleted}/${targetDocs.length}) supprimé.`, "success");
         } catch (err) {
-          log(`Erreur de lot (${err.message}). Passage en mode suppression unitaire...`, "warn");
-          for (const item of chunk) {
-            try {
-              await deleteDoc(doc(db, colName, item.id));
-              totalDeleted++;
-            } catch (singleErr) {
-              log(`Échec suppression ${item.id} : ${singleErr.message}`, "error");
-            }
-          }
+          log(`Erreur de suppression : ${err.message}`, "error");
         }
       }
 
@@ -1388,53 +971,23 @@
       await scanCollection();
     }
 
-    // Seed Test Documents
     async function createTestSeed() {
-      if (!currentUser || !isAuthorized) {
-        openLoginModal();
-        return;
-      }
+      if (!currentUser) return openLoginModal();
 
-      const colName = collectionNameInput.value.trim() || "interventions";
+      const colName = getActiveCollectionName();
       btnCreateTest.disabled = true;
-      log(`Injection de fiches de test dans '${colName}' par [${currentUser.email}]...`, "action");
-
-      const yesterday = new Date(todayObj);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const lastWeek = new Date(todayObj);
-      lastWeek.setDate(lastWeek.getDate() - 7);
+      log(`Injection de fiches de test dans '${colName}'...`, "action");
 
       const seedDocs = [
-        {
-          titre: "Inspection urgente réseau",
-          technicien: "Tech-01",
-          statut: "Urgent",
-          date: Timestamp.now(),
-          notes: "Fiche de test - Aujourd'hui"
-        },
-        {
-          titre: "Maintenance préventive climatisation",
-          technicien: "Tech-02",
-          statut: "Terminé",
-          date: Timestamp.fromDate(yesterday),
-          notes: "Fiche de test - Hier"
-        },
-        {
-          titre: "Réparation urgente tableau électrique",
-          technicien: "Tech-01",
-          statut: "Urgent",
-          date: Timestamp.fromDate(lastWeek),
-          notes: "Fiche de test - Semaine passée"
-        }
+        { titre: "Fiche Test 1", date: Timestamp.now(), notes: "Test aujourd'hui" },
+        { titre: "Fiche Test 2", date: Timestamp.now(), notes: "Urgent inspection" }
       ];
 
       try {
-        for (const testData of seedDocs) {
-          const docRef = await addDoc(collection(db, colName), testData);
-          log(`Fiche ajoutée [ID: ${docRef.id}] - "${testData.titre}"`, "info");
+        for (const data of seedDocs) {
+          await addDoc(collection(db, colName), data);
         }
-        log(`Injection réussie ! 3 fiches de test créées.`, "success");
+        log(`Injection réussie dans '${colName}'.`, "success");
         await scanCollection();
       } catch (err) {
         log(`Erreur d'injection : ${err.message}`, "error");
@@ -1443,7 +996,7 @@
       }
     }
 
-    // Event Listeners
+    // Événements
     projectSelect.addEventListener('change', (e) => initFirebase(e.target.value));
     btnScan.addEventListener('click', scanCollection);
     btnDelete.addEventListener('click', openModal);
@@ -1452,14 +1005,10 @@
     btnCreateTest.addEventListener('click', createTestSeed);
     btnClearLog.addEventListener('click', () => {
       logConsole.innerHTML = '';
-      log("Journal effacé.", "info");
+      log("Console effacée.", "info");
     });
 
-    confirmModal.addEventListener('click', (e) => {
-      if (e.target === confirmModal) closeModal();
-    });
-
-    // Démarrage avec le projet par défaut 'postesst'
+    // Démarrage de l'application
     initFirebase("postesst");
   </script>
 </body>
