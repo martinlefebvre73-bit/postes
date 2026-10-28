@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="fr" class="dark">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +6,7 @@
   <title>PostesST - Gestionnaire & Purge Firebase</title>
   
   <!-- Tailwind CSS -->
-  <link rel="stylesheet" href="style5.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -73,7 +73,7 @@
           <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             PostesST <span class="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">Firebase Manager</span>
           </h1>
-          <p class="text-xs text-gray-400">Gestion et purge sécurisée par authentification Firestore</p>
+          <p class="text-xs text-gray-400">Gestion et purge multi-critères des bases de données</p>
         </div>
       </div>
 
@@ -92,8 +92,14 @@
         <!-- Status Badge -->
         <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-medium">
           <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-          <span id="statusText">Connexion...</span>
+          <span>Non connecté</span>
         </div>
+
+        <!-- User Profile / Auth Toggle Button -->
+        <button id="btnAuthToggle" class="hidden px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-user text-sky-400"></i>
+          <span id="userEmailDisplay">Connexion</span>
+        </button>
 
         <div class="px-3 py-1.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-2">
           <i class="fa-regular fa-calendar text-gray-400"></i>
@@ -174,7 +180,7 @@
 
           <!-- Action Buttons -->
           <div class="flex flex-col gap-3">
-            <button id="btnScan" disabled class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition-all flex items-center justify-center gap-2 border border-slate-700 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+            <button id="btnScan" class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition-all flex items-center justify-center gap-2 border border-slate-700 active:scale-[0.99]">
               <i class="fa-solid fa-rotate text-sky-400"></i>
               <span>Analyser avec les filtres</span>
             </button>
@@ -196,7 +202,7 @@
             Générez des fiches de test avec des dates et mots-clés variés pour valider le fonctionnement des filtres.
           </p>
 
-          <button id="btnCreateTest" disabled class="w-full py-2.5 px-4 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 font-medium text-xs transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+          <button id="btnCreateTest" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 font-medium text-xs transition-all flex items-center justify-center gap-2 active:scale-[0.99]">
             <i class="fa-solid fa-plus"></i>
             <span>Injecter des fiches de test</span>
           </button>
@@ -220,7 +226,7 @@
           <!-- Document List Container -->
           <div id="docListContainer" class="max-h-56 overflow-y-auto rounded-xl bg-slate-950/60 border border-slate-800/80 p-3 flex flex-col gap-2">
             <div class="text-center py-6 text-gray-500 text-xs italic">
-              Veuillez patienter pendant la connexion sécurisée...
+              Cliquez sur "Analyser avec les filtres" pour rechercher les fiches.
             </div>
           </div>
         </div>
@@ -250,6 +256,45 @@
     </main>
   </div>
 
+  <!-- Supervisor Login Modal (Matching index.html Auth) -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50 transition-opacity duration-200 opacity-0">
+    <div class="glass-panel bg-slate-900 border border-blue-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-transform duration-200 scale-95">
+      
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-full border border-blue-400/30 flex items-center justify-center bg-blue-500/10 mx-auto mb-3">
+          <i class="fa-solid fa-user-shield text-2xl text-blue-400"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white">Connexion Superviseur</h3>
+        <p class="text-xs text-gray-400 mt-1">Postes Canada &bull; Projet <span id="loginProjectName" class="text-blue-400 font-mono">postesst</span></p>
+      </div>
+
+      <form id="formConnexionModal" class="space-y-4">
+        <div>
+          <label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Courriel</label>
+          <input type="email" id="emailConnexion" required placeholder="nom@entreprise.com" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 text-white border border-slate-700 focus:outline-none focus:border-blue-500 text-xs transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Mot de passe</label>
+          <input type="password" id="passwordConnexion" required placeholder="Mot de passe" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 text-white border border-slate-700 focus:outline-none focus:border-blue-500 text-xs transition-colors">
+        </div>
+
+        <div id="loginErrorMsg" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg text-center">
+          Identifiants incorrects ou accès refusé.
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" id="btnCancelLoginModal" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-medium transition-colors border border-slate-700">
+            Annuler
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold tracking-wider uppercase shadow-lg shadow-blue-900/40 transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Se connecter</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Custom Confirmation Modal -->
   <div id="confirmModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50 transition-opacity duration-200 opacity-0">
     <div class="glass-panel bg-slate-900 border border-rose-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-transform duration-200 scale-95">
@@ -269,7 +314,7 @@
         <div>Collection : <span id="modalCollection" class="text-gray-200">interventions</span></div>
         <div>Filtre Date : <span id="modalDateFilter" class="text-amber-300">Aujourd'hui</span></div>
         <div>Mot-clé : <span id="modalKeywordFilter" class="text-sky-300">Aucun</span></div>
-        <div>Utilisateur Auth : <span id="modalAuthUser" class="text-emerald-400 font-bold">Inconnu</span></div>
+        <div>Utilisateur : <span id="modalUserEmail" class="text-emerald-400">Connecté</span></div>
         <div>Action : <span class="text-rose-400 font-bold">DELETE_BATCH</span></div>
       </div>
 
@@ -305,8 +350,10 @@
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { 
       getAuth, 
+      signInWithEmailAndPassword,
       signInAnonymously,
-      onAuthStateChanged
+      signOut,
+      onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
     // Firebase Configurations
@@ -333,8 +380,9 @@
     let currentApp = null;
     let db = null;
     let auth = null;
-    let currentUser = null;
     let currentProjectKey = "postesst";
+    let currentUser = null;
+    let unsubscribeAuth = null;
 
     // DOM Elements
     const projectSelect = document.getElementById('projectSelect');
@@ -346,7 +394,9 @@
     const keywordInput = document.getElementById('keywordInput');
 
     const statusBadge = document.getElementById('statusBadge');
-    const statusText = document.getElementById('statusText');
+    const btnAuthToggle = document.getElementById('btnAuthToggle');
+    const userEmailDisplay = document.getElementById('userEmailDisplay');
+
     const currentDateDisplay = document.getElementById('currentDateDisplay');
     const totalDocsCount = document.getElementById('totalDocsCount');
     const targetDocsCount = document.getElementById('targetDocsCount');
@@ -358,13 +408,23 @@
     const docListContainer = document.getElementById('docListContainer');
     const previewBadge = document.getElementById('previewBadge');
 
+    // Login Modal DOM Elements
+    const loginModal = document.getElementById('loginModal');
+    const loginProjectName = document.getElementById('loginProjectName');
+    const formConnexionModal = document.getElementById('formConnexionModal');
+    const emailConnexion = document.getElementById('emailConnexion');
+    const passwordConnexion = document.getElementById('passwordConnexion');
+    const loginErrorMsg = document.getElementById('loginErrorMsg');
+    const btnCancelLoginModal = document.getElementById('btnCancelLoginModal');
+
+    // Confirm Modal DOM Elements
     const confirmModal = document.getElementById('confirmModal');
     const modalDocCount = document.getElementById('modalDocCount');
     const modalProject = document.getElementById('modalProject');
     const modalCollection = document.getElementById('modalCollection');
     const modalDateFilter = document.getElementById('modalDateFilter');
     const modalKeywordFilter = document.getElementById('modalKeywordFilter');
-    const modalAuthUser = document.getElementById('modalAuthUser');
+    const modalUserEmail = document.getElementById('modalUserEmail');
     const btnCancelModal = document.getElementById('btnCancelModal');
     const btnConfirmDelete = document.getElementById('btnConfirmDelete');
 
@@ -380,7 +440,6 @@
     const dateFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' });
     currentDateDisplay.textContent = dateFormatter.format(todayObj);
 
-    // Logging Utility
     function log(message, type = 'info') {
       const now = new Date();
       const timeStr = now.toLocaleTimeString('fr-FR');
@@ -424,67 +483,113 @@
       }
     });
 
-    // Ensure Active Authenticated Session
-    async function ensureAuthenticated() {
-      if (auth && auth.currentUser) {
-        currentUser = auth.currentUser;
-        return currentUser;
-      }
-      
-      log("Connexion anonyme en cours auprès du service Auth...", "action");
-      const userCred = await signInAnonymously(auth);
-      currentUser = userCred.user;
-      return currentUser;
+    // Login Modal Helpers
+    function openLoginModal() {
+      loginProjectName.textContent = currentProjectKey;
+      loginErrorMsg.classList.add('hidden');
+      loginModal.classList.remove('hidden');
+      loginModal.classList.add('flex');
+      setTimeout(() => {
+        loginModal.classList.remove('opacity-0');
+        loginModal.querySelector('div').classList.remove('scale-95');
+      }, 10);
     }
 
-    // Initialize Firebase Application & Auth State
+    function closeLoginModal() {
+      loginModal.classList.add('opacity-0');
+      loginModal.querySelector('div').classList.add('scale-95');
+      setTimeout(() => {
+        loginModal.classList.remove('flex');
+        loginModal.classList.add('hidden');
+      }, 200);
+    }
+
+    // Initialize Firebase Connection with Auth
     async function initFirebase(projectKey) {
       currentProjectKey = projectKey;
-      log(`Initialisation de Firebase [${projectKey}]...`, "action");
+      log(`Initialisation du projet [${projectKey}]...`, "action");
 
-      btnScan.disabled = true;
-      btnCreateTest.disabled = true;
-      btnDelete.disabled = true;
+      if (unsubscribeAuth) unsubscribeAuth();
 
       statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-medium";
-      statusText.textContent = `Connexion...`;
+      statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span>Connexion...</span>`;
 
       try {
         const existingApps = getApps();
         const activeApp = existingApps.find(a => a.name === projectKey);
         
-        if (activeApp) {
-          currentApp = activeApp;
-        } else {
-          currentApp = initializeApp(configs[projectKey], projectKey);
-        }
-
+        currentApp = activeApp || initializeApp(configs[projectKey], projectKey);
         db = getFirestore(currentApp);
         auth = getAuth(currentApp);
 
-        // Explicitly authenticate before triggering Firestore
-        const user = await ensureAuthenticated();
+        btnAuthToggle.classList.remove('hidden');
 
-        statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium";
-        statusText.textContent = `Connecté (${user.uid.slice(0, 6)}...)`;
-        log(`Authentification valide [UID: ${user.uid}]. Règle 'request.auth != null' satisfaite.`, "success");
+        // Listen for Authentication state changes
+        unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+          currentUser = user;
 
-        btnScan.disabled = false;
-        btnCreateTest.disabled = false;
+          if (user) {
+            const displayEmail = user.email || `Anonyme (${user.uid.slice(0, 6)}...)`;
+            
+            statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium";
+            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Connecté: ${projectKey}</span>`;
 
-        await scanCollection();
+            userEmailDisplay.textContent = user.email ? user.email.split('@')[0] : "Déconnexion";
+            btnAuthToggle.title = `Connecté sous : ${displayEmail}`;
+
+            log(`Session active [${projectKey}] : ${displayEmail}`, "success");
+            closeLoginModal();
+            await scanCollection();
+
+          } else {
+            statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-medium";
+            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span><span>Non connecté</span>`;
+            
+            userEmailDisplay.textContent = "Se connecter";
+            
+            log(`Aucun utilisateur connecté sur [${projectKey}]. Connexion requise...`, "warn");
+            openLoginModal();
+          }
+        });
 
       } catch (err) {
-        if (err.code === 'auth/operation-not-allowed') {
-          log(`ERREUR CRITIQUE AUTH : L'authentification Anonyme n'est pas activée dans la console Firebase [${projectKey}]. Activez-la sous Authentication > Sign-in method.`, "error");
-        } else {
-          log(`Erreur Authentification (${projectKey}) : ${err.message}`, "error");
-        }
-
-        statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-medium";
-        statusText.textContent = `Accès Refusé`;
+        log(`Erreur initialisation (${projectKey}) : ${err.message}`, "error");
       }
     }
+
+    // Handle Supervisor Email/Password Login Submit
+    formConnexionModal.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginErrorMsg.classList.add('hidden');
+
+      const email = emailConnexion.value.trim();
+      const password = passwordConnexion.value;
+
+      try {
+        log(`Tentative de connexion pour ${email}...`, "action");
+        await signInWithEmailAndPassword(auth, email, password);
+        formConnexionModal.reset();
+      } catch (err) {
+        log(`Échec de connexion : ${err.message}`, "error");
+        loginErrorMsg.classList.remove('hidden');
+      }
+    });
+
+    // Toggle Login / Logout
+    btnAuthToggle.addEventListener('click', async () => {
+      if (currentUser) {
+        try {
+          await signOut(auth);
+          log("Déconnexion réussie.", "info");
+        } catch (err) {
+          log(`Erreur déconnexion : ${err.message}`, "error");
+        }
+      } else {
+        openLoginModal();
+      }
+    });
+
+    btnCancelLoginModal.addEventListener('click', closeLoginModal);
 
     function extractDocISODate(docData) {
       const dateVal = docData.date || docData.createdAt || docData.timestamp || docData.dateIntervention || docData.created_at;
@@ -543,20 +648,17 @@
       return true;
     }
 
-    // Read Collection from Firestore
     async function scanCollection() {
-      const colName = collectionNameInput.value.trim() || "interventions";
-      const keyword = keywordInput.value.trim();
-
-      // Ensure Auth before query
-      try {
-        await ensureAuthenticated();
-      } catch (authErr) {
-        log(`Analyse interrompue : utilisateur non authentifié (${authErr.message}).`, "error");
+      if (!currentUser) {
+        log("Accès refusé : Veuillez vous connecter pour lire Firestore.", "warn");
+        openLoginModal();
         return;
       }
 
-      log(`Lecture sécurisée de '${colName}'...`, "action");
+      const colName = collectionNameInput.value.trim() || "interventions";
+      const keyword = keywordInput.value.trim();
+
+      log(`Lecture de la collection '${colName}' sur [${currentProjectKey}]...`, "action");
       btnScan.disabled = true;
       btnScan.classList.add('opacity-50');
 
@@ -590,9 +692,9 @@
 
       } catch (err) {
         if (err.code === 'permission-denied') {
-          log(`ERREUR PERMISSION FIRESTORE : L'accès a été refusé. Vérifiez vos règles de sécurité Firestore.`, "error");
+          log(`ERREUR (permission-denied) : Accès refusé par les règles Firestore de [${currentProjectKey}].`, "error");
         } else {
-          log(`Erreur de lecture dans '${colName}' : ${err.message}`, "error");
+          log(`Erreur de lecture : ${err.message}`, "error");
         }
       } finally {
         btnScan.disabled = false;
@@ -636,6 +738,11 @@
     }
 
     function openModal() {
+      if (!currentUser) {
+        openLoginModal();
+        return;
+      }
+
       const colName = collectionNameInput.value.trim() || "interventions";
       const dateMode = dateModeSelect.options[dateModeSelect.selectedIndex].text;
       const keyword = keywordInput.value.trim() || "Aucun";
@@ -645,7 +752,7 @@
       modalCollection.textContent = colName;
       modalDateFilter.textContent = dateMode;
       modalKeywordFilter.textContent = keyword;
-      modalAuthUser.textContent = currentUser ? `${currentUser.uid.slice(0, 8)}...` : 'Non connecté';
+      modalUserEmail.textContent = currentUser.email || currentUser.uid;
 
       confirmModal.classList.remove('hidden');
       confirmModal.classList.add('flex');
@@ -664,20 +771,12 @@
       }, 200);
     }
 
-    // Execute WriteBatch Deletion with Auth Verification
     async function executeBatchDelete() {
       closeModal();
-      if (targetDocs.length === 0) return;
-
-      try {
-        await ensureAuthenticated();
-      } catch (authErr) {
-        log(`Suppression annulée : utilisateur non connecté (${authErr.message}).`, "error");
-        return;
-      }
+      if (!currentUser || targetDocs.length === 0) return;
 
       const colName = collectionNameInput.value.trim() || "interventions";
-      log(`Suppression sécurisée par lot de ${targetDocs.length} fiche(s)...`, "action");
+      log(`Suppression de ${targetDocs.length} fiche(s)...`, "action");
       
       btnDelete.disabled = true;
       btnScan.disabled = true;
@@ -697,10 +796,10 @@
 
           await batch.commit();
           totalDeleted += chunk.length;
-          log(`Lot (${totalDeleted}/${targetDocs.length}) supprimé avec succès.`, "success");
+          log(`Lot (${totalDeleted}/${targetDocs.length}) supprimé par ${currentUser.email || 'Admin'}.`, "success");
 
         } catch (err) {
-          log(`Erreur de lot : ${err.message}. Passage en suppression unitaire...`, "warn");
+          log(`Erreur de lot : ${err.message}. Passage en mode unitaire...`, "warn");
           for (const item of chunk) {
             try {
               await deleteDoc(doc(db, colName, item.id));
@@ -716,19 +815,14 @@
       await scanCollection();
     }
 
-    // Create Test Documents with Auth Verification
     async function createTestSeed() {
-      const colName = collectionNameInput.value.trim() || "interventions";
-      btnCreateTest.disabled = true;
-
-      try {
-        await ensureAuthenticated();
-      } catch (authErr) {
-        log(`Création annulée : non connecté (${authErr.message}).`, "error");
-        btnCreateTest.disabled = false;
+      if (!currentUser) {
+        openLoginModal();
         return;
       }
 
+      const colName = collectionNameInput.value.trim() || "interventions";
+      btnCreateTest.disabled = true;
       log(`Injection de fiches de test dans '${colName}'...`, "action");
 
       const yesterday = new Date(todayObj);
@@ -766,7 +860,7 @@
           const docRef = await addDoc(collection(db, colName), testData);
           log(`Fiche ajoutée [ID: ${docRef.id}] - "${testData.titre}"`, "info");
         }
-        log(`Injection réussie ! 3 fiches de test créées.`, "success");
+        log(`Injection réussie ! 3 fiches créées.`, "success");
         await scanCollection();
       } catch (err) {
         log(`Erreur d'injection : ${err.message}`, "error");
@@ -791,7 +885,7 @@
       if (e.target === confirmModal) closeModal();
     });
 
-    // Start App
+    // Initialisation
     initFirebase("postesst");
   </script>
 </body>
