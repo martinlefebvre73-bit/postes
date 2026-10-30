@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* Ajustements CSS pour l'affichage complet, multi-lignes et pleine largeur des champs */
+        /* Ajustements CSS écran pour l'affichage complet, multi-lignes et pleine largeur des champs */
         textarea.form-control.auto-expand {
             resize: none;
             overflow: hidden;
@@ -22,7 +22,7 @@
             font-family: inherit;
             font-size: inherit;
             width: 100%;
-            flex: 1; /* Force la zone de texte à occuper tout l'espace disponible */
+            flex: 1;
         }
 
         .point-row {
@@ -41,48 +41,96 @@
             width: 100%;
         }
 
-        /* Styles d'impression : Affichage complet de tout le contenu sans défilement ni tronquage */
+        /* Configuration de la page d'impression */
+        @page {
+            size: portrait;
+            margin: 12mm;
+        }
+
+        /* Styles d'impression avancés : Affichage intégral du texte sans tronquage */
         @media print {
             .no-print {
                 display: none !important;
             }
 
-            body, .container, .topic-list, .topic-card, .points-container, .point-row {
-                overflow: visible !important;
-                height: auto !important;
-                max-height: none !important;
-                width: 100% !important;
+            .print-only {
+                display: block !important;
             }
 
-            .form-control, textarea, input[type="text"] {
-                border: none !important;
-                background: transparent !important;
-                box-shadow: none !important;
-                resize: none !important;
-                overflow: visible !important;
-                height: auto !important;
-                white-space: pre-wrap !important;
-                word-break: break-word !important;
-                display: block !important;
+            html, body, .container {
                 width: 100% !important;
-                padding: 2px 0 !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 10.5pt !important;
+                line-height: 1.4 !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+
+            .section-block {
+                page-break-inside: auto;
+                break-inside: auto;
+                margin-bottom: 15px !important;
             }
 
             .topic-card {
-                page-break-inside: avoid;
-                break-inside: avoid;
-                margin-bottom: 15px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-bottom: 12px !important;
                 border: 1px solid #cbd5e1 !important;
-                padding: 12px !important;
+                padding: 10px !important;
                 border-radius: 6px !important;
                 width: 100% !important;
+                box-shadow: none !important;
+                background: #ffffff !important;
             }
 
-            .point-row {
+            .topic-header-input, .point-row {
                 display: flex !important;
                 align-items: flex-start !important;
-                margin-bottom: 6px !important;
                 width: 100% !important;
+                margin-bottom: 6px !important;
+            }
+
+            /* Extension forcée des zones de texte (textarea) à l'impression */
+            textarea, textarea.form-control, input.form-control {
+                border: none !important;
+                outline: none !important;
+                background: transparent !important;
+                resize: none !important;
+                overflow: visible !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+                field-sizing: content !important; /* Standard moderne pour auto-ajustement des formulaires */
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-family: inherit !important;
+                font-size: inherit !important;
+                color: #000000 !important;
+                width: 100% !important;
+                flex: 1 !important;
+                box-shadow: none !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+            }
+
+            .meta-grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 12px !important;
+                margin-bottom: 15px !important;
+            }
+
+            .meta-grid input {
+                border-bottom: 1px solid #94a3b8 !important;
+                border-radius: 0 !important;
             }
         }
     </style>
@@ -283,6 +331,11 @@ Format JSON strict obligatoire :
             el.style.height = el.scrollHeight + 'px';
         };
 
+        // Ajustement de secours de tous les champs avant impression
+        window.addEventListener('beforeprint', () => {
+            document.querySelectorAll('textarea.auto-expand').forEach(el => autoResizeTextarea(el));
+        });
+
         // Initialisation globale
         window.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -405,7 +458,6 @@ Format JSON strict obligatoire :
             renderSection('sst', currentMeeting.sujetsSST, 'sstTopicList');
             renderSection('variable', currentMeeting.sujetsVariables, 'variableTopicList');
 
-            // Ajustement automatique de la hauteur de tous les textareas
             setTimeout(() => {
                 document.querySelectorAll('textarea.auto-expand').forEach(el => autoResizeTextarea(el));
             }, 0);
