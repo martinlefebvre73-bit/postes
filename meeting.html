@@ -8,6 +8,77 @@
     <link rel="stylesheet" href="style4.css">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Ajustements CSS pour l'affichage complet et multi-lignes des champs */
+        textarea.form-control.auto-expand {
+            resize: none;
+            overflow: hidden;
+            min-height: 38px;
+            height: auto;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .point-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .topic-header-input {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        /* Styles d'impression : Affichage complet de tout le contenu sans défilement ni tronquage */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body, .container, .topic-list, .topic-card, .points-container, .point-row {
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+            }
+
+            .form-control, textarea, input[type="text"] {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                resize: none !important;
+                overflow: visible !important;
+                height: auto !important;
+                white-space: pre-wrap !important;
+                word-break: break-word !important;
+                display: block !important;
+                width: 100% !important;
+                padding: 2px 0 !important;
+            }
+
+            .topic-card {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin-bottom: 15px !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 12px !important;
+                border-radius: 6px !important;
+            }
+
+            .point-row {
+                display: flex !important;
+                align-items: flex-start !important;
+                margin-bottom: 6px !important;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -198,6 +269,13 @@ Format JSON strict obligatoire :
   ]
 }`;
 
+        // Redimensionnement automatique de la hauteur des textarea
+        window.autoResizeTextarea = (el) => {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        };
+
         // Initialisation globale
         window.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -319,6 +397,11 @@ Format JSON strict obligatoire :
         function renderAll() {
             renderSection('sst', currentMeeting.sujetsSST, 'sstTopicList');
             renderSection('variable', currentMeeting.sujetsVariables, 'variableTopicList');
+
+            // Ajustement automatique de la hauteur de tous les textareas
+            setTimeout(() => {
+                document.querySelectorAll('textarea.auto-expand').forEach(el => autoResizeTextarea(el));
+            }, 0);
         }
 
         function renderSection(type, list, containerId) {
@@ -344,10 +427,10 @@ Format JSON strict obligatoire :
 
                     pointsHtml += `
                         <div class="point-row">
-                            <span style="color: ${type === 'sst' ? 'var(--cp-red)' : 'var(--cp-navy)'}; font-weight: bold;">•</span>
-                            <input type="text" class="form-control" value="${escapeHtml(pointText)}"
+                            <span style="color: ${type === 'sst' ? 'var(--cp-red)' : 'var(--cp-navy)'}; font-weight: bold; margin-top: 6px;">•</span>
+                            <textarea class="form-control auto-expand" rows="1"
                                    placeholder="Point explicatif concret..."
-                                   oninput="updatePoint('${type}', ${topicIdx}, ${ptIdx}, this.value)">
+                                   oninput="updatePoint('${type}', ${topicIdx}, ${ptIdx}, this.value); autoResizeTextarea(this);">${escapeHtml(pointText)}</textarea>
                             <button type="button" onclick="toggleDictation('${type}', ${topicIdx}, 'point', ${ptIdx})"
                                     class="mic-btn ${isMicActive ? 'recording' : ''} no-print" title="Dicter ce point">
                                 <i class="fa-solid fa-microphone"></i>
@@ -368,10 +451,10 @@ Format JSON strict obligatoire :
 
                 card.innerHTML = `
                     <div class="topic-header-input">
-                        <span style="font-weight: 700; color: var(--cp-navy); min-width: 80px;">#${topicIdx + 1} ${type.toUpperCase()}</span>
-                        <input type="text" class="form-control topic-title-input" value="${escapeHtml(item.titre)}"
+                        <span style="font-weight: 700; color: var(--cp-navy); min-width: 80px; margin-top: 6px;">#${topicIdx + 1} ${type.toUpperCase()}</span>
+                        <textarea class="form-control topic-title-input auto-expand" rows="1"
                                placeholder="Sujet principal (ex: Morsures de chiens ou qualité de balayage...)"
-                               oninput="updateTitle('${type}', ${topicIdx}, this.value)">
+                               oninput="updateTitle('${type}', ${topicIdx}, this.value); autoResizeTextarea(this);">${escapeHtml(item.titre)}</textarea>
                         <button type="button" onclick="toggleDictation('${type}', ${topicIdx}, 'title')"
                                 class="mic-btn ${isTitleMicActive ? 'recording' : ''} no-print" title="Dicter le titre">
                             <i class="fa-solid fa-microphone"></i>
@@ -515,7 +598,6 @@ Format JSON strict obligatoire :
             }
 
             if (!GEMINI_API_KEY) {
-                // Redirection vers l'option Prompt M365 si aucune clé n'est configurée
                 copyM365Prompt(type, index);
                 return;
             }
@@ -574,7 +656,7 @@ Format JSON strict obligatoire :
             showToast(`${total} sujet(s) enrichi(s) avec succès !`, "success");
         };
 
-        // Option 100% Fonctionnelle avec Bouton Prompt Microsoft Copilot (M365)
+        // Option avec Bouton Prompt Microsoft Copilot (M365)
         window.copyM365Prompt = (type, index) => {
             const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
             const item = list[index];
