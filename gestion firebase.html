@@ -378,12 +378,7 @@
               <i class="fa-solid fa-layer-group" style="margin-right: 4px;"></i> 1. Choisir la Collection Firestore
             </label>
             <select id="collectionSelect" class="form-select">
-              <option value="interventions" selected>interventions (Fiches Interventions SST)</option>
-              <option value="employes">employes (Gestion de la liste du personnel)</option>
-              <option value="rapports">rapports (Problèmes de livraison)</option>
-              <option value="roulement">roulement (Plan de roulement)</option>
-              <option value="vehicules">vehicules (Assignation camions)</option>
-              <option value="custom">+ Saisir une collection personnalisée...</option>
+              <!-- Rempli dynamiquement selon la base de données sélectionnée -->
             </select>
             <input type="text" id="customCollectionInput" class="form-input hidden" placeholder="Nom exact de la collection..." style="margin-top: 8px;">
           </div>
@@ -599,6 +594,27 @@
       }
     };
 
+    // Dictionnaire complet des collections par base de données
+    const collectionsParProjet = {
+      "postesst": [
+        { value: "interventions", label: "interventions (Fiches Interventions SST)" },
+        { value: "employes", label: "employes (Gestion de la liste du personnel SST)" },
+        { value: "rapports", label: "rapports (Anomalies, Problèmes & Secourisme)" },
+        { value: "incidents", label: "incidents (Fiches d'incidents / Prévention)" },
+        { value: "audits", label: "audits (Audits de sécurité dépôt)" },
+        { value: "custom", label: "+ Saisir une collection personnalisée..." }
+      ],
+      "postes-26884": [
+        { value: "roulement", label: "roulement (Plan de roulement & Consignation)" },
+        { value: "vehicules", label: "vehicules (Assignation & Flotte camions)" },
+        { value: "anomalies", label: "anomalies (Suivi des anomalies de livraison)" },
+        { value: "tournees", label: "tournees (Double utilisation & Parcours)" },
+        { value: "superviseurs", label: "superviseurs (Planning & Gardes de supervision)" },
+        { value: "declarations", label: "declarations (Déclarations de temps / activités)" },
+        { value: "custom", label: "+ Saisir une collection personnalisée..." }
+      ]
+    };
+
     // Liste des courriels autorisés pour le projet 'postesst'
     const utilisateursAutorises = [
       "sandra.dostie@canadapost.ca",
@@ -668,7 +684,26 @@
     const dateFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' });
     currentDateDisplay.textContent = dateFormatter.format(todayObj);
 
-    // Récupération du nom de la collection
+    // Mise à jour dynamique du menu déroulant des collections selon le projet
+    function updateCollectionDropdown(projectKey) {
+      const list = collectionsParProjet[projectKey] || collectionsParProjet["postesst"];
+      collectionSelect.innerHTML = '';
+      
+      list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label;
+        collectionSelect.appendChild(opt);
+      });
+
+      if (collectionSelect.value === 'custom') {
+        customCollectionInput.classList.remove('hidden');
+      } else {
+        customCollectionInput.classList.add('hidden');
+      }
+    }
+
+    // Récupération du nom actif de la collection
     function getActiveCollectionName() {
       if (collectionSelect.value === 'custom') {
         return customCollectionInput.value.trim() || 'interventions';
@@ -731,6 +766,8 @@
     // Initialisation Firebase (postesst / postes-26884)
     async function initFirebase(projectKey) {
       currentProjectKey = projectKey;
+      updateCollectionDropdown(projectKey);
+
       log(`Initialisation du projet [${projectKey}]...`, "action");
 
       if (unsubscribeAuth) {
