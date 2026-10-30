@@ -57,11 +57,19 @@
             background-color: #415a77;
             border-radius: 4px;
         }
+        .th-triable {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .th-triable:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+        }
 
         @media print {
             @page { size: landscape; margin: 1cm; }
             body { background-color: #ffffff !important; color: #000000 !important; }
-            #vue-accueil, .btn, form, h1, #select-type-container { display: none !important; }
+            #vue-accueil, .btn, form, h1, #select-type-container, .barre-tri-rapport { display: none !important; }
             #zone-affichage { display: block !important; background-color: #ffffff !important; color: #000000 !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
             #zone-affichage h3 { color: #000000 !important; font-size: 1.5rem; margin-bottom: 20px; }
             .table { color: #000000 !important; border-color: #000000 !important; width: 100% !important; font-size: 0.9rem; }
@@ -413,7 +421,6 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Section Filtres -->
                     <div class="card bg-dark border-secondary p-3 mb-3">
                         <h6 class="text-info fw-bold mb-3">Filtres de sélection des fiches à supprimer</h6>
                         <div class="row g-2">
@@ -468,7 +475,6 @@
                         </div>
                     </div>
 
-                    <!-- Zone de Prévisualisation et Sélection -->
                     <div id="zonePrevisualisationImport" class="d-none">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge bg-primary fs-6" id="compteurFichesTrouvees">0 fiche(s) trouvée(s)</span>
@@ -600,7 +606,7 @@
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Configuration pour Interventions (Projet principal)
+        // Configuration pour Interventions
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
             authDomain: "postesst.firebaseapp.com",
@@ -613,7 +619,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // NOUVELLE Configuration pour accéder au Roulement (Projet secondaire)
+        // Configuration pour le Roulement
         const firebaseConfigRoulement = {
             apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
             authDomain: "postes-26884.firebaseapp.com",
@@ -626,15 +632,122 @@
         const appRoulement = initializeApp(firebaseConfigRoulement, "RoulementApp");
         const dbRoulement = getFirestore(appRoulement);
 
-        // COURRIEL AUTORISÉ POUR L'IMPORTATION ET LA SUPPRESSION
         const EMAIL_AUTORISE_IMPORT = "martin.lefebvre@canadapost.ca";
-
         const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
 
         let listeEmployesMemoire = [];
         let estModeChef = false;
 
-        // --- GESTION DES AUTORISATIONS DES BOUTONS D'IMPORT / SUPPRESSION ---
+        // --- ÉTATS GLOBAUX DU MODULE DE TRI ---
+        let donneesRapportActuel = [];
+        let colonneTriActuelle = 'date';
+        let triAscendant = true;
+        let fonctionRenduActuelle = null;
+
+        // Extraire la valeur numérique de l'ancienneté pour un tri exact
+        function extraireValeurAnciennete(strAnc) {
+            if (!strAnc) return 0;
+            let str = String(strAnc).trim().toLowerCase();
+            let dateEmbauche = null;
+            if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(str)) {
+                dateEmbauche = new Date(str.replace(/\//g, '-'));
+            } else if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/.test(str)) {
+                let parts = str.split(/[-\/]/);
+                dateEmbauche = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            }
+
+            if (dateEmbauche && !isNaN(dateEmbauche.getTime())) {
+                let diffMs = new Date() - dateEmbauche;
+                return diffMs > 0 ? diffMs / (1000 * 60 * 60 * 24 * 365.25) : 0;
+            } 
+            if (str.includes('mois') && !isNaN(parseFloat(str))) {
+                return parseFloat(str) / 12;
+            }
+            let val = parseFloat(str.replace(',', '.'));
+            return isNaN(val) ? 0 : val;
+        }
+
+        // Fonction universelle de tri des rapports
+        window.trierRapport = (colonne) => {
+            if (!colonne) return;
+
+            if (colonneTriActuelle === colonne) {
+                triAscendant = !triAscendant;
+            } else {
+                colonneTriActuelle = colonne;
+                triAscendant = true;
+            }
+
+            donneesRapportActuel.sort((a, b) => {
+                let valA = '', valB = '';
+
+                if (colonne === 'date') {
+                    valA = a.date || a.dateEcheance || '';
+                    valB = b.date || b.dateEcheance || '';
+                } else if (colonne === 'nom') {
+                    valA = (a.nom || '').toLowerCase();
+                    valB = (b.nom || '').toLowerCase();
+                } else if (colonne === 'anciennete') {
+                    let numA = extraireValeurAnciennete(a.anciennete);
+                    let numB = extraireValeurAnciennete(b.anciennete);
+                    return triAscendant ? numA - numB : numB - numA;
+                } else if (colonne === 'type') {
+                    valA = (a.typeIntervention || '').toLowerCase();
+                    valB = (b.typeIntervention || '').toLowerCase();
+                } else if (colonne === 'superviseur') {
+                    valA = (a.superviseurEmail || '').toLowerCase();
+                    valB = (b.superviseurEmail || '').toLowerCase();
+                }
+
+                let comp = String(valA).localeCompare(String(valB), 'fr', { numeric: true, sensitivity: 'base' });
+                return triAscendant ? comp : -comp;
+            });
+
+            const selectEl = document.getElementById('selectTriRapport');
+            if (selectEl) selectEl.value = colonneTriActuelle;
+
+            if (typeof fonctionRenduActuelle === 'function') {
+                fonctionRenduActuelle();
+            }
+        };
+
+        window.inverserOrdreTri = () => {
+            triAscendant = !triAscendant;
+            window.trierRapport(colonneTriActuelle);
+        };
+
+        // Génère la barre de tri supérieure pour les rapports
+        function genererBarreDeTriHTML() {
+            const fleche = triAscendant ? '▲ (Croissant)' : '▼ (Décroissant)';
+            return `
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 bg-dark p-2 rounded border border-secondary barre-tri-rapport">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-info fw-bold small">🔀 Trier par :</span>
+                        <select class="form-select form-select-sm w-auto" id="selectTriRapport" onchange="window.trierRapport(this.value)">
+                            <option value="date" ${colonneTriActuelle === 'date' ? 'selected' : ''}>Date</option>
+                            <option value="nom" ${colonneTriActuelle === 'nom' ? 'selected' : ''}>Employé (Nom)</option>
+                            <option value="anciennete" ${colonneTriActuelle === 'anciennete' ? 'selected' : ''}>Ancienneté</option>
+                            <option value="type" ${colonneTriActuelle === 'type' ? 'selected' : ''}>Type d'intervention</option>
+                            <option value="superviseur" ${colonneTriActuelle === 'superviseur' ? 'selected' : ''}>Superviseur</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-info" onclick="window.inverserOrdreTri()">${fleche}</button>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Génère un en-tête <th> triable avec indicateur
+        function getThTriable(libelle, cleColonne) {
+            let symbole = '↕';
+            if (colonneTriActuelle === cleColonne) {
+                symbole = triAscendant ? '▲' : '▼';
+            }
+            return `<th onclick="window.trierRapport('${cleColonne}')" class="th-triable">${libelle} <span class="text-warning small">${symbole}</span></th>`;
+        }
+
         function verifierAutorisationsImport(email) {
             const btnImport = document.getElementById('btnImportExcel');
             const btnAnnuler = document.getElementById('btnAnnulerImport');
@@ -651,7 +764,6 @@
             }
         }
 
-        // --- GESTION DES NOTIFICATIONS ET DIALOGUES SANS ALERT/CONFIRM ---
         window.afficherNotification = (message, type = 'info') => {
             const toastEl = document.getElementById('notification-toast');
             const toastMsg = document.getElementById('notification-message');
@@ -681,7 +793,6 @@
             bsModal.show();
         };
 
-        // --- GESTION DES ERREURS DE NAVIGATION / EMBEDDED IFRAME ---
         window.addEventListener('unhandledrejection', (event) => {
             if (event.reason && (event.reason.toString().includes("Location") || event.reason.toString().includes("href") || event.reason.toString().includes("URL"))) {
                 event.preventDefault();
@@ -701,11 +812,10 @@
             }
         };
 
-        // --- FONCTION UTILITAIRE POUR TROUVER LA SEMAINE ---
         function getWeekKeyFromDate(dateString) {
             const d = new Date(dateString + "T00:00:00");
             const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajuster au lundi
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
             const monday = new Date(d.setDate(diff));
             
             const year = monday.getFullYear();
@@ -715,7 +825,6 @@
             return `${year}-${month}-${dateDay}`;
         }
 
-        // --- GESTION DU MODE CHEF ET DES ACCÈS ---
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'chef') {
@@ -759,6 +868,7 @@
             document.getElementById('zone-affichage').classList.add('d-none');
             document.getElementById('vue-accueil').classList.remove('d-none');
             document.getElementById('select-type-container').innerHTML = "";
+            fonctionRenduActuelle = null;
             chargerStatistiques(); 
         };
 
@@ -1079,7 +1189,6 @@
             });
         };
 
-        // --- GESTION DE LA SAUVEGARDE MULTI-PROJETS ET EXPORT PRESSE-PAPIER SST ---
         document.getElementById('formIntervention').addEventListener('submit', async (e) => {
             e.preventDefault();
             const dateStr = document.getElementById('dateIntervention').value;
@@ -1141,10 +1250,8 @@
             };
 
             try {
-                // 1. Sauvegarder dans la base Interventions
                 await addDoc(collection(db, "interventions"), nouvelleIntervention);
                 
-                // 2. Vérifier si des cases du roulement sont cochées et sauvegarder dans l'autre base
                 const activitesCochees = Array.from(document.querySelectorAll('.roulement-cb:checked')).map(cb => cb.value);
                 
                 if (activitesCochees.length > 0) {
@@ -1179,14 +1286,12 @@
                     }
                 }
 
-                // 3. Préparer et copier les informations de l'employé & la description dans le presse-papier
                 const texteAExporter = `Date de l'observation : ${dateStr}\nNom de l'employé : ${nomEmployeSaisi}\nNuméro / ID de l'employé : ${idEmployeSaisi}\n\nDescription :\n${nouvelleIntervention.description}`;
 
                 if (navigator.clipboard) {
                     await navigator.clipboard.writeText(texteAExporter);
                 }
 
-                // 4. Ouvrir automatiquement le formulaire Observation SST
                 window.open('https://forms.cloud.microsoft/pages/responsepage.aspx?id=dm0FdSi2iESCsICwi1LYVFoReUrH6Z1AvappVeIt-P5UNDdZRDk3WEFROVNSNEQ4TzBXNkhHR1ZTMi4u&route=shorturl', '_blank');
 
                 afficherNotification("Intervention enregistrée avec succès ! Données copiées et formulaire SST ouvert.", "success");
@@ -1208,7 +1313,8 @@
                     const docRef = doc(db, "interventions", idDoc);
                     await updateDoc(docRef, { statut: nouveauStatut });
                     afficherNotification(`Dossier ${nouveauStatut === "Fermé" ? "fermé" : "rouvert"} avec succès !`, "success");
-                    retourAccueil();
+                    if (fonctionRenduActuelle) fonctionRenduActuelle();
+                    else retourAccueil();
                 } catch (e) {
                     console.error("Erreur lors de la mise à jour du statut du dossier :", e);
                     afficherNotification("Erreur lors de la modification du statut.", "danger");
@@ -1272,7 +1378,8 @@
                 await updateDoc(docRef, champsMisAJour);
                 afficherNotification("Intervention modifiée avec succès !", "success");
                 bootstrap.Modal.getInstance(document.getElementById('modalModification')).hide();
-                retourAccueil();
+                if (fonctionRenduActuelle) fonctionRenduActuelle();
+                else retourAccueil();
             } catch (erreur) {
                 console.error("Erreur lors de la modification :", erreur);
                 afficherNotification("Erreur lors de la mise à jour de l'intervention.", "danger");
@@ -1357,27 +1464,7 @@
                     let matchAnciennete = true;
                     if (filtreAnciennete) {
                         let strAnc = (data.anciennete || '').trim().toLowerCase();
-                        let valAnciennete = 0;
-                        
-                        let dateEmbauche = null;
-                        if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(strAnc)) {
-                            dateEmbauche = new Date(strAnc.replace(/\//g, '-'));
-                        } else if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/.test(strAnc)) {
-                            let parts = strAnc.split(/[-\/]/);
-                            dateEmbauche = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                        }
-
-                        if (dateEmbauche && !isNaN(dateEmbauche.getTime())) {
-                            let aujourdHui = new Date();
-                            let diffMs = aujourdHui - dateEmbauche;
-                            valAnciennete = diffMs > 0 ? diffMs / (1000 * 60 * 60 * 24 * 365.25) : 0;
-                        } 
-                        else if (strAnc.includes('mois') && !isNaN(parseFloat(strAnc))) {
-                            valAnciennete = parseFloat(strAnc) / 12;
-                        } else {
-                            valAnciennete = parseFloat(strAnc.replace(',', '.'));
-                            if (isNaN(valAnciennete)) valAnciennete = 0;
-                        }
+                        let valAnciennete = extraireValeurAnciennete(strAnc);
 
                         if (filtreAnciennete === "1 ans") matchAnciennete = valAnciennete <= 1;
                         else if (filtreAnciennete === "2 ans") matchAnciennete = valAnciennete > 1 && valAnciennete <= 2;
@@ -1404,60 +1491,72 @@
                     }
                 });
 
-                resultats.sort((a, b) => {
-                    let compNom = (a.nom || '').localeCompare(b.nom || '');
-                    if (compNom !== 0) return compNom;
-                    return new Date(b.date) - new Date(a.date);
-                });
+                donneesRapportActuel = resultats;
+                colonneTriActuelle = 'date';
+                triAscendant = false;
 
-                if (resultats.length === 0) {
-                    contenu.innerHTML = `<p class='text-warning fs-5'>Aucune intervention ne correspond aux critères sélectionnés.</p>`;
-                    return;
-                }
-
-                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
-                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
-                html += `<thead><tr><th>Date</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Type / Détails</th><th>Description</th><th>Statut</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
-
-                resultats.forEach(item => {
-                    let statutBadge = item.statut === "Ouvert" 
-                        ? `<span class="badge bg-info text-dark">Ouvert</span>` 
-                        : `<span class="badge bg-secondary">Fermé</span>`;
-
-                    let actionBtn = item.statut === "Ouvert"
-                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
-                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
-
-                    let detailsType = item.typeIntervention || 'N/A';
-                    if (item.typeIntervention === 'SST') {
-                        if (item.graviteSst) {
-                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
-                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
-                        }
-                        if (item.categoriesSst && item.categoriesSst.length > 0) {
-                            detailsType += `<br><small class="text-muted">Catégories: ${item.categoriesSst.join(', ')}</small>`;
-                        }
-                    } else if (item.typeIntervention === 'Observation') {
-                        if (item.statutsObservation && item.statutsObservation.length > 0) {
-                            detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
-                        }
+                fonctionRenduActuelle = () => {
+                    if (donneesRapportActuel.length === 0) {
+                        contenu.innerHTML = `<p class='text-warning fs-5'>Aucune intervention ne correspond aux critères sélectionnés.</p>`;
+                        return;
                     }
 
-                    html += `<tr>
-                        <td>${item.date}</td>
-                        <td><strong>${item.nom}</strong></td>
-                        <td>${item.idEmploye}</td>
-                        <td>${item.anciennete || 'N/A'}</td>
-                        <td>${detailsType}</td>
-                        <td>${item.description || 'N/A'}</td>
-                        <td>${statutBadge}</td>
-                        <td>${item.superviseurEmail || 'N/A'}</td>
-                        <td>${actionBtn}</td>
-                    </tr>`;
-                });
+                    let html = genererBarreDeTriHTML();
+                    html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                    html += `<thead><tr>
+                        ${getThTriable('Date', 'date')}
+                        ${getThTriable('Employé', 'nom')}
+                        <th>ID</th>
+                        ${getThTriable('Ancienneté', 'anciennete')}
+                        ${getThTriable('Type / Détails', 'type')}
+                        <th>Description</th>
+                        <th>Statut</th>
+                        ${getThTriable('Superviseur', 'superviseur')}
+                        <th>Action</th>
+                    </tr></thead><tbody>`;
 
-                html += `</tbody></table></div>`;
-                contenu.innerHTML = html;
+                    donneesRapportActuel.forEach(item => {
+                        let statutBadge = item.statut === "Ouvert" 
+                            ? `<span class="badge bg-info text-dark">Ouvert</span>` 
+                            : `<span class="badge bg-secondary">Fermé</span>`;
+
+                        let actionBtn = item.statut === "Ouvert"
+                            ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                            : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                        let detailsType = item.typeIntervention || 'N/A';
+                        if (item.typeIntervention === 'SST') {
+                            if (item.graviteSst) {
+                                let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                                detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                            }
+                            if (item.categoriesSst && item.categoriesSst.length > 0) {
+                                detailsType += `<br><small class="text-muted">Catégories: ${item.categoriesSst.join(', ')}</small>`;
+                            }
+                        } else if (item.typeIntervention === 'Observation') {
+                            if (item.statutsObservation && item.statutsObservation.length > 0) {
+                                detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
+                            }
+                        }
+
+                        html += `<tr>
+                            <td>${item.date}</td>
+                            <td><strong>${item.nom}</strong></td>
+                            <td>${item.idEmploye}</td>
+                            <td>${item.anciennete || 'N/A'}</td>
+                            <td>${detailsType}</td>
+                            <td>${item.description || 'N/A'}</td>
+                            <td>${statutBadge}</td>
+                            <td>${item.superviseurEmail || 'N/A'}</td>
+                            <td>${actionBtn}</td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                    contenu.innerHTML = html;
+                };
+
+                window.trierRapport('date');
 
             } catch (e) {
                 console.error("Erreur chargement rapport par type :", e);
@@ -1523,6 +1622,8 @@
                                 nom: nomAffichage,
                                 idEmploye: data.idEmploye || 'N/A',
                                 anciennete: data.anciennete || 'N/A',
+                                superviseurEmail: data.superviseurEmail || 'N/A',
+                                typeIntervention: 'SST',
                                 incidents: []
                             };
                         }
@@ -1596,6 +1697,7 @@
                     if (nbIncidents >= 2 || motifsRisque.length > 0) {
                         profilsRisque.push({
                             ...empData,
+                            date: empData.incidents.length > 0 ? empData.incidents[empData.incidents.length - 1].date : '',
                             nbIncidents: nbIncidents,
                             motifs: motifsRisque.length > 0 ? motifsRisque.join('<br>') : `Suivi standard (${nbIncidents} incidents SST)`
                         });
@@ -1609,6 +1711,9 @@
                             nom: employesManuels[key].nom,
                             idEmploye: employesManuels[key].idEmploye,
                             anciennete: employesManuels[key].anciennete,
+                            superviseurEmail: 'N/A',
+                            typeIntervention: 'Signalement Manuel',
+                            date: '',
                             incidents: [],
                             nbIncidents: 0,
                             motifs: `🛑 <strong>Signalement manuel :</strong> ${employesManuels[key].detailRisque}`
@@ -1616,45 +1721,53 @@
                     }
                 }
 
-                profilsRisque.sort((a, b) => {
-                    if (b.nbIncidents !== a.nbIncidents) {
-                        return b.nbIncidents - a.nbIncidents;
-                    }
-                    return (a.nom || '').localeCompare(b.nom || '');
-                });
+                donneesRapportActuel = profilsRisque;
+                colonneTriActuelle = 'nom';
+                triAscendant = true;
 
-                if (profilsRisque.length === 0) {
-                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun employé identifié comme étant à risque élevé.</p>";
-                    return;
-                }
-
-                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
-                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
-                html += `<thead><tr><th>Employé (Prénom Nom)</th><th>ID</th><th>Ancienneté</th><th>Incidents SST</th><th>Facteurs de Risque Identifiés</th><th>Détails des Incidents</th></tr></thead><tbody>`;
-
-                profilsRisque.forEach(item => {
-                    let listeDates = "<span class='text-muted'>Aucun incident SST enregistré</span>";
-                    
-                    if (item.incidents && item.incidents.length > 0) {
-                        listeDates = item.incidents.map(inc => {
-                            let badgeColor = inc.gravite === 'Majeur' ? 'text-danger fw-bold' : 'text-warning';
-                            let catTxt = inc.categories && inc.categories.length > 0 ? ` [${inc.categories.join(', ')}]` : '';
-                            return `<small>${inc.date} - <span class="${badgeColor}">[${inc.gravite}]</span>${catTxt} : ${inc.description}</small>`;
-                        }).join('<br><hr style="margin:4px 0; border-color:#415a77;">');
+                fonctionRenduActuelle = () => {
+                    if (donneesRapportActuel.length === 0) {
+                        contenu.innerHTML = "<p class='text-success fs-5'>Aucun employé identifié comme étant à risque élevé.</p>";
+                        return;
                     }
 
-                    html += `<tr>
-                        <td><strong>${item.nom}</strong></td>
-                        <td>${item.idEmploye}</td>
-                        <td>${item.anciennete}</td>
-                        <td class="text-center fw-bold text-danger fs-5">${item.nbIncidents}</td>
-                        <td><span class="text-warning">${item.motifs}</span></td>
-                        <td>${listeDates}</td>
-                    </tr>`;
-                });
+                    let html = genererBarreDeTriHTML();
+                    html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                    html += `<thead><tr>
+                        ${getThTriable('Employé (Prénom Nom)', 'nom')}
+                        <th>ID</th>
+                        ${getThTriable('Ancienneté', 'anciennete')}
+                        <th>Incidents SST</th>
+                        <th>Facteurs de Risque Identifiés</th>
+                        <th>Détails des Incidents</th>
+                    </tr></thead><tbody>`;
 
-                html += `</tbody></table></div>`;
-                contenu.innerHTML = html;
+                    donneesRapportActuel.forEach(item => {
+                        let listeDates = "<span class='text-muted'>Aucun incident SST enregistré</span>";
+                        
+                        if (item.incidents && item.incidents.length > 0) {
+                            listeDates = item.incidents.map(inc => {
+                                let badgeColor = inc.gravite === 'Majeur' ? 'text-danger fw-bold' : 'text-warning';
+                                let catTxt = inc.categories && inc.categories.length > 0 ? ` [${inc.categories.join(', ')}]` : '';
+                                return `<small>${inc.date} - <span class="${badgeColor}">[${inc.gravite}]</span>${catTxt} : ${inc.description}</small>`;
+                            }).join('<br><hr style="margin:4px 0; border-color:#415a77;">');
+                        }
+
+                        html += `<tr>
+                            <td><strong>${item.nom}</strong></td>
+                            <td>${item.idEmploye}</td>
+                            <td>${item.anciennete}</td>
+                            <td class="text-center fw-bold text-danger fs-5">${item.nbIncidents}</td>
+                            <td><span class="text-warning">${item.motifs}</span></td>
+                            <td>${listeDates}</td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                    contenu.innerHTML = html;
+                };
+
+                window.trierRapport('nom');
 
             } catch (e) {
                 console.error("Erreur lors de l'analyse des risques :", e);
@@ -1703,51 +1816,66 @@
                     }
                 });
 
-                resultats.sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance));
+                donneesRapportActuel = resultats;
+                colonneTriActuelle = 'date';
+                triAscendant = true;
 
-                if (resultats.length === 0) {
-                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun suivi ou échéance prévue pour cette semaine !</p>";
-                    return;
-                }
-
-                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
-                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
-                html += `<thead><tr><th>Échéance</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Type</th><th>Dernière Description</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
-
-                resultats.forEach(item => {
-                    let detailsType = item.typeIntervention || 'N/A';
-                    if (item.typeIntervention === 'SST') {
-                        if (item.graviteSst) {
-                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
-                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
-                        }
-                        if (item.categoriesSst && item.categoriesSst.length > 0) {
-                            detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
-                        }
-                    } else if (item.typeIntervention === 'Observation') {
-                        if (item.statutsObservation && item.statutsObservation.length > 0) {
-                            detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
-                        }
+                fonctionRenduActuelle = () => {
+                    if (donneesRapportActuel.length === 0) {
+                        contenu.innerHTML = "<p class='text-success fs-5'>Aucun suivi ou échéance prévue pour cette semaine !</p>";
+                        return;
                     }
 
-                    let actionBtn = item.statut === "Ouvert"
-                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
-                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+                    let html = genererBarreDeTriHTML();
+                    html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                    html += `<thead><tr>
+                        ${getThTriable('Échéance', 'date')}
+                        ${getThTriable('Employé', 'nom')}
+                        <th>ID</th>
+                        ${getThTriable('Ancienneté', 'anciennete')}
+                        ${getThTriable('Type', 'type')}
+                        <th>Dernière Description</th>
+                        ${getThTriable('Superviseur', 'superviseur')}
+                        <th>Action</th>
+                    </tr></thead><tbody>`;
 
-                    html += `<tr>
-                        <td class="text-warning fw-bold">${item.dateEcheance}</td>
-                        <td><strong>${item.nom}</strong></td>
-                        <td>${item.idEmploye}</td>
-                        <td>${item.anciennete || 'N/A'}</td>
-                        <td><span class="badge bg-secondary">${detailsType}</span></td>
-                        <td>${item.description || 'N/A'}</td>
-                        <td>${item.superviseurEmail || 'N/A'}</td>
-                        <td>${actionBtn}</td>
-                    </tr>`;
-                });
+                    donneesRapportActuel.forEach(item => {
+                        let detailsType = item.typeIntervention || 'N/A';
+                        if (item.typeIntervention === 'SST') {
+                            if (item.graviteSst) {
+                                let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                                detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                            }
+                            if (item.categoriesSst && item.categoriesSst.length > 0) {
+                                detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
+                            }
+                        } else if (item.typeIntervention === 'Observation') {
+                            if (item.statutsObservation && item.statutsObservation.length > 0) {
+                                detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
+                            }
+                        }
 
-                html += `</tbody></table></div>`;
-                contenu.innerHTML = html;
+                        let actionBtn = item.statut === "Ouvert"
+                            ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                            : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                        html += `<tr>
+                            <td class="text-warning fw-bold">${item.dateEcheance}</td>
+                            <td><strong>${item.nom}</strong></td>
+                            <td>${item.idEmploye}</td>
+                            <td>${item.anciennete || 'N/A'}</td>
+                            <td><span class="badge bg-secondary">${detailsType}</span></td>
+                            <td>${item.description || 'N/A'}</td>
+                            <td>${item.superviseurEmail || 'N/A'}</td>
+                            <td>${actionBtn}</td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                    contenu.innerHTML = html;
+                };
+
+                window.trierRapport('date');
 
             } catch (e) {
                 console.error("Erreur lors du chargement des suivis de la semaine :", e);
@@ -1784,53 +1912,68 @@
                     }
                 });
 
-                let resultats = Array.from(dossiersMap.values());
-                resultats.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+                donneesRapportActuel = Array.from(dossiersMap.values());
+                colonneTriActuelle = 'nom';
+                triAscendant = true;
 
-                if (resultats.length === 0) {
-                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun dossier ouvert pour le moment !</p>";
-                    return;
-                }
-
-                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button></div>`;
-                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
-                html += `<thead><tr><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Date du Dernier Suivi</th><th>Type</th><th>Description du Dernier Suivi</th><th>Échéance</th><th>Superviseur</th><th>Action</th></tr></thead><tbody>`;
-
-                resultats.forEach(item => {
-                    let detailsType = item.typeIntervention || 'N/A';
-                    if (item.typeIntervention === 'SST') {
-                        if (item.graviteSst) {
-                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
-                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
-                        }
-                        if (item.categoriesSst && item.categoriesSst.length > 0) {
-                            detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
-                        }
-                    } else if (item.typeIntervention === 'Observation') {
-                        if (item.statutsObservation && item.statutsObservation.length > 0) {
-                            detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
-                        }
+                fonctionRenduActuelle = () => {
+                    if (donneesRapportActuel.length === 0) {
+                        contenu.innerHTML = "<p class='text-success fs-5'>Aucun dossier ouvert pour le moment !</p>";
+                        return;
                     }
 
-                    let actionBtn = item.statut === "Ouvert"
-                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
-                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+                    let html = genererBarreDeTriHTML();
+                    html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle">`;
+                    html += `<thead><tr>
+                        ${getThTriable('Employé', 'nom')}
+                        <th>ID</th>
+                        ${getThTriable('Ancienneté', 'anciennete')}
+                        ${getThTriable('Date du Dernier Suivi', 'date')}
+                        ${getThTriable('Type', 'type')}
+                        <th>Description du Dernier Suivi</th>
+                        <th>Échéance</th>
+                        ${getThTriable('Superviseur', 'superviseur')}
+                        <th>Action</th>
+                    </tr></thead><tbody>`;
 
-                    html += `<tr>
-                        <td><strong>${item.nom}</strong></td>
-                        <td>${item.idEmploye}</td>
-                        <td>${item.anciennete || 'N/A'}</td>
-                        <td>${item.date}</td>
-                        <td><span class="badge bg-secondary">${detailsType}</span></td>
-                        <td>${item.description || 'Aucune description'}</td>
-                        <td class="text-info">${item.dateEcheance || 'N/A'}</td>
-                        <td>${item.superviseurEmail || 'N/A'}</td>
-                        <td>${actionBtn}</td>
-                    </tr>`;
-                });
+                    donneesRapportActuel.forEach(item => {
+                        let detailsType = item.typeIntervention || 'N/A';
+                        if (item.typeIntervention === 'SST') {
+                            if (item.graviteSst) {
+                                let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                                detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                            }
+                            if (item.categoriesSst && item.categoriesSst.length > 0) {
+                                detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
+                            }
+                        } else if (item.typeIntervention === 'Observation') {
+                            if (item.statutsObservation && item.statutsObservation.length > 0) {
+                                detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
+                            }
+                        }
 
-                html += `</tbody></table></div>`;
-                contenu.innerHTML = html;
+                        let actionBtn = item.statut === "Ouvert"
+                            ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                            : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+
+                        html += `<tr>
+                            <td><strong>${item.nom}</strong></td>
+                            <td>${item.idEmploye}</td>
+                            <td>${item.anciennete || 'N/A'}</td>
+                            <td>${item.date}</td>
+                            <td><span class="badge bg-secondary">${detailsType}</span></td>
+                            <td>${item.description || 'Aucune description'}</td>
+                            <td class="text-info">${item.dateEcheance || 'N/A'}</td>
+                            <td>${item.superviseurEmail || 'N/A'}</td>
+                            <td>${actionBtn}</td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                    contenu.innerHTML = html;
+                };
+
+                window.trierRapport('nom');
 
             } catch (e) {
                 console.error("Erreur lors de la génération du rapport :", e);
@@ -1887,45 +2030,62 @@
                     }
                 });
 
-                if (retards.length === 0) {
-                    contenu.innerHTML = "<p class='text-success fs-5'>Aucun fichier en retard</p>";
-                    return;
-                }
+                donneesRapportActuel = retards;
+                colonneTriActuelle = 'date';
+                triAscendant = true;
 
-                let html = `<div class="mb-3"><button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Imprimer le rapport</button></div>`;
-                html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle"><thead><tr><th>Date</th><th>Employé</th><th>ID</th><th>Ancienneté</th><th>Type</th><th>Échéance</th><th>Superviseur (Courriel)</th><th>Action</th></tr></thead><tbody>`;
-                
-                retards.forEach(item => {
-                    let detailsType = item.typeIntervention || 'N/A';
-                    if (item.typeIntervention === 'SST') {
-                        if (item.graviteSst) {
-                            let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
-                            detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
-                        }
-                        if (item.categoriesSst && item.categoriesSst.length > 0) {
-                            detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
-                        }
-                    } else if (item.typeIntervention === 'Observation') {
-                        if (item.statutsObservation && item.statutsObservation.length > 0) {
-                            detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
-                        }
+                fonctionRenduActuelle = () => {
+                    if (donneesRapportActuel.length === 0) {
+                        contenu.innerHTML = "<p class='text-success fs-5'>Aucun fichier en retard</p>";
+                        return;
                     }
 
-                    let actionBtn = item.statut === "Ouvert"
-                        ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
-                        : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
+                    let html = genererBarreDeTriHTML();
+                    html += `<div class="table-responsive"><table class="table table-striped table-bordered align-middle"><thead><tr>
+                        ${getThTriable('Date', 'date')}
+                        ${getThTriable('Employé', 'nom')}
+                        <th>ID</th>
+                        ${getThTriable('Ancienneté', 'anciennete')}
+                        ${getThTriable('Type', 'type')}
+                        <th>Échéance</th>
+                        ${getThTriable('Superviseur (Courriel)', 'superviseur')}
+                        <th>Action</th>
+                    </tr></thead><tbody>`;
+                    
+                    donneesRapportActuel.forEach(item => {
+                        let detailsType = item.typeIntervention || 'N/A';
+                        if (item.typeIntervention === 'SST') {
+                            if (item.graviteSst) {
+                                let badgeGravite = item.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                                detailsType += ` <span class="badge ${badgeGravite}">${item.graviteSst}</span>`;
+                            }
+                            if (item.categoriesSst && item.categoriesSst.length > 0) {
+                                detailsType += `<br><small class="text-muted">${item.categoriesSst.join(', ')}</small>`;
+                            }
+                        } else if (item.typeIntervention === 'Observation') {
+                            if (item.statutsObservation && item.statutsObservation.length > 0) {
+                                detailsType += `<br><small class="text-info">Obs: ${item.statutsObservation.join(', ')}</small>`;
+                            }
+                        }
 
-                    html += `<tr><td>${item.date}</td><td>${item.nom}</td><td>${item.idEmploye}</td><td>${item.anciennete || 'N/A'}</td><td><span class="badge bg-secondary">${detailsType}</span></td><td class="text-danger fw-bold">${item.dateEcheance}</td><td>${item.superviseurEmail || 'N/A'}</td><td>${actionBtn}</td></tr>`;
-                });
+                        let actionBtn = item.statut === "Ouvert"
+                            ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${item.idDoc}', 'Fermé')">Fermer</button>`
+                            : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${item.idDoc}', 'Ouvert')">Rouvrir</button>`;
 
-                html += `</tbody></table></div>`;
-                
-                html += `<h5 class="mt-4 text-light">Expédier les rapports aux superviseurs :</h5>`;
-                for (let [email, details] of Object.entries(retardsParSuperviseur)) {
-                    let corpsMessage = `Bonjour,%0A%0AVoici la liste de vos employés en situation de retard de suivi :%0A%0A${details}%0AMerci de régulariser ces dossiers.`;
-                    html += `<button class="btn btn-danger m-1" onclick="window.open('mailto:${email}?subject=Rapport des retards de suivi&body=${corpsMessage}', '_self')">Envoyer à ${email}</button> `;
-                }
-                contenu.innerHTML = html;
+                        html += `<tr><td>${item.date}</td><td>${item.nom}</td><td>${item.idEmploye}</td><td>${item.anciennete || 'N/A'}</td><td><span class="badge bg-secondary">${detailsType}</span></td><td class="text-danger fw-bold">${item.dateEcheance}</td><td>${item.superviseurEmail || 'N/A'}</td><td>${actionBtn}</td></tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                    
+                    html += `<h5 class="mt-4 text-light barre-tri-rapport">Expédier les rapports aux superviseurs :</h5>`;
+                    for (let [email, details] of Object.entries(retardsParSuperviseur)) {
+                        let corpsMessage = `Bonjour,%0A%0AVoici la liste de vos employés en situation de retard de suivi :%0A%0A${details}%0AMerci de régulariser ces dossiers.`;
+                        html += `<button class="btn btn-danger m-1 barre-tri-rapport" onclick="window.open('mailto:${email}?subject=Rapport des retards de suivi&body=${corpsMessage}', '_self')">Envoyer à ${email}</button> `;
+                    }
+                    contenu.innerHTML = html;
+                };
+
+                window.trierRapport('date');
 
             } catch (e) {
                 console.error("Erreur lors de la récupération des retards :", e);
@@ -1968,67 +2128,85 @@
                     }
                 });
 
-                resultats.sort((a, b) => new Date(a.date) - new Date(b.date));
+                donneesRapportActuel = resultats;
+                colonneTriActuelle = 'date';
+                triAscendant = true;
 
-                if (resultats.length === 0) {
-                    contenu.innerHTML = "<p class='text-muted fs-5'>Aucune intervention trouvée pour cet employé.</p>";
-                    return;
-                }
-
-                let html = `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr><th>Date</th><th>ID</th><th>Nom</th><th>Ancienneté</th><th>Type</th><th>Description</th><th>Prochaine intervention</th><th>Statut</th><th>Superviseur</th><th>Actions</th></tr></thead><tbody>`;
-                
-                resultats.forEach(data => {
-                    let statutBadge = data.statut === "Ouvert" 
-                        ? `<span class="badge bg-info text-dark">Ouvert</span>` 
-                        : `<span class="badge bg-secondary">Fermé</span>`;
-
-                    let detailsType = data.typeIntervention || 'N/A';
-                    if (data.typeIntervention === 'SST') {
-                        if (data.graviteSst) {
-                            let badgeGravite = data.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
-                            detailsType += ` <span class="badge ${badgeGravite}">${data.graviteSst}</span>`;
-                        }
-                        if (data.categoriesSst && data.categoriesSst.length > 0) {
-                            detailsType += `<br><small class="text-muted">${data.categoriesSst.join(', ')}</small>`;
-                        }
-                    } else if (data.typeIntervention === 'Observation') {
-                        if (data.statutsObservation && data.statutsObservation.length > 0) {
-                            detailsType += `<br><small class="text-info">Obs: ${data.statutsObservation.join(', ')}</small>`;
-                        }
+                fonctionRenduActuelle = () => {
+                    if (donneesRapportActuel.length === 0) {
+                        contenu.innerHTML = "<p class='text-muted fs-5'>Aucune intervention trouvée pour cet employé.</p>";
+                        return;
                     }
 
-                    let safeNom = (data.nom || '').replace(/'/g, "\\'");
-                    let safeAnciennete = (data.anciennete || '').replace(/'/g, "\\'");
-                    let safeDesc = (data.description || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
-                    let safeSup = (data.superviseurEmail || '').replace(/'/g, "\\'");
-                    let safeDateEch = data.dateEcheance || '';
-                    let safeGravite = data.graviteSst || '';
+                    let html = genererBarreDeTriHTML();
+                    html += `<div class="table-responsive"><table class="table table-bordered table-striped align-middle"><thead><tr>
+                        ${getThTriable('Date', 'date')}
+                        <th>ID</th>
+                        ${getThTriable('Nom', 'nom')}
+                        ${getThTriable('Ancienneté', 'anciennete')}
+                        ${getThTriable('Type', 'type')}
+                        <th>Description</th>
+                        <th>Prochaine intervention</th>
+                        <th>Statut</th>
+                        ${getThTriable('Superviseur', 'superviseur')}
+                        <th>Actions</th>
+                    </tr></thead><tbody>`;
+                    
+                    donneesRapportActuel.forEach(data => {
+                        let statutBadge = data.statut === "Ouvert" 
+                            ? `<span class="badge bg-info text-dark">Ouvert</span>` 
+                            : `<span class="badge bg-secondary">Fermé</span>`;
 
-                    let boutonsAction = `
-                        <div class="d-flex gap-1 flex-column">
-                            <button class="btn btn-sm btn-primary" onclick="preparerModification('${data.id}', '${data.date}', '${safeNom}', '${data.idEmploye}', '${safeAnciennete}', '${data.typeIntervention}', '${safeDesc}', ${data.prochainRdvJours || 14}, '${safeSup}', '${safeDateEch}', '${safeGravite}')">Modifier</button>
-                            ${data.statut === "Ouvert" 
-                                ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
-                                : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`}
-                        </div>
-                    `;
+                        let detailsType = data.typeIntervention || 'N/A';
+                        if (data.typeIntervention === 'SST') {
+                            if (data.graviteSst) {
+                                let badgeGravite = data.graviteSst === 'Majeur' ? 'bg-danger' : 'bg-warning text-dark';
+                                detailsType += ` <span class="badge ${badgeGravite}">${data.graviteSst}</span>`;
+                            }
+                            if (data.categoriesSst && data.categoriesSst.length > 0) {
+                                detailsType += `<br><small class="text-muted">${data.categoriesSst.join(', ')}</small>`;
+                            }
+                        } else if (data.typeIntervention === 'Observation') {
+                            if (data.statutsObservation && data.statutsObservation.length > 0) {
+                                detailsType += `<br><small class="text-info">Obs: ${data.statutsObservation.join(', ')}</small>`;
+                            }
+                        }
 
-                    html += `<tr>
-                        <td>${data.date}</td>
-                        <td>${data.idEmploye}</td>
-                        <td>${data.nom}</td>
-                        <td>${data.anciennete || 'N/A'}</td>
-                        <td><span class="badge bg-secondary">${detailsType}</span></td>
-                        <td>${data.description}</td>
-                        <td>${data.prochainRdvJours === 0 ? 'Aucun (Fermé)' : `Dans ${data.prochainRdvJours} jours`}</td>
-                        <td>${statutBadge}</td>
-                        <td>${data.superviseurEmail}</td>
-                        <td>${boutonsAction}</td>
-                    </tr>`;
-                });
-                
-                html += `</tbody></table></div>`;
-                contenu.innerHTML = html;
+                        let safeNom = (data.nom || '').replace(/'/g, "\\'");
+                        let safeAnciennete = (data.anciennete || '').replace(/'/g, "\\'");
+                        let safeDesc = (data.description || '').replace(/'/g, "\\'").replace(/\n/g, ' ');
+                        let safeSup = (data.superviseurEmail || '').replace(/'/g, "\\'");
+                        let safeDateEch = data.dateEcheance || '';
+                        let safeGravite = data.graviteSst || '';
+
+                        let boutonsAction = `
+                            <div class="d-flex gap-1 flex-column">
+                                <button class="btn btn-sm btn-primary" onclick="preparerModification('${data.id}', '${data.date}', '${safeNom}', '${data.idEmploye}', '${safeAnciennete}', '${data.typeIntervention}', '${safeDesc}', ${data.prochainRdvJours || 14}, '${safeSup}', '${safeDateEch}', '${safeGravite}')">Modifier</button>
+                                ${data.statut === "Ouvert" 
+                                    ? `<button class="btn btn-sm btn-success" onclick="basculerStatutDossier('${data.id}', 'Fermé')">Fermer</button>` 
+                                    : `<button class="btn btn-sm btn-warning text-dark" onclick="basculerStatutDossier('${data.id}', 'Ouvert')">Rouvrir</button>`}
+                            </div>
+                        `;
+
+                        html += `<tr>
+                            <td>${data.date}</td>
+                            <td>${data.idEmploye}</td>
+                            <td>${data.nom}</td>
+                            <td>${data.anciennete || 'N/A'}</td>
+                            <td><span class="badge bg-secondary">${detailsType}</span></td>
+                            <td>${data.description}</td>
+                            <td>${data.prochainRdvJours === 0 ? 'Aucun (Fermé)' : `Dans ${data.prochainRdvJours} jours`}</td>
+                            <td>${statutBadge}</td>
+                            <td>${data.superviseurEmail}</td>
+                            <td>${boutonsAction}</td>
+                        </tr>`;
+                    });
+                    
+                    html += `</tbody></table></div>`;
+                    contenu.innerHTML = html;
+                };
+
+                window.trierRapport('date');
 
             } catch (e) {
                 console.error("Erreur lors de la recherche :", e);
@@ -2036,7 +2214,6 @@
             }
         };
 
-        // --- FONCTION DE FORMATAGE DE DATE EXCEL ---
         function formaterDateExcel(dateRaw) {
             if (!dateRaw) return new Date().toISOString().split('T')[0];
             
@@ -2051,9 +2228,9 @@
             if (typeof dateRaw === 'string') {
                 const parties = dateRaw.trim().split(/[\/\-\.]/);
                 if (parties.length === 3) {
-                    if (parties[0].length === 4) { // YYYY-MM-DD
+                    if (parties[0].length === 4) {
                         return `${parties[0]}-${parties[1].padStart(2, '0')}-${parties[2].padStart(2, '0')}`;
-                    } else if (parties[2].length === 4) { // DD/MM/YYYY
+                    } else if (parties[2].length === 4) {
                         return `${parties[2]}-${parties[1].padStart(2, '0')}-${parties[0].padStart(2, '0')}`;
                     }
                 }
@@ -2066,7 +2243,6 @@
             return new Date().toISOString().split('T')[0];
         }
 
-        // --- FONCTION D'IMPORTATION DES FICHIERS EXCEL (Restreinte) ---
         window.importerFichierExcel = async (event) => {
             const userEmail = auth.currentUser ? auth.currentUser.email : '';
             if (userEmail.trim().toLowerCase() !== EMAIL_AUTORISE_IMPORT.toLowerCase()) {
@@ -2091,7 +2267,6 @@
                         return;
                     }
 
-                    // Chargement de l'historique des interventions SST pour vérifier les doublons (1 SST max par employé par date)
                     const snapshotExistants = await getDocs(collection(db, "interventions"));
                     const interventionsSstExistantes = new Set();
                     
@@ -2218,7 +2393,6 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // --- GESTION DE LA SUPPRESSION CONDITIONNELLE UNIVERSELLE (Restreinte) ---
         window.ouvrirModalAnnulerImport = () => {
             const userEmail = auth.currentUser ? auth.currentUser.email : '';
             if (userEmail.trim().toLowerCase() !== EMAIL_AUTORISE_IMPORT.toLowerCase()) {
