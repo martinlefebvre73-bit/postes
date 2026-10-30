@@ -396,20 +396,35 @@
         </div>
     </div>
 
-    <!-- MODAL : ANNULER IMPORT PAR DATE -->
+    <!-- MODAL : ANNULER ET SUPPRIMER IMPORTATIONS -->
     <div class="modal fade" id="modalAnnulerImport" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light">Annuler une importation Excel</h5>
+                    <h5 class="modal-title text-light">Annuler / Supprimer des importations</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label text-light">Sélectionner la date d'importation à annuler :</label>
+                        <label class="form-label text-light">Date d'importation (laisser vide pour toutes les dates) :</label>
                         <input type="date" class="form-control" id="dateImportAAnnuler">
                     </div>
-                    <button type="button" class="btn btn-danger w-100 fw-bold" onclick="confirmerAnnulationImportParDate()">Supprimer les imports de cette date</button>
+
+                    <div class="mb-3">
+                        <label class="form-label text-light">Critère de suppression :</label>
+                        <select class="form-select" id="critereAnnulerImport" onchange="gererAffichageCritereImport()">
+                            <option value="tous_date">Toutes les fiches importées à cette date</option>
+                            <option value="employe_specifique">Filtrer par Nom ou ID d'employé</option>
+                            <option value="fiches_identiques">Fiches où le Nom et l'ID correspondent exactement</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 d-none" id="blocEmployeAnnulerImport">
+                        <label class="form-label text-light">Nom ou ID de l'employé :</label>
+                        <input type="text" class="form-control" id="employeAnnulerImport" placeholder="Entrez le nom ou l'ID">
+                    </div>
+
+                    <button type="button" class="btn btn-danger w-100 fw-bold" onclick="confirmerAnnulationImportParDate()">Supprimer les fiches correspondantes</button>
                 </div>
             </div>
         </div>
@@ -2094,19 +2109,35 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // --- FONCTION D'ANNULATION DES IMPORTATIONS PAR DATE SÉLECTIONNÉE ---
+        // --- GESTION DE LA SUPPRESSION CONDITIONNELLE DES IMPORTATIONS ---
         window.ouvrirModalAnnulerImport = () => {
             const inputDate = document.getElementById('dateImportAAnnuler');
             if (inputDate) {
                 inputDate.value = new Date().toISOString().split('T')[0];
             }
+            document.getElementById('critereAnnulerImport').value = 'tous_date';
+            document.getElementById('employeAnnulerImport').value = '';
+            gererAffichageCritereImport();
             new bootstrap.Modal(document.getElementById('modalAnnulerImport')).show();
+        };
+
+        window.gererAffichageCritereImport = () => {
+            const critere = document.getElementById('critereAnnulerImport').value;
+            const blocEmp = document.getElementById('blocEmployeAnnulerImport');
+            if (critere === 'employe_specifique' || critere === 'fiches_identiques') {
+                blocEmp.classList.remove('d-none');
+            } else {
+                blocEmp.classList.add('d-none');
+            }
         };
 
         window.confirmerAnnulationImportParDate = async () => {
             const dateSelectionnee = document.getElementById('dateImportAAnnuler').value;
-            if (!dateSelectionnee) {
-                afficherNotification("Veuillez sélectionner une date d'importation.", "warning");
+            const critere = document.getElementById('critereAnnulerImport').value;
+            const termeEmploye = document.getElementById('employeAnnulerImport').value.trim().toLowerCase();
+
+            if ((critere === 'employe_specifique' || critere === 'fiches_identiques') && !termeEmploye) {
+                afficherNotification("Veuillez entrer un nom ou un ID d'employé pour ce critère.", "warning");
                 return;
             }
 
@@ -2114,18 +2145,35 @@
             const bsModal = bootstrap.Modal.getInstance(modalEl);
             if (bsModal) bsModal.hide();
 
-            demanderConfirmation(`Voulez-vous vraiment annuler et supprimer toutes les interventions importées via Excel pour la date du ${dateSelectionnee} ?`, async () => {
+            let messageConfirm = "Voulez-vous vraiment supprimer ";
+            if (critere === 'tous_date') {
+                messageConfirm += `toutes les fiches importées pour la date du ${dateSelectionnee || 'toutes dates'} ?`;
+            } else if (critere === 'employe_specifique') {
+                messageConfirm += `les fiches importées correspondant à "${termeEmploye}" ${dateSelectionnee ? 'pour le ' + dateSelectionnee : ''} ?`;
+            } else if (critere === 'fiches_identiques') {
+                messageConfirm += `les fiches importées où le Nom et l'ID correspondent exactement à "${termeEmploye}" ?`;
+            }
+
+            demanderConfirmation(messageConfirm, async () => {
                 try {
-                    const q = query(
-                        collection(db, "interventions"),
-                        where("source", "==", "import_excel"),
-                        where("dateImportation", "==", dateSelectionnee)
-                    );
+                    let q;
+                    if (dateSelectionnee) {
+                        q = query(
+                            collection(db, "interventions"),
+                            where("source", "==", "import_excel"),
+                            where("dateImportation", "==", dateSelectionnee)
+                        );
+                    } else {
+                        q = query(
+                            collection(db, "interventions"),
+                            where("source", "==", "import_excel")
+                        );
+                    }
                     
                     const querySnapshot = await getDocs(q);
                     
                     if (querySnapshot.empty) {
-                        afficherNotification(`Aucune intervention importée le ${dateSelectionnee} n'a été trouvée.`, "warning");
+                        afficherNotification(`Aucune intervention importée trouvée pour ces critères.`, "warning");
                         return;
                     }
 
@@ -2133,13 +2181,40 @@
                     const promessesSuppression = [];
                     
                     querySnapshot.forEach((docSnap) => {
-                        promessesSuppression.push(deleteDoc(doc(db, "interventions", docSnap.id)));
-                        compteSuppressions++;
+                        const data = docSnap.data();
+                        let aSupprimer = false;
+
+                        const nomEmp = (data.nom || '').trim().toLowerCase();
+                        const idEmp = String(data.idEmploye || '').trim().toLowerCase();
+
+                        if (critere === 'tous_date') {
+                            aSupprimer = true;
+                        } else if (critere === 'employe_specifique') {
+                            if (nomEmp.includes(termeEmploye) || idEmp.includes(termeEmploye)) {
+                                aSupprimer = true;
+                            }
+                        } else if (critere === 'fiches_identiques') {
+                            if (nomEmp === termeEmploye && idEmp === termeEmploye) {
+                                aSupprimer = true;
+                            } else if (nomEmp === termeEmploye || idEmp === termeEmploye) {
+                                aSupprimer = true;
+                            }
+                        }
+
+                        if (aSupprimer) {
+                            promessesSuppression.push(deleteDoc(doc(db, "interventions", docSnap.id)));
+                            compteSuppressions++;
+                        }
                     });
+
+                    if (compteSuppressions === 0) {
+                        afficherNotification(`Aucune fiche ne correspond aux critères spécifiés.`, "warning");
+                        return;
+                    }
 
                     await Promise.all(promessesSuppression);
 
-                    afficherNotification(`Annulation réussie : ${compteSuppressions} intervention(s) importée(s) le ${dateSelectionnee} ont été supprimées.`, "success");
+                    afficherNotification(`Annulation réussie : ${compteSuppressions} intervention(s) importée(s) supprimée(s).`, "success");
                     chargerStatistiques();
                 } catch (erreur) {
                     console.error("Erreur lors de l'annulation de l'importation :", erreur);
