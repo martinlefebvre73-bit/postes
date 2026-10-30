@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    /* Styles complémentaires pour mise en page fluide sans Tailwind */
+    /* Styles complémentaires pour mise en page fluide */
     :root {
       --bg-dark: #0B0F17;
       --card-bg: rgba(17, 24, 39, 0.85);
@@ -338,7 +338,7 @@
           <span style="color: var(--text-muted);">Projet:</span>
           <select id="projectSelect" style="background: transparent; color: #fff; border: none; font-weight: 600; cursor: pointer;">
             <option value="postesst" style="background: #111827;">postesst</option>
-            <option value="postes-26884" style="background: #111827;">postes-26884</option>
+            <option value="postes-26884" style="background: #111827;">postes-26884 (postes)</option>
           </select>
         </div>
 
@@ -499,7 +499,7 @@
     </main>
   </div>
 
-  <!-- Modal de Connexion Superviseur -->
+  <!-- Modal de Connexion Superviseur (pour postesst) -->
   <div id="loginModal" class="modal-overlay">
     <div class="modal-card">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -507,7 +507,7 @@
           <i class="fa-solid fa-user-shield" style="font-size: 20px; color: var(--sky-accent);"></i>
         </div>
         <h3 style="margin: 0; font-size: 18px; color: #fff;">Connexion Superviseur</h3>
-        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Accès restreint aux superviseurs autorisés</p>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Accès restreint aux superviseurs autorisés pour <strong>postesst</strong></p>
       </div>
 
       <form id="formConnexionModal">
@@ -578,7 +578,7 @@
       onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    // Firebase Configurations
+    // Firebase Configurations pour les 2 projets
     const configs = {
       "postesst": {
         apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -599,7 +599,7 @@
       }
     };
 
-    // Liste des courriels autorisés selon gestionListe
+    // Liste des courriels autorisés pour le projet 'postesst'
     const utilisateursAutorises = [
       "sandra.dostie@canadapost.ca",
       "caroline.gauthier@canadapost.ca",
@@ -613,7 +613,7 @@
     let currentUser = null;
     let unsubscribeAuth = null;
 
-    // DOM Elements
+    // Éléments DOM
     const projectSelect = document.getElementById('projectSelect');
     const collectionSelect = document.getElementById('collectionSelect');
     const customCollectionInput = document.getElementById('customCollectionInput');
@@ -668,7 +668,7 @@
     const dateFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' });
     currentDateDisplay.textContent = dateFormatter.format(todayObj);
 
-    // Fonction de récupération du nom de collection actif
+    // Récupération du nom de la collection
     function getActiveCollectionName() {
       if (collectionSelect.value === 'custom') {
         return customCollectionInput.value.trim() || 'interventions';
@@ -676,7 +676,7 @@
       return collectionSelect.value;
     }
 
-    // Logger Utility
+    // Logger
     function log(message, type = 'info') {
       const timeStr = new Date().toLocaleTimeString('fr-FR');
       let icon = 'fa-info-circle';
@@ -695,7 +695,6 @@
       logConsole.scrollTop = logConsole.scrollHeight;
     }
 
-    // Gestion de l'affichage de la collection personnalisée
     collectionSelect.addEventListener('change', () => {
       if (collectionSelect.value === 'custom') {
         customCollectionInput.classList.remove('hidden');
@@ -729,12 +728,15 @@
       loginModal.style.display = 'none';
     }
 
-    // Initialisation Firebase avec vérification d'autorisation stricte
+    // Initialisation Firebase (postesst / postes-26884)
     async function initFirebase(projectKey) {
       currentProjectKey = projectKey;
       log(`Initialisation du projet [${projectKey}]...`, "action");
 
-      if (unsubscribeAuth) unsubscribeAuth();
+      if (unsubscribeAuth) {
+        unsubscribeAuth();
+        unsubscribeAuth = null;
+      }
 
       statusBadge.className = "status-badge status-disconnected";
       statusText.textContent = "Connexion...";
@@ -745,6 +747,20 @@
         
         currentApp = activeApp || initializeApp(configs[projectKey], projectKey);
         db = getFirestore(currentApp);
+
+        // --- MODE ROULEMENT (postes-26884 / postes) : Accès direct sans authentification requise ---
+        if (projectKey === "postes-26884") {
+          statusBadge.className = "status-badge status-connected";
+          statusText.textContent = `Accès Direct: ${projectKey}`;
+          userEmailDisplay.textContent = "Mode Roulement";
+
+          log(`Accès direct à la base [${projectKey}] configuré (identique au fichier Roulement).`, "success");
+          closeLoginModal();
+          await scanCollection();
+          return;
+        }
+
+        // --- MODE POSTESST : Authentification stricte par courriel/mot de passe ---
         auth = getAuth(currentApp);
 
         unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
@@ -765,9 +781,9 @@
             userEmailDisplay.textContent = "Se connecter";
             
             if (user && user.email) {
-              log(`Accès refusé pour [${user.email}] : utilisateur non autorisé.`, "error");
+              log(`Accès refusé pour [${user.email}] sur ${projectKey} : utilisateur non autorisé.`, "error");
             } else {
-              log(`Connexion requise pour accéder à Firestore sur [${projectKey}].`, "warn");
+              log(`Connexion requise pour accéder à [${projectKey}].`, "warn");
             }
             openLoginModal();
           }
@@ -778,7 +794,7 @@
       }
     }
 
-    // Soumission du formulaire de connexion
+    // Connexion manuelle pour le projet postesst
     formConnexionModal.addEventListener('submit', async (e) => {
       e.preventDefault();
       loginErrorMsg.classList.add('hidden');
@@ -797,6 +813,11 @@
     });
 
     btnAuthToggle.addEventListener('click', async () => {
+      if (currentProjectKey === "postes-26884") {
+        log("Le projet postes-26884 est configuré en accès direct (mode Roulement).", "info");
+        return;
+      }
+
       if (currentUser) {
         await signOut(auth);
         log("Déconnexion effectuée.", "info");
@@ -852,16 +873,19 @@
     }
 
     async function scanCollection() {
-      if (!currentUser || !currentUser.email || !utilisateursAutorises.includes(currentUser.email.toLowerCase().trim())) {
-        log("Accès refusé : Veuillez vous connecter avec un compte autorisé.", "error");
-        openLoginModal();
-        return;
+      // Pour postesst, vérifier l'authentification
+      if (currentProjectKey === "postesst") {
+        if (!currentUser || !currentUser.email || !utilisateursAutorises.includes(currentUser.email.toLowerCase().trim())) {
+          log("Accès refusé pour postesst : Veuillez vous connecter avec un compte autorisé.", "error");
+          openLoginModal();
+          return;
+        }
       }
 
       const colName = getActiveCollectionName();
       const keyword = keywordInput.value.trim();
 
-      log(`Lecture de la collection '${colName}'...`, "action");
+      log(`Lecture de la collection '${colName}' sur [${currentProjectKey}]...`, "action");
       btnScan.disabled = true;
 
       try {
@@ -924,7 +948,7 @@
     }
 
     function openModal() {
-      if (!currentUser) return openLoginModal();
+      if (currentProjectKey === "postesst" && !currentUser) return openLoginModal();
 
       modalDocCount.textContent = `${targetDocs.length} fiche(s)`;
       modalProject.textContent = currentProjectKey;
@@ -941,10 +965,11 @@
 
     async function executeBatchDelete() {
       closeModal();
-      if (!currentUser || targetDocs.length === 0) return;
+      if (currentProjectKey === "postesst" && !currentUser) return openLoginModal();
+      if (targetDocs.length === 0) return;
 
       const colName = getActiveCollectionName();
-      log(`Suppression de ${targetDocs.length} fiche(s) dans '${colName}'...`, "action");
+      log(`Suppression de ${targetDocs.length} fiche(s) dans '${colName}' sur [${currentProjectKey}]...`, "action");
 
       btnDelete.disabled = true;
       btnScan.disabled = true;
@@ -972,11 +997,11 @@
     }
 
     async function createTestSeed() {
-      if (!currentUser) return openLoginModal();
+      if (currentProjectKey === "postesst" && !currentUser) return openLoginModal();
 
       const colName = getActiveCollectionName();
       btnCreateTest.disabled = true;
-      log(`Injection de fiches de test dans '${colName}'...`, "action");
+      log(`Injection de fiches de test dans '${colName}' sur [${currentProjectKey}]...`, "action");
 
       const seedDocs = [
         { titre: "Fiche Test 1", date: Timestamp.now(), notes: "Test aujourd'hui" },
@@ -1008,7 +1033,7 @@
       log("Console effacée.", "info");
     });
 
-    // Démarrage de l'application
+    // Démarrage initial de l'application
     initFirebase("postesst");
   </script>
 </body>
