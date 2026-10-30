@@ -166,8 +166,9 @@
 
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Saisie intervention</button>
-                    <button class="btn btn-outline-success btn-menu-egal text-light" onclick="document.getElementById('inputExcelFile').click()">📂 Importer Excel</button>
-                    <button class="btn btn-outline-danger btn-menu-egal text-light" onclick="ouvrirModalAnnulerImport()">↩️ Annuler import</button>
+                    <!-- Boutons réservés exclusivement à martin.lefebvre@canadapost.ca -->
+                    <button id="btnImportExcel" class="btn btn-outline-success btn-menu-egal text-light d-none" onclick="document.getElementById('inputExcelFile').click()">📂 Importer Excel</button>
+                    <button id="btnAnnulerImport" class="btn btn-outline-danger btn-menu-egal text-light d-none" onclick="ouvrirModalAnnulerImport()">🗑️ Supprimer fiches</button>
                     <button class="btn btn-warning btn-menu-egal text-dark" onclick="afficherRetards()">Retard</button>
                     <button class="btn btn-secondary btn-menu-egal text-light" onclick="afficherSuivisSemaine()">Semaine en cours</button>
                     <button class="btn btn-success btn-menu-egal" onclick="genererRapportOuverts()">Rapport Ouverts</button>
@@ -403,21 +404,29 @@
         </div>
     </div>
 
-    <!-- MODAL : ANNULER ET SUPPRIMER IMPORTATIONS (AVANCÉ) -->
+    <!-- MODAL : SUPPRESSION / ÉPURATION CONDITIONNELLE UNIVERSELLE -->
     <div class="modal fade" id="modalAnnulerImport" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light">↩️ Annuler / Supprimer des importations Excel</h5>
+                    <h5 class="modal-title text-light">🗑️ Suppression / Épuration ciblée d'interventions</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Section Filtres -->
                     <div class="card bg-dark border-secondary p-3 mb-3">
-                        <h6 class="text-info fw-bold mb-3">Filtres de recherche d'importation</h6>
+                        <h6 class="text-info fw-bold mb-3">Filtres de sélection des fiches à supprimer</h6>
                         <div class="row g-2">
                             <div class="col-md-3">
-                                <label class="form-label text-light small">Date d'importation :</label>
+                                <label class="form-label text-light small">Origine de la fiche :</label>
+                                <select class="form-select form-select-sm" id="sourceImportAAnnuler">
+                                    <option value="">-- Toutes les origines --</option>
+                                    <option value="import_excel">Importations Excel uniquement</option>
+                                    <option value="manuelle">Saisies manuelles uniquement</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-light small">Date (Intervention ou Import) :</label>
                                 <input type="date" class="form-control form-control-sm" id="dateImportAAnnuler">
                             </div>
                             <div class="col-md-3">
@@ -442,17 +451,17 @@
                                 <label class="form-label text-light small">Saisie Nom / ID :</label>
                                 <input type="text" class="form-control form-control-sm" id="employeAnnulerImport" placeholder="Ex: 12345 ou Tremblay">
                             </div>
-                            <div class="col-md-4 mt-2">
+                            <div class="col-md-3">
                                 <label class="form-label text-light small">Mot-clé / N° demande :</label>
                                 <input type="text" class="form-control form-control-sm" id="motCleImportAAnnuler" placeholder="Recherche dans la description...">
                             </div>
-                            <div class="col-md-4 mt-2">
+                            <div class="col-md-3">
                                 <label class="form-label text-light small">Superviseur :</label>
                                 <select class="form-select form-select-sm" id="superviseurImportAAnnuler">
                                     <option value="">-- Tous les superviseurs --</option>
                                 </select>
                             </div>
-                            <div class="col-md-4 mt-2 d-flex align-items-end gap-2">
+                            <div class="col-md-3 d-flex align-items-end gap-2">
                                 <button type="button" class="btn btn-info btn-sm w-100 fw-bold text-dark" onclick="rechercherImportsAAnnuler()">🔍 Rechercher / Prévisualiser</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="reinitialiserFiltresImport()">Réinitialiser</button>
                             </div>
@@ -474,7 +483,7 @@
                                 <thead class="table-dark sticky-top">
                                     <tr>
                                         <th style="width: 40px;" class="text-center">Sélec.</th>
-                                        <th>Date Import</th>
+                                        <th>Origine</th>
                                         <th>Date Interv.</th>
                                         <th>Employé</th>
                                         <th>ID</th>
@@ -617,10 +626,30 @@
         const appRoulement = initializeApp(firebaseConfigRoulement, "RoulementApp");
         const dbRoulement = getFirestore(appRoulement);
 
+        // COURRIEL AUTORISÉ POUR L'IMPORTATION ET LA SUPPRESSION
+        const EMAIL_AUTORISE_IMPORT = "martin.lefebvre@canadapost.ca";
+
         const SUPERVISORS = ["Pierre-Stéphane", "Martin", "Jonathan", "Dany", "Jean", "Yves"];
 
         let listeEmployesMemoire = [];
         let estModeChef = false;
+
+        // --- GESTION DES AUTORISATIONS DES BOUTONS D'IMPORT / SUPPRESSION ---
+        function verifierAutorisationsImport(email) {
+            const btnImport = document.getElementById('btnImportExcel');
+            const btnAnnuler = document.getElementById('btnAnnulerImport');
+
+            const estAutorise = email && email.trim().toLowerCase() === EMAIL_AUTORISE_IMPORT.toLowerCase();
+
+            if (btnImport) {
+                if (estAutorise) btnImport.classList.remove('d-none');
+                else btnImport.classList.add('d-none');
+            }
+            if (btnAnnuler) {
+                if (estAutorise) btnAnnuler.classList.remove('d-none');
+                else btnAnnuler.classList.add('d-none');
+            }
+        }
 
         // --- GESTION DES NOTIFICATIONS ET DIALOGUES SANS ALERT/CONFIRM ---
         window.afficherNotification = (message, type = 'info') => {
@@ -697,8 +726,10 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                verifierAutorisationsImport(user.email);
                 initialiserDonnees();
             } else {
+                verifierAutorisationsImport(null);
                 console.warn("Utilisateur non connecté ou session indisponible.");
                 if (window.location && window.location.protocol && window.location.protocol.startsWith('http') && window.location.origin !== 'null') {
                     afficherNotification("Veuillez vous connecter pour accéder au suivi des interventions.", "warning");
@@ -709,6 +740,7 @@
             }
         }, (error) => {
             console.error("Erreur Firebase Auth:", error);
+            verifierAutorisationsImport(null);
             initialiserDonnees();
         });
 
@@ -1104,7 +1136,8 @@
                 dateEcheance: dateEcheance,
                 superviseurEmail: document.getElementById('superviseur').value,
                 inspecteur: document.getElementById('inspecteur').value,
-                statut: statutDossier
+                statut: statutDossier,
+                source: "manuelle"
             };
 
             try {
@@ -2033,8 +2066,15 @@
             return new Date().toISOString().split('T')[0];
         }
 
-        // --- FONCTION D'IMPORTATION DES FICHIERS EXCEL ---
+        // --- FONCTION D'IMPORTATION DES FICHIERS EXCEL (Restreinte) ---
         window.importerFichierExcel = async (event) => {
+            const userEmail = auth.currentUser ? auth.currentUser.email : '';
+            if (userEmail.trim().toLowerCase() !== EMAIL_AUTORISE_IMPORT.toLowerCase()) {
+                afficherNotification("Accès refusé : Seul l'administrateur (" + EMAIL_AUTORISE_IMPORT + ") est autorisé à importer des fichiers.", "danger");
+                event.target.value = "";
+                return;
+            }
+
             const file = event.target.files[0];
             if (!file) return;
 
@@ -2067,13 +2107,11 @@
                     let compteIgnores = 0;
 
                     for (const row of rows) {
-                        // Fonction utilitaire de recherche de colonne très précise
                         const getValeurColonne = (regex) => {
                             const key = Object.keys(row).find(k => regex.test(k.trim().toLowerCase()));
                             return key ? String(row[key]).trim() : "";
                         };
 
-                        // Extraction ciblée des champs du fichier Excel
                         const numEmployeExcel = getValeurColonne(/numér|numé|numero|matri|id.*emp/i);
                         const nomEmployeExcel = getValeurColonne(/^nom|nom.*emp/i);
                         const nDemandeCat = getValeurColonne(/demande.*cat|cat/i);
@@ -2085,10 +2123,8 @@
 
                         const dateInterv = formaterDateExcel(dateEvenementRaw);
 
-                        // --- JUMELAGE AVEC LA LISTE DES EMPLOYÉS (Même principe que la saisie manuelle) ---
                         let empTrouve = null;
 
-                        // 1. Recherche par matricule / ID employé
                         if (numEmployeExcel) {
                             const numClean = String(numEmployeExcel).replace(/\.0$/, '').trim().toLowerCase();
                             empTrouve = listeEmployesMemoire.find(emp => {
@@ -2097,7 +2133,6 @@
                             });
                         }
 
-                        // 2. Recherche alternative par Nom / Prénom si l'ID n'a pas concordé
                         if (!empTrouve && nomEmployeExcel) {
                             const nomExcelNorm = nomEmployeExcel.toLowerCase().replace(/\s+/g, ' ').trim();
                             empTrouve = listeEmployesMemoire.find(emp => {
@@ -2107,7 +2142,6 @@
                             });
                         }
 
-                        // Détermination des valeurs finales jumelées
                         let idEmployeSaisi = "";
                         let nomEmp = "";
                         let ancienneteEmp = "Non spécifiée";
@@ -2123,14 +2157,12 @@
                             ancienneteEmp = 'Non spécifiée';
                         }
 
-                        // VÉRIFICATION D'UNICITÉ : Ignorer si une intervention SST existe déjà pour cet employé à cette date
                         const cleVerification = `${idEmployeSaisi.toLowerCase()}_${dateInterv}`;
                         if (interventionsSstExistantes.has(cleVerification)) {
                             compteIgnores++;
                             continue;
                         }
 
-                        // Préparation de la description et du numéro de demande
                         let descriptionFinale = nDemandeCat ? `N° de demande : ${nDemandeCat}` : (descriptionDetail || "Importé automatiquement depuis Excel");
                         if (nDemandeCat && descriptionDetail) {
                             descriptionFinale = `N° de demande : ${nDemandeCat} - ${descriptionDetail}`;
@@ -2138,7 +2170,6 @@
 
                         const graviteSst = (nDemandeCat !== "") ? "Majeur" : "Mineur";
 
-                        // Prochaine observation = Aucune (dossier fermé sans échéance)
                         const delaiJours = 0;
                         const dateEcheance = "";
                         const statutDossier = "Fermé";
@@ -2165,7 +2196,6 @@
 
                         await addDoc(collection(db, "interventions"), nouvelleIntervention);
                         
-                        // Mémoriser la clé pour éviter les doublons internes au même fichier
                         interventionsSstExistantes.add(cleVerification);
                         compteImportations++;
                     }
@@ -2188,18 +2218,20 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // --- GESTION DE LA SUPPRESSION CONDITIONNELLE AVANCÉE DES IMPORTATIONS ---
+        // --- GESTION DE LA SUPPRESSION CONDITIONNELLE UNIVERSELLE (Restreinte) ---
         window.ouvrirModalAnnulerImport = () => {
-            const inputDate = document.getElementById('dateImportAAnnuler');
-            if (inputDate) {
-                inputDate.value = new Date().toISOString().split('T')[0];
+            const userEmail = auth.currentUser ? auth.currentUser.email : '';
+            if (userEmail.trim().toLowerCase() !== EMAIL_AUTORISE_IMPORT.toLowerCase()) {
+                afficherNotification("Accès refusé : Seul l'administrateur (" + EMAIL_AUTORISE_IMPORT + ") est autorisé à accéder à cette fonction.", "danger");
+                return;
             }
             reinitialiserFiltresImport();
             new bootstrap.Modal(document.getElementById('modalAnnulerImport')).show();
         };
 
         window.reinitialiserFiltresImport = () => {
-            document.getElementById('dateImportAAnnuler').value = new Date().toISOString().split('T')[0];
+            document.getElementById('sourceImportAAnnuler').value = '';
+            document.getElementById('dateImportAAnnuler').value = '';
             document.getElementById('typeImportAAnnuler').value = '';
             document.getElementById('critereAnnulerImport').value = 'tous';
             document.getElementById('employeAnnulerImport').value = '';
@@ -2225,6 +2257,7 @@
         };
 
         window.rechercherImportsAAnnuler = async () => {
+            const sourceSelectionnee = document.getElementById('sourceImportAAnnuler').value;
             const dateSelectionnee = document.getElementById('dateImportAAnnuler').value;
             const typeSelectionne = document.getElementById('typeImportAAnnuler').value.trim().toLowerCase();
             const critereEmp = document.getElementById('critereAnnulerImport').value;
@@ -2233,12 +2266,7 @@
             const superviseurSelectionne = document.getElementById('superviseurImportAAnnuler').value.trim().toLowerCase();
 
             try {
-                let q = query(collection(db, "interventions"), where("source", "==", "import_excel"));
-                if (dateSelectionnee) {
-                    q = query(collection(db, "interventions"), where("source", "==", "import_excel"), where("dateImportation", "==", dateSelectionnee));
-                }
-
-                const querySnapshot = await getDocs(q);
+                const querySnapshot = await getDocs(collection(db, "interventions"));
                 let resultats = [];
 
                 querySnapshot.forEach((docSnap) => {
@@ -2250,6 +2278,19 @@
                     const typeInterv = (data.typeIntervention || '').trim().toLowerCase();
                     const sup = (data.superviseurEmail || '').trim().toLowerCase();
                     const desc = (data.description || '').trim().toLowerCase();
+
+                    if (sourceSelectionnee) {
+                        if (sourceSelectionnee === 'manuelle' && data.source === 'import_excel') match = false;
+                        if (sourceSelectionnee === 'import_excel' && data.source !== 'import_excel') match = false;
+                    }
+
+                    if (dateSelectionnee) {
+                        const dateInterv = data.date || '';
+                        const dateImp = data.dateImportation || '';
+                        if (dateInterv !== dateSelectionnee && dateImp !== dateSelectionnee) {
+                            match = false;
+                        }
+                    }
 
                     if (typeSelectionne && typeInterv !== typeSelectionne) {
                         match = false;
@@ -2291,7 +2332,7 @@
                 tbody.innerHTML = '';
 
                 if (resultats.length === 0) {
-                    afficherNotification("Aucune fiche importée ne correspond à vos filtres.", "warning");
+                    afficherNotification("Aucune fiche ne correspond à vos filtres.", "warning");
                     document.getElementById('zonePrevisualisationImport').classList.add('d-none');
                     document.getElementById('btnConfirmerSuppressionImport').disabled = true;
                     document.getElementById('btnConfirmerSuppressionImport').textContent = '🗑️ Supprimer les fiches sélectionnées (0)';
@@ -2299,16 +2340,21 @@
                 }
 
                 resultats.forEach(item => {
+                    const isExcel = item.source === 'import_excel';
+                    const badgeOrigine = isExcel 
+                        ? `<span class="badge bg-success">Excel</span>` 
+                        : `<span class="badge bg-info text-dark">Manuel</span>`;
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="text-center">
                             <input class="form-check-input check-fiche-import" type="checkbox" value="${item.idDoc}" checked onchange="mettreAJourCompteurSuppression()">
                         </td>
-                        <td><small>${item.dateImportation || 'N/A'}</small></td>
+                        <td>${badgeOrigine}</td>
                         <td><small>${item.date || 'N/A'}</small></td>
                         <td><strong>${item.nom || 'Inconnu'}</strong></td>
                         <td><code>${item.idEmploye || 'N/A'}</code></td>
-                        <td><span class="badge bg-secondary">${item.typeIntervention || 'SST'}</span></td>
+                        <td><span class="badge bg-secondary">${item.typeIntervention || 'N/A'}</span></td>
                         <td><small>${(item.description || '').substring(0, 45)}${(item.description || '').length > 45 ? '...' : ''}</small></td>
                         <td><small>${item.superviseurEmail || 'N/A'}</small></td>
                     `;
@@ -2321,7 +2367,7 @@
 
             } catch (e) {
                 console.error("Erreur lors de la recherche des fiches à supprimer :", e);
-                afficherNotification("Erreur lors de la recherche des fiches d'importation.", "danger");
+                afficherNotification("Erreur lors de la recherche des fiches.", "danger");
             }
         };
 
@@ -2349,6 +2395,12 @@
         };
 
         window.confirmerSuppressionImportSelection = async () => {
+            const userEmail = auth.currentUser ? auth.currentUser.email : '';
+            if (userEmail.trim().toLowerCase() !== EMAIL_AUTORISE_IMPORT.toLowerCase()) {
+                afficherNotification("Accès refusé : Action réservée à l'administrateur.", "danger");
+                return;
+            }
+
             const casesCochees = Array.from(document.querySelectorAll('.check-fiche-import:checked')).map(cb => cb.value);
 
             if (casesCochees.length === 0) {
@@ -2359,18 +2411,18 @@
             const modalEl = document.getElementById('modalAnnulerImport');
             const bsModal = bootstrap.Modal.getInstance(modalEl);
 
-            demanderConfirmation(`Voulez-vous vraiment supprimer définitivement ${casesCochees.length} fiche(s) d'importation sélectionnée(s) ?`, async () => {
+            demanderConfirmation(`Voulez-vous vraiment supprimer définitivement ${casesCochees.length} fiche(s) sélectionnée(s) ?`, async () => {
                 try {
                     if (bsModal) bsModal.hide();
 
                     const promesses = casesCochees.map(idDoc => deleteDoc(doc(db, "interventions", idDoc)));
                     await Promise.all(promesses);
 
-                    afficherNotification(`Succès : ${casesCochees.length} fiche(s) d'importation supprimée(s) avec succès.`, "success");
+                    afficherNotification(`Succès : ${casesCochees.length} fiche(s) supprimée(s) avec succès.`, "success");
                     chargerStatistiques();
                 } catch (e) {
                     console.error("Erreur lors de la suppression des fiches :", e);
-                    afficherNotification("Erreur lors de la suppression des fiches d'importation.", "danger");
+                    afficherNotification("Erreur lors de la suppression des fiches.", "danger");
                 }
             });
         };
