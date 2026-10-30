@@ -160,7 +160,7 @@
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button class="btn btn-primary btn-menu-egal" onclick="afficherPageSaisie()">Saisie intervention</button>
                     <button class="btn btn-outline-success btn-menu-egal text-light" onclick="document.getElementById('inputExcelFile').click()">📂 Importer Excel</button>
-                    <button class="btn btn-outline-danger btn-menu-egal text-light" onclick="annulerImportationAujourdhui()">↩️ Annuler import du jour</button>
+                    <button class="btn btn-outline-danger btn-menu-egal text-light" onclick="ouvrirModalAnnulerImport()">↩️ Annuler import</button>
                     <button class="btn btn-warning btn-menu-egal text-dark" onclick="afficherRetards()">Retard</button>
                     <button class="btn btn-secondary btn-menu-egal text-light" onclick="afficherSuivisSemaine()">Semaine en cours</button>
                     <button class="btn btn-success btn-menu-egal" onclick="genererRapportOuverts()">Rapport Ouverts</button>
@@ -391,6 +391,25 @@
                         <input type="text" class="form-control" id="critereRecherche" placeholder="Entrez le nom ou l'ID">
                     </div>
                     <button type="button" class="btn btn-info w-100 text-dark fw-bold" onclick="executerRecherche()">Rechercher</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL : ANNULER IMPORT PAR DATE -->
+    <div class="modal fade" id="modalAnnulerImport" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">Annuler une importation Excel</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-light">Sélectionner la date d'importation à annuler :</label>
+                        <input type="date" class="form-control" id="dateImportAAnnuler">
+                    </div>
+                    <button type="button" class="btn btn-danger w-100 fw-bold" onclick="confirmerAnnulationImportParDate()">Supprimer les imports de cette date</button>
                 </div>
             </div>
         </div>
@@ -2075,22 +2094,38 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // --- FONCTION D'ANNULATION DES IMPORTATIONS DU JOUR ---
-        window.annulerImportationAujourdhui = async () => {
-            const aujourdHui = new Date().toISOString().split('T')[0];
-            
-            demanderConfirmation(`Voulez-vous vraiment annuler et supprimer toutes les interventions importées via Excel aujourd'hui (${aujourdHui}) ?`, async () => {
+        // --- FONCTION D'ANNULATION DES IMPORTATIONS PAR DATE SÉLECTIONNÉE ---
+        window.ouvrirModalAnnulerImport = () => {
+            const inputDate = document.getElementById('dateImportAAnnuler');
+            if (inputDate) {
+                inputDate.value = new Date().toISOString().split('T')[0];
+            }
+            new bootstrap.Modal(document.getElementById('modalAnnulerImport')).show();
+        };
+
+        window.confirmerAnnulationImportParDate = async () => {
+            const dateSelectionnee = document.getElementById('dateImportAAnnuler').value;
+            if (!dateSelectionnee) {
+                afficherNotification("Veuillez sélectionner une date d'importation.", "warning");
+                return;
+            }
+
+            const modalEl = document.getElementById('modalAnnulerImport');
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+
+            demanderConfirmation(`Voulez-vous vraiment annuler et supprimer toutes les interventions importées via Excel pour la date du ${dateSelectionnee} ?`, async () => {
                 try {
                     const q = query(
                         collection(db, "interventions"),
                         where("source", "==", "import_excel"),
-                        where("dateImportation", "==", aujourdHui)
+                        where("dateImportation", "==", dateSelectionnee)
                     );
                     
                     const querySnapshot = await getDocs(q);
                     
                     if (querySnapshot.empty) {
-                        afficherNotification("Aucune intervention importée aujourd'hui n'a été trouvée.", "warning");
+                        afficherNotification(`Aucune intervention importée le ${dateSelectionnee} n'a été trouvée.`, "warning");
                         return;
                     }
 
@@ -2104,7 +2139,7 @@
 
                     await Promise.all(promessesSuppression);
 
-                    afficherNotification(`Annulation réussie : ${compteSuppressions} intervention(s) importée(s) aujourd'hui ont été supprimées.`, "success");
+                    afficherNotification(`Annulation réussie : ${compteSuppressions} intervention(s) importée(s) le ${dateSelectionnee} ont été supprimées.`, "success");
                     chargerStatistiques();
                 } catch (erreur) {
                     console.error("Erreur lors de l'annulation de l'importation :", erreur);
