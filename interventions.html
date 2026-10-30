@@ -50,6 +50,13 @@
             font-size: 0.95rem;
             font-weight: 600;
         }
+        .style-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .style-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #415a77;
+            border-radius: 4px;
+        }
 
         @media print {
             @page { size: landscape; margin: 1cm; }
@@ -396,35 +403,95 @@
         </div>
     </div>
 
-    <!-- MODAL : ANNULER ET SUPPRIMER IMPORTATIONS -->
+    <!-- MODAL : ANNULER ET SUPPRIMER IMPORTATIONS (AVANCÉ) -->
     <div class="modal fade" id="modalAnnulerImport" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light">Annuler / Supprimer des importations</h5>
+                    <h5 class="modal-title text-light">↩️ Annuler / Supprimer des importations Excel</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-light">Date d'importation (laisser vide pour toutes les dates) :</label>
-                        <input type="date" class="form-control" id="dateImportAAnnuler">
+                    <!-- Section Filtres -->
+                    <div class="card bg-dark border-secondary p-3 mb-3">
+                        <h6 class="text-info fw-bold mb-3">Filtres de recherche d'importation</h6>
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label text-light small">Date d'importation :</label>
+                                <input type="date" class="form-control form-control-sm" id="dateImportAAnnuler">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-light small">Type d'intervention :</label>
+                                <select class="form-select form-select-sm" id="typeImportAAnnuler">
+                                    <option value="">-- Tous les types --</option>
+                                    <option value="SST">SST</option>
+                                    <option value="Observation">Observation</option>
+                                    <option value="Coaching">Coaching</option>
+                                    <option value="Formation">Formation</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-light small">Critère d'employé :</label>
+                                <select class="form-select form-select-sm" id="critereAnnulerImport" onchange="gererAffichageCritereImport()">
+                                    <option value="tous">Tous les employés</option>
+                                    <option value="employe_specifique">Nom ou ID contient...</option>
+                                    <option value="fiches_identiques">Nom et ID sont identiques</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-none" id="blocEmployeAnnulerImport">
+                                <label class="form-label text-light small">Saisie Nom / ID :</label>
+                                <input type="text" class="form-control form-control-sm" id="employeAnnulerImport" placeholder="Ex: 12345 ou Tremblay">
+                            </div>
+                            <div class="col-md-4 mt-2">
+                                <label class="form-label text-light small">Mot-clé / N° demande :</label>
+                                <input type="text" class="form-control form-control-sm" id="motCleImportAAnnuler" placeholder="Recherche dans la description...">
+                            </div>
+                            <div class="col-md-4 mt-2">
+                                <label class="form-label text-light small">Superviseur :</label>
+                                <select class="form-select form-select-sm" id="superviseurImportAAnnuler">
+                                    <option value="">-- Tous les superviseurs --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mt-2 d-flex align-items-end gap-2">
+                                <button type="button" class="btn btn-info btn-sm w-100 fw-bold text-dark" onclick="rechercherImportsAAnnuler()">🔍 Rechercher / Prévisualiser</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="reinitialiserFiltresImport()">Réinitialiser</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-light">Critère de suppression :</label>
-                        <select class="form-select" id="critereAnnulerImport" onchange="gererAffichageCritereImport()">
-                            <option value="tous_date">Toutes les fiches importées à cette date</option>
-                            <option value="employe_specifique">Filtrer par Nom ou ID d'employé</option>
-                            <option value="fiches_identiques">Fiches où le Nom et l'ID correspondent exactement</option>
-                        </select>
-                    </div>
+                    <!-- Zone de Prévisualisation et Sélection -->
+                    <div id="zonePrevisualisationImport" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-primary fs-6" id="compteurFichesTrouvees">0 fiche(s) trouvée(s)</span>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" id="checkToutSelectionnerImport" onchange="toutCocherDecocherImport(this)" checked>
+                                <label class="form-check-label text-light small fw-bold" for="checkToutSelectionnerImport">Tout sélectionner / décocher</label>
+                            </div>
+                        </div>
 
-                    <div class="mb-3 d-none" id="blocEmployeAnnulerImport">
-                        <label class="form-label text-light">Nom ou ID de l'employé :</label>
-                        <input type="text" class="form-control" id="employeAnnulerImport" placeholder="Entrez le nom ou l'ID">
+                        <div class="table-responsive style-scrollbar" style="max-height: 320px; overflow-y: auto;">
+                            <table class="table table-sm table-striped table-bordered text-light align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th style="width: 40px;" class="text-center">Sélec.</th>
+                                        <th>Date Import</th>
+                                        <th>Date Interv.</th>
+                                        <th>Employé</th>
+                                        <th>ID</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th>Superviseur</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyPrevisualisationImport">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-
-                    <button type="button" class="btn btn-danger w-100 fw-bold" onclick="confirmerAnnulationImportParDate()">Supprimer les fiches correspondantes</button>
+                </div>
+                <div class="modal-footer border-secondary justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn btn-danger fw-bold" id="btnConfirmerSuppressionImport" onclick="confirmerSuppressionImportSelection()" disabled>🗑️ Supprimer les fiches sélectionnées (0)</button>
                 </div>
             </div>
         </div>
@@ -917,10 +984,15 @@
         window.chargerSuperviseurs = async () => {
             const selectSup = document.getElementById('superviseur');
             const selectInsp = document.getElementById('inspecteur');
+            const selectSupImport = document.getElementById('superviseurImportAAnnuler');
+
             try {
                 const querySnapshot = await getDocs(collection(db, "superviseurs"));
                 selectSup.innerHTML = '<option value="">-- Choisir un superviseur --</option>';
                 selectInsp.innerHTML = '<option value="">-- Choisir un inspecteur --</option>';
+                if (selectSupImport) {
+                    selectSupImport.innerHTML = '<option value="">-- Tous les superviseurs --</option>';
+                }
                 
                 querySnapshot.forEach((doc) => {
                     let sup = doc.data();
@@ -936,6 +1008,13 @@
                     optionInsp.value = nomSup; 
                     optionInsp.textContent = nomSup;
                     selectInsp.appendChild(optionInsp);
+
+                    if (selectSupImport) {
+                        let optionImp = document.createElement('option');
+                        optionImp.value = courrielSup || nomSup;
+                        optionImp.textContent = `${nomSup} ${courrielSup ? '(' + courrielSup + ')' : ''}`;
+                        selectSupImport.appendChild(optionImp);
+                    }
                 });
             } catch (e) {
                 console.error("Erreur chargement superviseurs/inspecteurs: ", e);
@@ -2109,16 +2188,30 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // --- GESTION DE LA SUPPRESSION CONDITIONNELLE DES IMPORTATIONS ---
+        // --- GESTION DE LA SUPPRESSION CONDITIONNELLE AVANCÉE DES IMPORTATIONS ---
         window.ouvrirModalAnnulerImport = () => {
             const inputDate = document.getElementById('dateImportAAnnuler');
             if (inputDate) {
                 inputDate.value = new Date().toISOString().split('T')[0];
             }
-            document.getElementById('critereAnnulerImport').value = 'tous_date';
-            document.getElementById('employeAnnulerImport').value = '';
-            gererAffichageCritereImport();
+            reinitialiserFiltresImport();
             new bootstrap.Modal(document.getElementById('modalAnnulerImport')).show();
+        };
+
+        window.reinitialiserFiltresImport = () => {
+            document.getElementById('dateImportAAnnuler').value = new Date().toISOString().split('T')[0];
+            document.getElementById('typeImportAAnnuler').value = '';
+            document.getElementById('critereAnnulerImport').value = 'tous';
+            document.getElementById('employeAnnulerImport').value = '';
+            document.getElementById('motCleImportAAnnuler').value = '';
+            document.getElementById('superviseurImportAAnnuler').value = '';
+            
+            gererAffichageCritereImport();
+            
+            document.getElementById('zonePrevisualisationImport').classList.add('d-none');
+            document.getElementById('tbodyPrevisualisationImport').innerHTML = '';
+            document.getElementById('btnConfirmerSuppressionImport').disabled = true;
+            document.getElementById('btnConfirmerSuppressionImport').textContent = '🗑️ Supprimer les fiches sélectionnées (0)';
         };
 
         window.gererAffichageCritereImport = () => {
@@ -2131,94 +2224,153 @@
             }
         };
 
-        window.confirmerAnnulationImportParDate = async () => {
+        window.rechercherImportsAAnnuler = async () => {
             const dateSelectionnee = document.getElementById('dateImportAAnnuler').value;
-            const critere = document.getElementById('critereAnnulerImport').value;
-            const termeEmploye = document.getElementById('employeAnnulerImport').value.trim().toLowerCase();
+            const typeSelectionne = document.getElementById('typeImportAAnnuler').value.trim().toLowerCase();
+            const critereEmp = document.getElementById('critereAnnulerImport').value;
+            const termeEmp = document.getElementById('employeAnnulerImport').value.trim().toLowerCase();
+            const motCle = document.getElementById('motCleImportAAnnuler').value.trim().toLowerCase();
+            const superviseurSelectionne = document.getElementById('superviseurImportAAnnuler').value.trim().toLowerCase();
 
-            if ((critere === 'employe_specifique' || critere === 'fiches_identiques') && !termeEmploye) {
-                afficherNotification("Veuillez entrer un nom ou un ID d'employé pour ce critère.", "warning");
+            try {
+                let q = query(collection(db, "interventions"), where("source", "==", "import_excel"));
+                if (dateSelectionnee) {
+                    q = query(collection(db, "interventions"), where("source", "==", "import_excel"), where("dateImportation", "==", dateSelectionnee));
+                }
+
+                const querySnapshot = await getDocs(q);
+                let resultats = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    let match = true;
+
+                    const nomEmp = (data.nom || '').trim().toLowerCase();
+                    const idEmp = String(data.idEmploye || '').trim().toLowerCase();
+                    const typeInterv = (data.typeIntervention || '').trim().toLowerCase();
+                    const sup = (data.superviseurEmail || '').trim().toLowerCase();
+                    const desc = (data.description || '').trim().toLowerCase();
+
+                    if (typeSelectionne && typeInterv !== typeSelectionne) {
+                        match = false;
+                    }
+
+                    if (superviseurSelectionne && !sup.includes(superviseurSelectionne)) {
+                        match = false;
+                    }
+
+                    if (motCle && !desc.includes(motCle)) {
+                        match = false;
+                    }
+
+                    if (critereEmp === 'employe_specifique') {
+                        if (termeEmp && !nomEmp.includes(termeEmp) && !idEmp.includes(termeEmp)) {
+                            match = false;
+                        }
+                    } else if (critereEmp === 'fiches_identiques') {
+                        if (termeEmp) {
+                            if (nomEmp !== termeEmp || idEmp !== termeEmp) {
+                                if (!nomEmp.includes(termeEmp) || !idEmp.includes(termeEmp)) match = false;
+                            }
+                        } else {
+                            if (nomEmp !== idEmp && nomEmp !== `employé id ${idEmp}`) {
+                                match = false;
+                            }
+                        }
+                    }
+
+                    if (match) {
+                        resultats.push({
+                            idDoc: docSnap.id,
+                            ...data
+                        });
+                    }
+                });
+
+                const tbody = document.getElementById('tbodyPrevisualisationImport');
+                tbody.innerHTML = '';
+
+                if (resultats.length === 0) {
+                    afficherNotification("Aucune fiche importée ne correspond à vos filtres.", "warning");
+                    document.getElementById('zonePrevisualisationImport').classList.add('d-none');
+                    document.getElementById('btnConfirmerSuppressionImport').disabled = true;
+                    document.getElementById('btnConfirmerSuppressionImport').textContent = '🗑️ Supprimer les fiches sélectionnées (0)';
+                    return;
+                }
+
+                resultats.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-center">
+                            <input class="form-check-input check-fiche-import" type="checkbox" value="${item.idDoc}" checked onchange="mettreAJourCompteurSuppression()">
+                        </td>
+                        <td><small>${item.dateImportation || 'N/A'}</small></td>
+                        <td><small>${item.date || 'N/A'}</small></td>
+                        <td><strong>${item.nom || 'Inconnu'}</strong></td>
+                        <td><code>${item.idEmploye || 'N/A'}</code></td>
+                        <td><span class="badge bg-secondary">${item.typeIntervention || 'SST'}</span></td>
+                        <td><small>${(item.description || '').substring(0, 45)}${(item.description || '').length > 45 ? '...' : ''}</small></td>
+                        <td><small>${item.superviseurEmail || 'N/A'}</small></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('zonePrevisualisationImport').classList.remove('d-none');
+                document.getElementById('checkToutSelectionnerImport').checked = true;
+                mettreAJourCompteurSuppression();
+
+            } catch (e) {
+                console.error("Erreur lors de la recherche des fiches à supprimer :", e);
+                afficherNotification("Erreur lors de la recherche des fiches d'importation.", "danger");
+            }
+        };
+
+        window.toutCocherDecocherImport = (masterCheckbox) => {
+            const checkboxes = document.querySelectorAll('.check-fiche-import');
+            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+            mettreAJourCompteurSuppression();
+        };
+
+        window.mettreAJourCompteurSuppression = () => {
+            const cocher = document.querySelectorAll('.check-fiche-import:checked').length;
+            const total = document.querySelectorAll('.check-fiche-import').length;
+
+            const btn = document.getElementById('btnConfirmerSuppressionImport');
+            const compteurBadge = document.getElementById('compteurFichesTrouvees');
+
+            compteurBadge.textContent = `${cocher} / ${total} fiche(s) sélectionnée(s)`;
+            btn.textContent = `🗑️ Supprimer les fiches sélectionnées (${cocher})`;
+
+            if (cocher > 0) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        };
+
+        window.confirmerSuppressionImportSelection = async () => {
+            const casesCochees = Array.from(document.querySelectorAll('.check-fiche-import:checked')).map(cb => cb.value);
+
+            if (casesCochees.length === 0) {
+                afficherNotification("Veuillez sélectionner au moins une fiche à supprimer.", "warning");
                 return;
             }
 
             const modalEl = document.getElementById('modalAnnulerImport');
             const bsModal = bootstrap.Modal.getInstance(modalEl);
-            if (bsModal) bsModal.hide();
 
-            let messageConfirm = "Voulez-vous vraiment supprimer ";
-            if (critere === 'tous_date') {
-                messageConfirm += `toutes les fiches importées pour la date du ${dateSelectionnee || 'toutes dates'} ?`;
-            } else if (critere === 'employe_specifique') {
-                messageConfirm += `les fiches importées correspondant à "${termeEmploye}" ${dateSelectionnee ? 'pour le ' + dateSelectionnee : ''} ?`;
-            } else if (critere === 'fiches_identiques') {
-                messageConfirm += `les fiches importées où le Nom et l'ID correspondent exactement à "${termeEmploye}" ?`;
-            }
-
-            demanderConfirmation(messageConfirm, async () => {
+            demanderConfirmation(`Voulez-vous vraiment supprimer définitivement ${casesCochees.length} fiche(s) d'importation sélectionnée(s) ?`, async () => {
                 try {
-                    let q;
-                    if (dateSelectionnee) {
-                        q = query(
-                            collection(db, "interventions"),
-                            where("source", "==", "import_excel"),
-                            where("dateImportation", "==", dateSelectionnee)
-                        );
-                    } else {
-                        q = query(
-                            collection(db, "interventions"),
-                            where("source", "==", "import_excel")
-                        );
-                    }
-                    
-                    const querySnapshot = await getDocs(q);
-                    
-                    if (querySnapshot.empty) {
-                        afficherNotification(`Aucune intervention importée trouvée pour ces critères.`, "warning");
-                        return;
-                    }
+                    if (bsModal) bsModal.hide();
 
-                    let compteSuppressions = 0;
-                    const promessesSuppression = [];
-                    
-                    querySnapshot.forEach((docSnap) => {
-                        const data = docSnap.data();
-                        let aSupprimer = false;
+                    const promesses = casesCochees.map(idDoc => deleteDoc(doc(db, "interventions", idDoc)));
+                    await Promise.all(promesses);
 
-                        const nomEmp = (data.nom || '').trim().toLowerCase();
-                        const idEmp = String(data.idEmploye || '').trim().toLowerCase();
-
-                        if (critere === 'tous_date') {
-                            aSupprimer = true;
-                        } else if (critere === 'employe_specifique') {
-                            if (nomEmp.includes(termeEmploye) || idEmp.includes(termeEmploye)) {
-                                aSupprimer = true;
-                            }
-                        } else if (critere === 'fiches_identiques') {
-                            if (nomEmp === termeEmploye && idEmp === termeEmploye) {
-                                aSupprimer = true;
-                            } else if (nomEmp === termeEmploye || idEmp === termeEmploye) {
-                                aSupprimer = true;
-                            }
-                        }
-
-                        if (aSupprimer) {
-                            promessesSuppression.push(deleteDoc(doc(db, "interventions", docSnap.id)));
-                            compteSuppressions++;
-                        }
-                    });
-
-                    if (compteSuppressions === 0) {
-                        afficherNotification(`Aucune fiche ne correspond aux critères spécifiés.`, "warning");
-                        return;
-                    }
-
-                    await Promise.all(promessesSuppression);
-
-                    afficherNotification(`Annulation réussie : ${compteSuppressions} intervention(s) importée(s) supprimée(s).`, "success");
+                    afficherNotification(`Succès : ${casesCochees.length} fiche(s) d'importation supprimée(s) avec succès.`, "success");
                     chargerStatistiques();
-                } catch (erreur) {
-                    console.error("Erreur lors de l'annulation de l'importation :", erreur);
-                    afficherNotification("Erreur lors de la suppression des interventions importées.", "danger");
+                } catch (e) {
+                    console.error("Erreur lors de la suppression des fiches :", e);
+                    afficherNotification("Erreur lors de la suppression des fiches d'importation.", "danger");
                 }
             });
         };
