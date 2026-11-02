@@ -89,6 +89,9 @@
                     <button onclick="rechercherHistoriqueGlobal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-lg shadow transition text-base">
                         Lancer la recherche
                     </button>
+                    <button onclick="genererRapportTendance()" class="w-full mt-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3.5 rounded-lg shadow transition text-base">
+    📈 Rapport tendance (30 jours)
+</button>
                 </div>
             </section>
         </div>
@@ -113,6 +116,33 @@
                 </table>
             </div>
         </div>
+        <div id="tendanceSection" class="hidden bg-luxuryCard border border-amber-600/50 rounded-xl shadow-xl p-6 mb-8">
+    <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+        <h2 class="text-lg font-semibold text-amber-400">
+            Rapport de tendance - Routes sans camion (30 jours)
+        </h2>
+
+        <button onclick="document.getElementById('tendanceSection').classList.add('hidden')"
+            class="text-gray-400 hover:text-white text-sm font-bold">
+            Fermer ×
+        </button>
+    </div>
+
+    <div class="overflow-x-auto max-h-[600px] rounded-lg border border-gray-700">
+        <table class="min-w-full divide-y divide-gray-700 text-sm">
+            <thead class="bg-luxuryBlack sticky top-0">
+                <tr>
+                    <th class="px-6 py-3 text-left">Rang</th>
+                    <th class="px-6 py-3 text-left">Route</th>
+                    <th class="px-6 py-3 text-left">Jours sans camion</th>
+                    <th class="px-6 py-3 text-left">% du temps</th>
+                </tr>
+            </thead>
+
+            <tbody id="tbodyTendance"></tbody>
+        </table>
+    </div>
+</div>
 
         <!-- Section Résultats des Rapports Actuels -->
         <div id="resultsSection" class="hidden space-y-8">
@@ -607,6 +637,137 @@
                 alert("Erreur lors du chargement du rapport.");
             }
         }
+        window.genererRapportTendance = async function () {
+
+    const tbody = document.getElementById('tbodyTendance');
+
+    tbody.innerHTML =
+        `<tr>
+            <td colspan="4" class="px-6 py-4 text-center text-gray-400">
+                Analyse des 30 derniers jours...
+            </td>
+        </tr>`;
+
+    document.getElementById('tendanceSection').classList.remove('hidden');
+
+    try {
+
+        const q = query(
+            collection(db, "asscamion"),
+            orderBy("timestamp", "desc")
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        const dateLimite = new Date();
+        dateLimite.setDate(dateLimite.getDate() - 30);
+
+        const compteurRoutes = {};
+        const joursDistincts = new Set();
+
+        querySnapshot.forEach(docSnap => {
+
+            const data = docSnap.data();
+
+            if (!data.timestamp || !data.timestamp.toDate) return;
+
+            const dateRapport = data.timestamp.toDate();
+
+            if (dateRapport < dateLimite) return;
+
+            const dateCle =
+                dateRapport.getFullYear() + '-' +
+                String(dateRapport.getMonth() + 1).padStart(2, '0') + '-' +
+                String(dateRapport.getDate()).padStart(2, '0');
+
+            joursDistincts.add(dateCle);
+
+            if (!Array.isArray(data.rapport2)) return;
+
+            data.rapport2.forEach(route => {
+
+                route = String(route).trim();
+
+                if (!compteurRoutes[route]) {
+                    compteurRoutes[route] = 0;
+                }
+
+                compteurRoutes[route]++;
+            });
+        });
+
+        const nbJoursAnalyses = joursDistincts.size || 1;
+
+        const classement = Object.entries(compteurRoutes)
+            .map(([route, jours]) => ({
+                route,
+                jours,
+                pourcentage:
+                    ((jours / nbJoursAnalyses) * 100).toFixed(1)
+            }))
+            .sort((a, b) => b.jours - a.jours);
+
+        if (classement.length === 0) {
+
+            tbody.innerHTML =
+                `<tr>
+                    <td colspan="4"
+                        class="px-6 py-4 text-center text-gray-400">
+                        Aucun historique disponible.
+                    </td>
+                </tr>`;
+
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        classement.forEach((item, index) => {
+
+            let couleur = 'text-beigeSoft';
+
+            if (item.jours >= 20) {
+                couleur = 'text-red-400 font-bold';
+            }
+            else if (item.jours >= 10) {
+                couleur = 'text-amber-400 font-semibold';
+            }
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-luxuryBlack/50">
+                    <td class="px-6 py-3">
+                        ${index + 1}
+                    </td>
+
+                    <td class="px-6 py-3 ${couleur}">
+                        ${item.route}
+                    </td>
+
+                    <td class="px-6 py-3 ${couleur}">
+                        ${item.jours}
+                    </td>
+
+                    <td class="px-6 py-3">
+                        ${item.pourcentage}%
+                    </td>
+                </tr>
+            `;
+        });
+
+    }
+    catch (e) {
+
+        console.error(e);
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="4"
+                    class="px-6 py-4 text-center text-red-400">
+                    Erreur lors de l'analyse.
+                </td>
+            </tr>`;
+    }
+};
     </script>
 </body>
 </html>
