@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feuille de Saisie avec Benchmark 8h - Postes Canada</title>
+    <!-- PDF.js pour le découpage des fichiers PDF multi-pages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <style>
         :root {
             --primary: #1e3a8a;
@@ -428,7 +433,7 @@
             try {
                 await Promise.race([
                     chargerEmployes(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Firebase")), 5000))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Firebase")), 15000))
                 ]);
             } catch (err) {
                 console.warn("Délai de connexion Firebase dépassé ou hors ligne. Utilisation du mode local.", err);
@@ -1049,6 +1054,7 @@
             const tbody = document.getElementById('surveillerTableBody');
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Analyse des données et historique...</td></tr>`;
 
+            // Récupérer l'ensemble des données de Firebase pour l'analyse sur 7 jours
             let allEntriesForCheck = [...entries];
             try {
                 const querySnapshot = await getDocs(collection(db, "bench"));
@@ -1063,23 +1069,28 @@
                 console.warn("Impossible de récupérer l'historique complet Firebase, utilisation des données locales.", err);
             }
 
+            // Calculer pour chaque employé les occurrences de 15.08 sur les 7 derniers jours par rapport à la date de chaque saisie
             const alerts = [];
 
             allEntriesForCheck.forEach((item, index) => {
                 let reasons = [];
                 
+                // 1. Plus de 1.5 en 15.08 sur une saisie
                 if ((item.heure1508 || 0) > 1.5) {
                     reasons.push(`15.08 > 1.5h (${item.heure1508.toFixed(2)}h)`);
                 }
 
+                // 2. Dépassement Benchmark
                 if ((item.totalHeures || 0) > (item.benchmark || 8.0)) {
                     reasons.push(`Dépassement Benchmark (${item.totalHeures.toFixed(2)}h vs ${item.benchmark.toFixed(2)}h)`);
                 }
 
+                // 3. Volume exceptionnel combiné > 2h
                 if (((item.heure1704 || 0) + (item.heure1508 || 0) + (item.heureBz || 0)) > 2.0) {
                     reasons.push(`Volume exceptionnel > 2h`);
                 }
 
+                // 4. Heures de 15.08 à 2 reprises ou plus dans les 7 derniers jours pour le même employé
                 if (item.nom && item.date && (item.heure1508 || 0) > 0) {
                     const currentDate = new Date(item.date);
                     const pastDate = new Date(currentDate);
@@ -1101,6 +1112,7 @@
                 }
 
                 if (reasons.length > 0) {
+                    // Éviter les doublons si déjà présent pour la même entrée
                     if (!alerts.some(a => a.item === item)) {
                         alerts.push({ item, index, reasons: [...new Set(reasons)].join(', ') });
                     }
@@ -1132,7 +1144,306 @@
             });
         }
 
-        window.exportData = function() {
+        // Pré-charger la clé API si elle a déjà été enregistrée dans le navigateur
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('cams_gemini_key');
+            const keyInput = document.getElementById('geminiApiKeyInput');
+            if (savedKey && keyInput) keyInput.value = savedKey;
+        });
+
+        async function renderPdfPageToBase64(pdfDoc, pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            return dataUrl.split(',')[1];
+        }
+
+        function imageFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = err => reject(err);
+            });
+        }
+
+        async function analyserUnePageBase64(base64Jpeg, apiKey, numeroPage) {
+            const prompt = `
+                Tu analyses une feuille de temps manuscrite de Postes Canada (page ${numeroPage}).
+                1. Regarde la case EN HAUT À DROITE de la feuille : extrais les heures inscrites pour "15.08" et pour "BZ" (et "17.04" si présent). Convertis les minutes éventuelles en décimales (ex: 1h30 = 1.5, 45min = 0.75). S'il n'y a rien, mets 0.
+                2. Trouve le numéro de route (ex: "12", "216", "Ach1").
+                3. Trouve l'identifiant (ID) de l'employé et/ou son nom.
+                Réponds UNIQUEMENT en JSON valide avec cette structure exacte :
+                {
+                    "route": "",
+                    "id": "",
+                    "nom": "",
+                    "heure1704": 0,
+                    "heure1508": 0,
+                    "heureBz": 0
+                }
+            `;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inline_data: { mime_type: "image/jpeg", data: base64Jpeg } }
+                        ]
+                    }],
+                    generationConfig: {
+                        response_mime_type: "application/json",
+                        temperature: 0.1
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur API Gemini (${response.status})`);
+            }
+
+            const result = await response.json();
+            const rawJson = result.candidates[0].content.parts[0].text;
+            return JSON.parse(rawJson);
+        }
+
+        function trouverModuleParRoute(routeStr) {
+            if (!routeStr) return "";
+            const val = String(routeStr).trim().toLowerCase();
+            if (val.startsWith('ach')) return "Achemineur";
+            if (val.startsWith('fa')) return "FA";
+
+            const cleanNum = parseInt(val.replace(/\D/g, ''), 10);
+            if (isNaN(cleanNum)) return "";
+
+            for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                if (mod === "Achemineur" || mod === "FA") continue;
+                if (routes.some(r => r === cleanNum)) return mod;
+            }
+            return "";
+        }
+
+                // Suppression du chargement de clé Gemini, utilisation de Tesseract.js local
+        window.addEventListener('DOMContentLoaded', () => {
+            // Nettoyage stockage obsolète si besoin
+        });
+
+        async function renderPdfPageToCanvas(pdfDoc, pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            return canvas;
+        }
+
+        function trouverModuleParRoute(routeStr) {
+            if (!routeStr) return "";
+            const val = String(routeStr).trim().toLowerCase();
+            if (val.startsWith('ach')) return "Achemineur";
+            if (val.startsWith('fa')) return "FA";
+
+            const cleanNum = parseInt(val.replace(/\D/g, ''), 10);
+            if (isNaN(cleanNum)) return "";
+
+            for (const [mod, routes] of Object.entries(supervisorRoutes)) {
+                if (mod === "Achemineur" || mod === "FA") continue;
+                if (routes.some(r => r === cleanNum)) return mod;
+            }
+            return "";
+        }
+
+        // Fonction d'analyse locale par expressions régulières (Regex) sur le texte extrait par OCR
+        function extraireDonneesDuTexte(texteOcr) {
+            let route = "";
+            let idEmploye = "";
+            let heure1704 = 0;
+            let heure1508 = 0;
+            let heureBz = 0;
+
+            // Recherche de numéro de route (ex: Route 12, R12, ou nombre isolé)
+            const matchRoute = texteOcr.match(/(?:route|rt|#)\s*[:\-]?\s*([a-zA-Z0-9]+)/i);
+            if (matchRoute) {
+                route = matchRoute[1];
+            }
+
+            // Recherche d'identifiant employé (ID : 5 chiffres ou format Postes Canada)
+            const matchId = texteOcr.match(/(?:id|matricule|emp|badge)\s*[:\-]?\s*([0-9a-zA-Z]{4,8})/i);
+            if (matchId) {
+                idEmploye = matchId[1];
+            }
+
+            // Recherche des heures 15.08, BZ, 17.04
+            // Ex: 15.08 : 1.5 ou BZ : 2.0
+            const match1508 = texteOcr.match(/15\.?08[^0-9]*([0-9]+[\.,][0-9]+|[0-9]+)/i);
+            if (match1508) heure1508 = parseFloat(match1508[1].replace(',', '.')) || 0;
+
+            const matchBz = texteOcr.match(/\bbz\b[^0-9]*([0-9]+[\.,][0-9]+|[0-9]+)/i);
+            if (matchBz) heureBz = parseFloat(matchBz[1].replace(',', '.')) || 0;
+
+            const match1704 = texteOcr.match(/17\.?04[^0-9]*([0-9]+[\.,][0-9]+|[0-9]+)/i);
+            if (match1704) heure1704 = parseFloat(match1704[1].replace(',', '.')) || 0;
+
+            return { route, id: idEmploye, heure1704, heure1508, heureBz };
+        }
+
+        window.traiterLotFeuillesLocal = async function() {
+            const fileInput = document.getElementById('batchScanInput');
+            const btn = document.getElementById('btnBatchScan');
+            const progContainer = document.getElementById('scanProgressContainer');
+            const progBar = document.getElementById('scanProgressBar');
+            const progText = document.getElementById('scanProgressText');
+            const progPercent = document.getElementById('scanProgressPercent');
+            const dateSelectionnee = document.getElementById('dateInput').value || new Date().toISOString().split('T')[0];
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Veuillez sélectionner votre fichier PDF multi-pages ou vos images.");
+                return;
+            }
+
+            btn.disabled = true;
+            progContainer.style.display = 'block';
+
+            try {
+                let pagesAAnalyser = [];
+
+                for (const file of fileInput.files) {
+                    if (file.type === "application/pdf") {
+                        progText.textContent = `Lecture du PDF (${file.name})...`;
+                        const arrayBuffer = await file.arrayBuffer();
+                        const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                        for (let p = 1; p <= pdfDoc.numPages; p++) {
+                            const canvas = await renderPdfPageToCanvas(pdfDoc, p);
+                            pagesAAnalyser.push({ canvas, label: `${file.name} - Page ${p}` });
+                        }
+                    } else if (file.type.startsWith("image/")) {
+                        const img = document.createElement('img');
+                        const url = URL.createObjectURL(file);
+                        await new Promise((res) => { img.onload = res; img.src = url; });
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        pagesAAnalyser.push({ canvas, label: file.name });
+                    }
+                }
+
+                const totalPages = pagesAAnalyser.length;
+                let compteurAjouts = 0;
+                let compteurIgnorees = 0;
+
+                // Initialisation du worker Tesseract en français/anglais
+                progText.textContent = `Initialisation du moteur OCR local...`;
+                const worker = await Tesseract.createWorker('fra+eng');
+
+                for (let i = 0; i < totalPages; i++) {
+                    const item = pagesAAnalyser[i];
+                    const indexHumain = i + 1;
+                    const pct = Math.round((indexHumain / totalPages) * 100);
+
+                    progText.textContent = `OCR local : feuille ${indexHumain} sur ${totalPages} (${compteurAjouts} ajoutée(s), ${compteurIgnorees} à zéro ignorée(s))...`;
+                    progPercent.textContent = `${pct}%`;
+                    progBar.style.width = `${pct}%`;
+
+                    try {
+                        const ret = await worker.recognize(item.canvas);
+                        const texteOcr = ret.data.text;
+
+                        const extracted = extraireDonneesDuTexte(texteOcr);
+
+                        const h1704 = extracted.heure1704;
+                        const h1508 = extracted.heure1508;
+                        const hBz = extracted.heureBz;
+                        const totalHeures = h1704 + h1508 + hBz;
+
+                        // Ignorer automatiquement les feuilles à zéro
+                        if (totalHeures <= 0) {
+                            compteurIgnorees++;
+                            continue;
+                        }
+
+                        let nomFinal = "Employé scanné";
+                        let idFinal = String(extracted.id || "").trim();
+                        let ancienneteFinale = "-";
+                        let employeExterne = false;
+
+                        if (idFinal) {
+                            const empTrouve = listeEmployesMemoire.find(emp =>
+                                String(emp.idEmploye ?? emp.id ?? '').toLowerCase() === idFinal.toLowerCase()
+                            );
+                            if (empTrouve) {
+                                nomFinal = `${empTrouve.nom || ''} ${empTrouve.prenom || ''}`.trim();
+                                ancienneteFinale = empTrouve.anciennete || 'Non spécifiée';
+                            } else {
+                                employeExterne = true;
+                            }
+                        }
+
+                        const routeFinale = String(extracted.route || "").trim();
+                        const moduleFinal = trouverModuleParRoute(routeFinale);
+                        const calc = calculateBenchmark(routeFinale, h1508, hBz, h1704);
+
+                        const newEntry = {
+                            date: dateSelectionnee,
+                            module: moduleFinal,
+                            route: routeFinale,
+                            nom: nomFinal,
+                            id: idFinal,
+                            anciennete: ancienneteFinale,
+                            employeExterne: employeExterne,
+                            temporaire: false,
+                            heure1704: h1704,
+                            heure1508: h1508,
+                            heureBz: hBz,
+                            totalHeures: totalHeures,
+                            benchmark: calc.benchmark,
+                            equiv8h: calc.equiv8h,
+                            benchmarkPaye: calc.benchmarkPaye,
+                            createdAt: new Date().toISOString()
+                        };
+
+                        entries.push(newEntry);
+                        saveAndRender();
+                        compteurAjouts++;
+
+                        try {
+                            await addDoc(collection(db, "bench"), newEntry);
+                        } catch (fbErr) {
+                            console.warn(`Sauvegarde locale uniquement pour la page ${indexHumain}`);
+                        }
+
+                    } catch (pageErr) {
+                        console.error(`Erreur OCR sur la page ${indexHumain}:`, pageErr);
+                    }
+                }
+
+                await worker.terminate();
+
+                progText.textContent = `✅ Terminé : ${compteurAjouts} feuille(s) ajoutée(s), ${compteurIgnorees} feuille(s) à zéro ignorée(s) sur ${totalPages}.`;
+                document.getElementById('firebaseStatus').textContent = `OCR Local terminé : ${compteurAjouts} saisie(s) importée(s) (${compteurIgnorees} feuille(s) à zéro ignorée(s)).`;
+                document.getElementById('firebaseStatus').style.color = "#059669";
+
+            } catch (err) {
+                console.error("Erreur globale lors du traitement OCR local :", err);
+                alert("Une erreur est survenue lors de l'OCR : " + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.exportData = function() { {
             if (entries.length === 0) {
                 alert("Aucune donnée à exporter.");
                 return;
@@ -1208,6 +1519,32 @@
 
     <div class="form-section">
         <div id="firebaseStatus" class="status-msg" style="margin-bottom: 12px;">Connexion à Firebase en cours...</div>
+        <!-- Zone d'injection de fichier multi-pages avec OCR local (Tesseract.js, sans clé API) -->
+        <div style="margin-bottom: 18px; padding: 15px; background: #e0f2fe; border-radius: 8px; border: 1px solid #0284c7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Local (Sans IA / Sans Clé API)</strong>
+                    <p style="font-size: 0.8rem; color: #334155; margin-top: 2px;">
+                        Découpe les PDF, analyse les textes, ignore les feuilles à 0 h et remplit le tableau automatiquement.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="file" id="batchScanInput" accept="application/pdf,image/*" multiple class="form-control" style="font-size: 0.8rem; padding: 5px;">
+                    <button type="button" id="btnBatchScan" class="btn btn-primary" onclick="traiterLotFeuillesLocal()" style="background: #0284c7;">
+                        🚀 Lancer l'OCR Local
+                    </button>
+                </div>
+            </div>
+            <div id="scanProgressContainer" style="display: none; margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #0369a1; margin-bottom: 4px;">
+                    <span id="scanProgressText">Analyse de la page 1 / 50...</span>
+                    <span id="scanProgressPercent">0%</span>
+                </div>
+                <div style="width: 100%; background: #bae6fd; height: 10px; border-radius: 5px; overflow: hidden;">
+                    <div id="scanProgressBar" style="width: 0%; background: #0284c7; height: 100%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        </div>
         <form id="entryForm" onsubmit="addEntry(event)">
             <div class="form-grid">
                 <div class="form-group">
