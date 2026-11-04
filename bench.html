@@ -9,6 +9,8 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+    <!-- Tesseract.js pour l'OCR local -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #1e3a8a;
@@ -354,14 +356,12 @@
             
             const valeurRoute = exceptions[num] !== undefined ? exceptions[num] : 8.0;
             
-            // Benchmark sur un équivalent 8h (ex: route 8h + 1h en 15.08 = 9.00h)
             const benchmark = valeurRoute !== 0 
                 ? (((heure1704 + heure1508 + heureBz + valeurRoute) / valeurRoute) * 8.0) 
                 : 8.0;
             
             const equiv8h = benchmark;
             
-            // Benchmark payé sur un équivalent 8h avec toutes les heures de 15.08 majorées de 1.5x (ex: route 8h + 1h en 15.08 = 9.50h)
             const benchmarkPaye = valeurRoute !== 0 
                 ? ((( (heure1704 * 1.5) + (heure1508 * 1.5) + heureBz + valeurRoute ) / valeurRoute) * 8.0) 
                 : 8.0;
@@ -1054,7 +1054,6 @@
             const tbody = document.getElementById('surveillerTableBody');
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Analyse des données et historique...</td></tr>`;
 
-            // Récupérer l'ensemble des données de Firebase pour l'analyse sur 7 jours
             let allEntriesForCheck = [...entries];
             try {
                 const querySnapshot = await getDocs(collection(db, "bench"));
@@ -1069,28 +1068,23 @@
                 console.warn("Impossible de récupérer l'historique complet Firebase, utilisation des données locales.", err);
             }
 
-            // Calculer pour chaque employé les occurrences de 15.08 sur les 7 derniers jours par rapport à la date de chaque saisie
             const alerts = [];
 
             allEntriesForCheck.forEach((item, index) => {
                 let reasons = [];
                 
-                // 1. Plus de 1.5 en 15.08 sur une saisie
                 if ((item.heure1508 || 0) > 1.5) {
                     reasons.push(`15.08 > 1.5h (${item.heure1508.toFixed(2)}h)`);
                 }
 
-                // 2. Dépassement Benchmark
                 if ((item.totalHeures || 0) > (item.benchmark || 8.0)) {
                     reasons.push(`Dépassement Benchmark (${item.totalHeures.toFixed(2)}h vs ${item.benchmark.toFixed(2)}h)`);
                 }
 
-                // 3. Volume exceptionnel combiné > 2h
                 if (((item.heure1704 || 0) + (item.heure1508 || 0) + (item.heureBz || 0)) > 2.0) {
                     reasons.push(`Volume exceptionnel > 2h`);
                 }
 
-                // 4. Heures de 15.08 à 2 reprises ou plus dans les 7 derniers jours pour le même employé
                 if (item.nom && item.date && (item.heure1508 || 0) > 0) {
                     const currentDate = new Date(item.date);
                     const pastDate = new Date(currentDate);
@@ -1112,7 +1106,6 @@
                 }
 
                 if (reasons.length > 0) {
-                    // Éviter les doublons si déjà présent pour la même entrée
                     if (!alerts.some(a => a.item === item)) {
                         alerts.push({ item, index, reasons: [...new Set(reasons)].join(', ') });
                     }
@@ -1144,99 +1137,6 @@
             });
         }
 
-        // Pré-charger la clé API si elle a déjà été enregistrée dans le navigateur
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedKey = localStorage.getItem('cams_gemini_key');
-            const keyInput = document.getElementById('geminiApiKeyInput');
-            if (savedKey && keyInput) keyInput.value = savedKey;
-        });
-
-        async function renderPdfPageToBase64(pdfDoc, pageNum) {
-            const page = await pdfDoc.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 2.0 });
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            return dataUrl.split(',')[1];
-        }
-
-        function imageFileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = err => reject(err);
-            });
-        }
-
-        async function analyserUnePageBase64(base64Jpeg, apiKey, numeroPage) {
-            const prompt = `
-                Tu analyses une feuille de temps manuscrite de Postes Canada (page ${numeroPage}).
-                1. Regarde la case EN HAUT À DROITE de la feuille : extrais les heures inscrites pour "15.08" et pour "BZ" (et "17.04" si présent). Convertis les minutes éventuelles en décimales (ex: 1h30 = 1.5, 45min = 0.75). S'il n'y a rien, mets 0.
-                2. Trouve le numéro de route (ex: "12", "216", "Ach1").
-                3. Trouve l'identifiant (ID) de l'employé et/ou son nom.
-                Réponds UNIQUEMENT en JSON valide avec cette structure exacte :
-                {
-                    "route": "",
-                    "id": "",
-                    "nom": "",
-                    "heure1704": 0,
-                    "heure1508": 0,
-                    "heureBz": 0
-                }
-            `;
-
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            { inline_data: { mime_type: "image/jpeg", data: base64Jpeg } }
-                        ]
-                    }],
-                    generationConfig: {
-                        response_mime_type: "application/json",
-                        temperature: 0.1
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erreur API Gemini (${response.status})`);
-            }
-
-            const result = await response.json();
-            const rawJson = result.candidates[0].content.parts[0].text;
-            return JSON.parse(rawJson);
-        }
-
-        function trouverModuleParRoute(routeStr) {
-            if (!routeStr) return "";
-            const val = String(routeStr).trim().toLowerCase();
-            if (val.startsWith('ach')) return "Achemineur";
-            if (val.startsWith('fa')) return "FA";
-
-            const cleanNum = parseInt(val.replace(/\D/g, ''), 10);
-            if (isNaN(cleanNum)) return "";
-
-            for (const [mod, routes] of Object.entries(supervisorRoutes)) {
-                if (mod === "Achemineur" || mod === "FA") continue;
-                if (routes.some(r => r === cleanNum)) return mod;
-            }
-            return "";
-        }
-
-                // Suppression du chargement de clé Gemini, utilisation de Tesseract.js local
-        window.addEventListener('DOMContentLoaded', () => {
-            // Nettoyage stockage obsolète si besoin
-        });
-
         async function renderPdfPageToCanvas(pdfDoc, pageNum) {
             const page = await pdfDoc.getPage(pageNum);
             const viewport = page.getViewport({ scale: 2.0 });
@@ -1264,7 +1164,6 @@
             return "";
         }
 
-        // Fonction d'analyse locale par expressions régulières (Regex) sur le texte extrait par OCR
         function extraireDonneesDuTexte(texteOcr) {
             let route = "";
             let idEmploye = "";
@@ -1272,20 +1171,16 @@
             let heure1508 = 0;
             let heureBz = 0;
 
-            // Recherche de numéro de route (ex: Route 12, R12, ou nombre isolé)
             const matchRoute = texteOcr.match(/(?:route|rt|#)\s*[:\-]?\s*([a-zA-Z0-9]+)/i);
             if (matchRoute) {
                 route = matchRoute[1];
             }
 
-            // Recherche d'identifiant employé (ID : 5 chiffres ou format Postes Canada)
             const matchId = texteOcr.match(/(?:id|matricule|emp|badge)\s*[:\-]?\s*([0-9a-zA-Z]{4,8})/i);
             if (matchId) {
                 idEmploye = matchId[1];
             }
 
-            // Recherche des heures 15.08, BZ, 17.04
-            // Ex: 15.08 : 1.5 ou BZ : 2.0
             const match1508 = texteOcr.match(/15\.?08[^0-9]*([0-9]+[\.,][0-9]+|[0-9]+)/i);
             if (match1508) heure1508 = parseFloat(match1508[1].replace(',', '.')) || 0;
 
@@ -1344,7 +1239,6 @@
                 let compteurAjouts = 0;
                 let compteurIgnorees = 0;
 
-                // Initialisation du worker Tesseract en français/anglais
                 progText.textContent = `Initialisation du moteur OCR local...`;
                 const worker = await Tesseract.createWorker('fra+eng');
 
@@ -1368,7 +1262,6 @@
                         const hBz = extracted.heureBz;
                         const totalHeures = h1704 + h1508 + hBz;
 
-                        // Ignorer automatiquement les feuilles à zéro
                         if (totalHeures <= 0) {
                             compteurIgnorees++;
                             continue;
@@ -1443,7 +1336,7 @@
             }
         };
 
-        window.exportData = function() { {
+        window.exportData = function() {
             if (entries.length === 0) {
                 alert("Aucune donnée à exporter.");
                 return;
@@ -1519,13 +1412,13 @@
 
     <div class="form-section">
         <div id="firebaseStatus" class="status-msg" style="margin-bottom: 12px;">Connexion à Firebase en cours...</div>
-        <!-- Zone d'injection de fichier multi-pages avec OCR local (Tesseract.js, sans clé API) -->
+        <!-- Zone d'injection de fichier multi-pages avec OCR local (Tesseract.js) -->
         <div style="margin-bottom: 18px; padding: 15px; background: #e0f2fe; border-radius: 8px; border: 1px solid #0284c7;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Local (Sans IA / Sans Clé API)</strong>
+                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Local (Sans Clé API)</strong>
                     <p style="font-size: 0.8rem; color: #334155; margin-top: 2px;">
-                        Découpe les PDF, analyse les textes, ignore les feuilles à 0 h et remplit le tableau automatiquement.
+                        Découpe les PDF, analyse les textes localement, ignore les feuilles à 0 h et remplit le tableau.
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
