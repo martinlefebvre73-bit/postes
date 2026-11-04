@@ -13,31 +13,31 @@
     <style>
         /* Ajustements pour compacter le modal des objectifs et le garder dans l'écran */
         #objectif-modal .modal-content {
-            max-height: 85vh; /* Le modal ne dépassera jamais 85% de la hauteur de l'écran */
-            max-width: 500px; /* Plus étroit pour un look plus proportionné */
+            max-height: 85vh;
+            max-width: 500px;
             display: flex;
             flex-direction: column;
         }
         #objectif-modal .modal-body {
-            overflow-y: auto; /* Ajoute un défilement interne si l'écran est minuscule */
+            overflow-y: auto;
             padding-right: 8px;
         }
         
         .objectif-input-group {
-            margin-bottom: 8px; /* Espacement réduit */
+            margin-bottom: 8px;
             background: #f8fafc;
-            padding: 8px 10px; /* Espacement réduit */
+            padding: 8px 10px;
             border-radius: 6px;
             border: 1px solid #e2e8f0;
         }
         .objectif-input {
             width: 100%;
-            padding: 6px 10px; /* Champ plus fin */
+            padding: 6px 10px;
             margin-top: 4px;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
             font-family: inherit;
-            font-size: 0.85em; /* Police légèrement réduite */
+            font-size: 0.85em;
         }
         .objectif-input:focus {
             outline: none;
@@ -341,6 +341,25 @@
                 this.makeModalDraggable('objectif-modal');
             }
 
+            // Fonction pour trouver l'index de la semaine en cours de manière dynamique
+            getCurrentWeekIndex() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const todayStr = `${year}-${month}-${day}`;
+                
+                let currentIndex = 0;
+                for (let i = 0; i < this.scheduleData.length; i++) {
+                    if (this.scheduleData[i].weekKey <= todayStr) {
+                        currentIndex = i;
+                    } else {
+                        break;
+                    }
+                }
+                return currentIndex;
+            }
+
             // Fonction générique pour rendre un modal déplaçable
             makeModalDraggable(modalId) {
                 const modal = document.getElementById(modalId);
@@ -380,7 +399,6 @@
                     }
                 });
 
-                // Fonction de réinitialisation à attacher au modal
                 modal.resetPosition = () => {
                     xOffset = 0;
                     yOffset = 0;
@@ -413,8 +431,8 @@
                 if (previousVal && this.scheduleData.some(s => s.weekKey === previousVal)) {
                     dateSelect.value = previousVal;
                 } else {
-                    const todayStr = "2026-10-13";
-                    let defaultItem = this.scheduleData.find(s => s.weekKey >= todayStr) || this.scheduleData[0];
+                    const currentIdx = this.getCurrentWeekIndex();
+                    let defaultItem = this.scheduleData[currentIdx] || this.scheduleData[0];
                     dateSelect.value = defaultItem ? defaultItem.weekKey : this.scheduleData[0].weekKey;
                 }
             }
@@ -435,7 +453,6 @@
 
                 document.getElementById('modal-supervisor-select').addEventListener('change', () => this.updateModalTaskDisplay());
 
-                // Événements du modal d'objectifs
                 document.getElementById('btn-objectif').addEventListener('click', () => this.openObjectifModal());
                 document.getElementById('btn-close-objectif-modal').addEventListener('click', () => this.closeObjectifModal());
                 document.getElementById('btn-cancel-objectif').addEventListener('click', () => this.closeObjectifModal());
@@ -743,7 +760,7 @@
                         objectives: weekItem.objectives
                     }, { merge: true });
 
-                    this.closeObjectifModal(); // Ferme le modal après la sauvegarde
+                    this.closeObjectifModal();
                     this.renderTable();
                     this.showToast("Objectifs enregistrés avec succès !");
                 } catch (error) {
@@ -759,13 +776,37 @@
                 const tbody = document.getElementById('table-body');
                 tbody.innerHTML = '';
 
-                this.scheduleData.forEach((weekItem, index) => {
+                // Récupération de l'index de la semaine actuelle
+                const currentIndex = this.getCurrentWeekIndex();
+                const orderedIndices = [];
+                
+                // 1. On place la semaine en cours et les futures en HAUT de la liste
+                for (let i = currentIndex; i < this.scheduleData.length; i++) {
+                    orderedIndices.push(i);
+                }
+                // 2. On place les anciennes semaines en BAS de la liste
+                for (let i = 0; i < currentIndex; i++) {
+                    orderedIndices.push(i);
+                }
+
+                orderedIndices.forEach((index) => {
+                    const weekItem = this.scheduleData[index];
                     let tr = document.createElement('tr');
+                    
+                    // Style visuel pour différencier l'état des semaines
+                    if (index < currentIndex) {
+                        tr.style.opacity = "0.55"; // Grise les anciennes semaines déplacées en bas
+                        tr.style.backgroundColor = "#f8fafc";
+                    } else if (index === currentIndex) {
+                        tr.style.borderLeft = "4px solid #f59e0b"; // Surligne la semaine en cours
+                        tr.style.backgroundColor = "#fffbeb";
+                    }
                     
                     let html = `
                         <td class="week-cell">
                             <span class="week-dot"></span>
                             ${weekItem.week}
+                            ${index === currentIndex ? '<br><span style="font-size:0.75em; color:#d97706; font-weight:bold;">(En cours)</span>' : ''}
                         </td>
                     `;
 
