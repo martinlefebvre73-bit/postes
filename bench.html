@@ -348,15 +348,19 @@
             const exceptions = { 90: 5.97, 94: 4.17, 96: 4.28, 302: 3.65, 306: 3.68, 310: 5.55 };
             
             const valeurRoute = exceptions[num] !== undefined ? exceptions[num] : 8.0;
-            const benchmark = valeurRoute !== 0 ? (((heure1704 + heure1508 + heureBz + valeurRoute) / valeurRoute) * 8.0) : 8.0;
-            const equiv8h = (heure1508 + heureBz) * (benchmark / 8.0);
             
-            let benchmarkPaye = 0;
-            if (heure1508 <= 2) {
-                benchmarkPaye = (heure1508 * 1.5) + heureBz;
-            } else {
-                benchmarkPaye = (2 * 1.5) + ((heure1508 - 2) * 2.0) + heureBz;
-            }
+            // Benchmark sur un équivalent 8h (ex: route 8h + 1h en 15.08 = 9.00h)
+            const benchmark = valeurRoute !== 0 
+                ? (((heure1704 + heure1508 + heureBz + valeurRoute) / valeurRoute) * 8.0) 
+                : 8.0;
+            
+            const equiv8h = benchmark;
+            
+            // Benchmark payé sur un équivalent 8h avec toutes les heures de 15.08 majorées de 1.5x (ex: route 8h + 1h en 15.08 = 9.50h)
+            const benchmarkPaye = valeurRoute !== 0 
+                ? ((( (heure1704 * 1.5) + (heure1508 * 1.5) + heureBz + valeurRoute ) / valeurRoute) * 8.0) 
+                : 8.0;
+
             return { benchmark, equiv8h, benchmarkPaye };
         }
 
@@ -1045,7 +1049,6 @@
             const tbody = document.getElementById('surveillerTableBody');
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Analyse des données et historique...</td></tr>`;
 
-            // Récupérer l'ensemble des données de Firebase pour l'analyse sur 7 jours
             let allEntriesForCheck = [...entries];
             try {
                 const querySnapshot = await getDocs(collection(db, "bench"));
@@ -1060,28 +1063,23 @@
                 console.warn("Impossible de récupérer l'historique complet Firebase, utilisation des données locales.", err);
             }
 
-            // Calculer pour chaque employé les occurrences de 15.08 sur les 7 derniers jours par rapport à la date de chaque saisie
             const alerts = [];
 
             allEntriesForCheck.forEach((item, index) => {
                 let reasons = [];
                 
-                // 1. Plus de 1.5 en 15.08 sur une saisie
                 if ((item.heure1508 || 0) > 1.5) {
                     reasons.push(`15.08 > 1.5h (${item.heure1508.toFixed(2)}h)`);
                 }
 
-                // 2. Dépassement Benchmark
                 if ((item.totalHeures || 0) > (item.benchmark || 8.0)) {
                     reasons.push(`Dépassement Benchmark (${item.totalHeures.toFixed(2)}h vs ${item.benchmark.toFixed(2)}h)`);
                 }
 
-                // 3. Volume exceptionnel combiné > 2h
                 if (((item.heure1704 || 0) + (item.heure1508 || 0) + (item.heureBz || 0)) > 2.0) {
                     reasons.push(`Volume exceptionnel > 2h`);
                 }
 
-                // 4. Heures de 15.08 à 2 reprises ou plus dans les 7 derniers jours pour le même employé
                 if (item.nom && item.date && (item.heure1508 || 0) > 0) {
                     const currentDate = new Date(item.date);
                     const pastDate = new Date(currentDate);
@@ -1103,7 +1101,6 @@
                 }
 
                 if (reasons.length > 0) {
-                    // Éviter les doublons si déjà présent pour la même entrée
                     if (!alerts.some(a => a.item === item)) {
                         alerts.push({ item, index, reasons: [...new Set(reasons)].join(', ') });
                     }
