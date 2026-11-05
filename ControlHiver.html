@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrôle des Équipements Hivernaux - Postes Canada</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --border-color: #334155;
+            --gold: #f59e0b;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3a8a, #0f172a);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gold);
+        }
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        header p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .firebase-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--gold);
+            padding: 3px 10px;
+            border-radius: 20px;
+            width: fit-content;
+            font-weight: 500;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--gold);
+            display: inline-block;
+        }
+        .indicator-dot.connected {
+            background-color: #10b981;
+            box-shadow: 0 0 6px #10b981;
+        }
+        .control-panel {
+            padding: 20px 30px;
+            background: #1e293b;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+        .form-control, .form-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: #0f172a;
+            color: white;
+        }
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary {
+            background: var(--gold);
+            color: #0f172a;
+        }
+        .btn-primary:hover {
+            background: #d97706;
+        }
+        .table-section {
+            padding: 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+        }
+        th {
+            background-color: #0f172a;
+            color: var(--gold);
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        .checkbox-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--gold);
+            cursor: pointer;
+        }
+        .status-msg {
+            padding: 10px 30px;
+            font-size: 0.85rem;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border-bottom: 1px solid var(--border-color);
+        }
+    </style>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const supervisorRoutes = {
+            "Dany": [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 209, 213, 215, 217, 219, 223, 225],
+            "Yves": [2, 4, 6, 8, 10, 16, 18, 20, 22, 26, 28, 30, 32, 34, 64],
+            "Martin": [12, 14, 216, 218, 224, 228, 230, 232, 236, 238, 240, 244, 246, 248, 250, 252, 254, 256, 258, 260, 262, 264, 272, 282, 290, 310],
+            "Jonathan": [24, 201, 202, 203, 204, 205, 206, 207, 208, 210, 211, 212, 214, 220, 221, 222, 226, 227, 234, 242, 266, 268, 270, 274, 278, 286],
+            "Jean": [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 88, 90],
+            "Yanick": [94, 96, 302, 306]
+        };
+
+        let currentData = {};
+
+        window.initApp = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+            populateModules();
+            chargerDonneesParDate();
+        }
+
+        function populateModules() {
+            const modSelect = document.getElementById('moduleSelect');
+            modSelect.innerHTML = '<option value="">-- Choisir un module --</option>';
+            Object.keys(supervisorRoutes).forEach(mod => {
+                const opt = document.createElement('option');
+                opt.value = mod;
+                opt.textContent = mod;
+                modSelect.appendChild(opt);
+            });
+        }
+
+        window.onModuleChange = function() {
+            const mod = document.getElementById('moduleSelect').value;
+            const routeSelect = document.getElementById('routeSelect');
+            routeSelect.innerHTML = '<option value="">-- Choisir une route --</option>';
+            
+            if (mod && supervisorRoutes[mod]) {
+                supervisorRoutes[mod].forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r;
+                    opt.textContent = `Route ${r}`;
+                    routeSelect.appendChild(opt);
+                });
+            }
+            renderTable();
+        }
+
+        window.renderTable = function() {
+            const mod = document.getElementById('moduleSelect').value;
+            const route = document.getElementById('routeSelect').value;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (!mod || !route) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module et une route.</td></tr>`;
+                return;
+            }
+
+            const key = `${mod}_${route}`;
+            const routeData = currentData[key] || { bottes: false, crampons: false };
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: bold; color: var(--gold);">Route ${route} (${mod})</td>
+                <td>
+                    <div class="checkbox-container">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="bottesCheck" ${routeData.bottes ? 'checked' : ''} onchange="updateStatus()"> Bottes vérifiées
+                        </label>
+                    </div>
+                </td>
+                <td>
+                    <div class="checkbox-container">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="cramponsCheck" ${routeData.crampons ? 'checked' : ''} onchange="updateStatus()"> Crampons vérifiés
+                        </label>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        window.updateStatus = function() {
+            const mod = document.getElementById('moduleSelect').value;
+            const route = document.getElementById('routeSelect').value;
+            if (!mod || !route) return;
+
+            const key = `${mod}_${route}`;
+            currentData[key] = {
+                bottes: document.getElementById('bottesCheck').checked,
+                crampons: document.getElementById('cramponsCheck').checked
+            };
+            sauvegarderFirebase();
+        }
+
+        async function sauvegarderFirebase() {
+            const dateStr = document.getElementById('dateInput').value;
+            if (!dateStr) return;
+
+            try {
+                const docRef = doc(db, "winter_gear_control", dateStr);
+                await setDoc(docRef, { data: currentData, updatedAt: new Date().toISOString() });
+                document.getElementById('firebaseStatusText').textContent = "Synchronisé avec Firebase";
+            } catch (err) {
+                console.error("Erreur de sauvegarde:", err);
+                document.getElementById('firebaseStatusText').textContent = "Erreur de synchronisation";
+            }
+        }
+
+        window.chargerDonneesParDate = async function() {
+            const dateStr = document.getElementById('dateInput').value;
+            if (!dateStr) return;
+
+            document.getElementById('firebaseStatusText').textContent = "Chargement...";
+            try {
+                const docRef = doc(db, "winter_gear_control", dateStr);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    currentData = docSnap.data().data || {};
+                } else {
+                    currentData = {};
+                }
+                document.getElementById('firebaseStatusText').textContent = "Connecté à Firebase";
+                renderTable();
+            } catch (err) {
+                console.error("Erreur de chargement:", err);
+                currentData = {};
+                renderTable();
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-left">
+            <h1>Contrôle des Équipements Hivernaux</h1>
+            <p>Suivi des bottes et crampons par module et par route</p>
+            <div class="firebase-indicator">
+                <span id="indicatorDot" class="indicator-dot connected"></span>
+                <span id="firebaseStatusText">Connexion à Firebase...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="control-panel">
+        <div class="form-group">
+            <label for="dateInput">Date de contrôle</label>
+            <input type="date" id="dateInput" class="form-control" onchange="chargerDonneesParDate()">
+        </div>
+        <div class="form-group">
+            <label for="moduleSelect">Module / Superviseur</label>
+            <select id="moduleSelect" class="form-select" onchange="onModuleChange()">
+                <option value="">-- Choisir un module --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="routeSelect">Route</label>
+            <select id="routeSelect" class="form-select" onchange="renderTable()">
+                <option value="">-- Choisir une route --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sélection</th>
+                    <th>Vérification des Bottes</th>
+                    <th>Vérification des Crampons</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module et une route.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
