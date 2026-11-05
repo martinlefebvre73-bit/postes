@@ -307,7 +307,7 @@
     <!-- Firebase SDKs & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -728,6 +728,10 @@
                 createdAt: new Date().toISOString() 
             };
 
+            if (editingFirebaseId) {
+                newEntry.firebaseId = editingFirebaseId;
+            }
+
             if (editingIndex !== null) {
                 entries[editingIndex] = newEntry;
                 editingIndex = null;
@@ -744,13 +748,15 @@
                 }
                 editingFirebaseId = null;
             } else if (editingIndex === null) {
-                entries.push(newEntry);
                 try {
-                    await addDoc(collection(db, "bench"), newEntry);
+                    const docRef = await addDoc(collection(db, "bench"), newEntry);
+                    newEntry.firebaseId = docRef.id;
+                    entries.push(newEntry);
                     document.getElementById('firebaseStatus').textContent = "Saisie enregistrée et synchronisée dans Firebase.";
                     document.getElementById('firebaseStatus').style.color = "#059669";
                 } catch (err) {
                     console.error("Erreur sauvegarde Firebase:", err);
+                    entries.push(newEntry);
                     document.getElementById('firebaseStatus').textContent = "Sauvegarde locale réussie (Hors ligne).";
                     document.getElementById('firebaseStatus').style.color = "#d97706";
                 }
@@ -810,7 +816,9 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        window.deleteEntry = function(index) {
+        window.deleteEntry = async function(index) {
+            const item = entries[index];
+
             if (editingIndex === index) {
                 document.getElementById('entryForm').reset();
                 document.getElementById('externalCheckboxesGroup').style.display = 'none';
@@ -822,6 +830,19 @@
                 updateRoutesListForModule();
                 if(isManualEntry) toggleManualEntry();
             }
+
+            if (item && item.firebaseId) {
+                try {
+                    await deleteDoc(doc(db, "bench", item.firebaseId));
+                    document.getElementById('firebaseStatus').textContent = "Fiche supprimée de Firebase et de l'affichage.";
+                    document.getElementById('firebaseStatus').style.color = "#059669";
+                } catch (err) {
+                    console.error("Erreur lors de la suppression dans Firebase :", err);
+                    document.getElementById('firebaseStatus').textContent = "Erreur de suppression dans Firebase (supprimé localement).";
+                    document.getElementById('firebaseStatus').style.color = "#dc2626";
+                }
+            }
+
             entries.splice(index, 1);
             saveAndRender();
         }
@@ -1307,15 +1328,16 @@
                             createdAt: new Date().toISOString()
                         };
 
-                        entries.push(newEntry);
-                        saveAndRender();
-                        compteurAjouts++;
-
                         try {
-                            await addDoc(collection(db, "bench"), newEntry);
+                            const docRef = await addDoc(collection(db, "bench"), newEntry);
+                            newEntry.firebaseId = docRef.id;
                         } catch (fbErr) {
                             console.warn(`Sauvegarde locale uniquement pour la page ${indexHumain}`);
                         }
+
+                        entries.push(newEntry);
+                        saveAndRender();
+                        compteurAjouts++;
 
                     } catch (pageErr) {
                         console.error(`Erreur OCR sur la page ${indexHumain}:`, pageErr);
@@ -1338,7 +1360,7 @@
 
         window.exportData = function() {
             if (entries.length === 0) {
-                alert("Aucune donnée à exporter.");
+                alert("Aucuna donnée à exporter.");
                 return;
             }
             let csv = "Date,Module,Route,Nom,ID,Anciennete,Employe Externe,Temporaire,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
