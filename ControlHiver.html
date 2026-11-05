@@ -112,21 +112,49 @@
             outline: none;
             border-color: var(--gold);
         }
-        .btn {
-            padding: 9px 18px;
-            border: none;
-            border-radius: 6px;
+        
+        /* Section État d'avancement */
+        .progress-section {
+            padding: 20px 30px;
+            background: #151c2c;
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .progress-card {
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .progress-title {
+            font-size: 0.85rem;
+            color: #94a3b8;
             font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
         }
-        .btn-primary {
-            background: var(--gold);
-            color: #0f172a;
+        .progress-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--gold);
         }
-        .btn-primary:hover {
-            background: #d97706;
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #0f172a;
+            border-radius: 4px;
+            overflow: hidden;
         }
+        .progress-bar-fill {
+            height: 100%;
+            background: #10b981;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
         .table-section {
             padding: 30px;
             overflow-x: auto;
@@ -166,13 +194,6 @@
             height: 18px;
             accent-color: var(--gold);
             cursor: pointer;
-        }
-        .status-msg {
-            padding: 10px 30px;
-            font-size: 0.85rem;
-            color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-            border-bottom: 1px solid var(--border-color);
         }
     </style>
 
@@ -223,66 +244,96 @@
         }
 
         window.onModuleChange = function() {
-            const mod = document.getElementById('moduleSelect').value;
-            const routeSelect = document.getElementById('routeSelect');
-            routeSelect.innerHTML = '<option value="">-- Choisir une route --</option>';
-            
-            if (mod && supervisorRoutes[mod]) {
-                supervisorRoutes[mod].forEach(r => {
-                    const opt = document.createElement('option');
-                    opt.value = r;
-                    opt.textContent = `Route ${r}`;
-                    routeSelect.appendChild(opt);
-                });
-            }
             renderTable();
         }
 
         window.renderTable = function() {
             const mod = document.getElementById('moduleSelect').value;
-            const route = document.getElementById('routeSelect').value;
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
-            if (!mod || !route) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module et une route.</td></tr>`;
+            if (!mod) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module pour afficher l'ensemble des routes.</td></tr>`;
+                updateProgress([], 0);
                 return;
             }
 
-            const key = `${mod}_${route}`;
-            const routeData = currentData[key] || { bottes: false, crampons: false };
+            const routes = supervisorRoutes[mod];
+            let checkedBottes = 0;
+            let checkedCrampons = 0;
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-weight: bold; color: var(--gold);">Route ${route} (${mod})</td>
-                <td>
-                    <div class="checkbox-container">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="bottesCheck" ${routeData.bottes ? 'checked' : ''} onchange="updateStatus()"> Bottes vérifiées
-                        </label>
-                    </div>
-                </td>
-                <td>
-                    <div class="checkbox-container">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="cramponsCheck" ${routeData.crampons ? 'checked' : ''} onchange="updateStatus()"> Crampons vérifiés
-                        </label>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
+            routes.forEach(r => {
+                const key = `${mod}_${r}`;
+                const routeData = currentData[key] || { bottes: false, crampons: false };
+
+                if (routeData.bottes) checkedBottes++;
+                if (routeData.crampons) checkedCrampons++;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: bold; color: var(--gold);">Route ${r}</td>
+                    <td>
+                        <div class="checkbox-container">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="bottes_${r}" ${routeData.bottes ? 'checked' : ''} onchange="updateStatus('${r}')"> Bottes vérifiées
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="checkbox-container">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="crampons_${r}" ${routeData.crampons ? 'checked' : ''} onchange="updateStatus('${r}')"> Crampons vérifiés
+                            </label>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateProgress(routes, checkedBottes, checkedCrampons);
         }
 
-        window.updateStatus = function() {
+        function updateProgress(routes, bCount, cCount) {
+            const total = routes.length;
+            if (total === 0) {
+                document.getElementById('progressBottes').textContent = "0 / 0 (0%)";
+                document.getElementById('fillBottes').style.width = "0%";
+                document.getElementById('progressCrampons').textContent = "0 / 0 (0%)";
+                document.getElementById('fillCrampons').style.width = "0%";
+                return;
+            }
+
+            const bPercent = Math.round((bCount / total) * 100);
+            const cPercent = Math.round((cCount / total) * 100);
+
+            document.getElementById('progressBottes').textContent = `${bCount} / ${total} (${bPercent}%)`;
+            document.getElementById('fillBottes').style.width = `${bPercent}%`;
+
+            document.getElementById('progressCrampons').textContent = `${cCount} / ${total} (${cPercent}%)`;
+            document.getElementById('fillCrampons').style.width = `${cPercent}%`;
+        }
+
+        window.updateStatus = function(route) {
             const mod = document.getElementById('moduleSelect').value;
-            const route = document.getElementById('routeSelect').value;
             if (!mod || !route) return;
 
             const key = `${mod}_${route}`;
             currentData[key] = {
-                bottes: document.getElementById('bottesCheck').checked,
-                crampons: document.getElementById('cramponsCheck').checked
+                bottes: document.getElementById(`bottes_${route}`).checked,
+                crampons: document.getElementById(`crampons_${route}`).checked
             };
+            
+            // Recalculer l'avancement en direct
+            const routes = supervisorRoutes[mod];
+            let bCount = 0;
+            let cCount = 0;
+            routes.forEach(r => {
+                const k = `${mod}_${r}`;
+                if (currentData[k]?.bottes) bCount++;
+                if (currentData[k]?.crampons) cCount++;
+            });
+            updateProgress(routes, bCount, cCount);
+
             sauvegarderFirebase();
         }
 
@@ -331,7 +382,7 @@
     <header>
         <div class="header-left">
             <h1>Contrôle des Équipements Hivernaux</h1>
-            <p>Suivi des bottes et crampons par module et par route</p>
+            <p>Suivi global des bottes et crampons par module</p>
             <div class="firebase-indicator">
                 <span id="indicatorDot" class="indicator-dot connected"></span>
                 <span id="firebaseStatusText">Connexion à Firebase...</span>
@@ -350,11 +401,23 @@
                 <option value="">-- Choisir un module --</option>
             </select>
         </div>
-        <div class="form-group">
-            <label for="routeSelect">Route</label>
-            <select id="routeSelect" class="form-select" onchange="renderTable()">
-                <option value="">-- Choisir une route --</option>
-            </select>
+    </div>
+
+    <!-- Tableau d'état d'avancement -->
+    <div class="progress-section">
+        <div class="progress-card">
+            <span class="progress-title">Avancement - Bottes vérifiées</span>
+            <span id="progressBottes" class="progress-value">0 / 0 (0%)</span>
+            <div class="progress-bar-bg">
+                <div id="fillBottes" class="progress-bar-fill"></div>
+            </div>
+        </div>
+        <div class="progress-card">
+            <span class="progress-title">Avancement - Crampons vérifiés</span>
+            <span id="progressCrampons" class="progress-value">0 / 0 (0%)</span>
+            <div class="progress-bar-bg">
+                <div id="fillCrampons" class="progress-bar-fill"></div>
+            </div>
         </div>
     </div>
 
@@ -362,13 +425,13 @@
         <table>
             <thead>
                 <tr>
-                    <th>Sélection</th>
+                    <th>Route</th>
                     <th>Vérification des Bottes</th>
                     <th>Vérification des Crampons</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module et une route.</td></tr>
+                <tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module pour afficher l'ensemble des routes.</td></tr>
             </tbody>
         </table>
     </div>
