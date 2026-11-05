@@ -81,6 +81,9 @@
             background-color: #10b981;
             box-shadow: 0 0 6px #10b981;
         }
+        .indicator-dot.offline {
+            background-color: #ef4444;
+        }
         .control-panel {
             padding: 20px 30px;
             background: #1e293b;
@@ -197,10 +200,11 @@
         }
     </style>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs & Auth Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
@@ -213,6 +217,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         const supervisorRoutes = {
             "Dany": [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 209, 213, 215, 217, 219, 223, 225],
@@ -225,15 +230,45 @@
 
         let currentData = {};
 
+        function setFirebaseStatusUI(status, text) {
+            const dot = document.getElementById('indicatorDot');
+            const label = document.getElementById('firebaseStatusText');
+            if(!dot || !label) return;
+
+            dot.className = "indicator-dot";
+            if (status === 'connected') {
+                dot.classList.add('connected');
+                label.textContent = text;
+            } else if (status === 'offline') {
+                dot.classList.add('offline');
+                label.textContent = text;
+            } else {
+                label.textContent = text;
+            }
+        }
+
+        // Gestion de l'authentification identique au modèle bench
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setFirebaseStatusUI('connected', 'Connecté (Utilisateur authentifié)');
+            } else {
+                setFirebaseStatusUI('connected', 'Connecté (Mode Invité / Public)');
+            }
+            initApp();
+        });
+
         window.initApp = function() {
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateInput').value = today;
+            if(!document.getElementById('dateInput').value) {
+                document.getElementById('dateInput').value = today;
+            }
             populateModules();
             chargerDonneesParDate();
         }
 
         function populateModules() {
             const modSelect = document.getElementById('moduleSelect');
+            if (modSelect.options.length > 1) return; // Éviter les doublons
             modSelect.innerHTML = '<option value="">-- Choisir un module --</option>';
             Object.keys(supervisorRoutes).forEach(mod => {
                 const opt = document.createElement('option');
@@ -254,7 +289,7 @@
 
             if (!mod) {
                 tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #94a3b8;">Veuillez sélectionner un module pour afficher l'ensemble des routes.</td></tr>`;
-                updateProgress([], 0);
+                updateProgress([], 0, 0);
                 return;
             }
 
@@ -323,7 +358,6 @@
                 crampons: document.getElementById(`crampons_${route}`).checked
             };
             
-            // Recalculer l'avancement en direct
             const routes = supervisorRoutes[mod];
             let bCount = 0;
             let cCount = 0;
@@ -344,10 +378,10 @@
             try {
                 const docRef = doc(db, "winter_gear_control", dateStr);
                 await setDoc(docRef, { data: currentData, updatedAt: new Date().toISOString() });
-                document.getElementById('firebaseStatusText').textContent = "Synchronisé avec Firebase";
+                setFirebaseStatusUI('connected', 'Synchronisé avec Firebase');
             } catch (err) {
                 console.error("Erreur de sauvegarde:", err);
-                document.getElementById('firebaseStatusText').textContent = "Erreur de synchronisation";
+                setFirebaseStatusUI('offline', 'Erreur de synchronisation');
             }
         }
 
@@ -355,7 +389,7 @@
             const dateStr = document.getElementById('dateInput').value;
             if (!dateStr) return;
 
-            document.getElementById('firebaseStatusText').textContent = "Chargement...";
+            setFirebaseStatusUI('connected', 'Chargement...');
             try {
                 const docRef = doc(db, "winter_gear_control", dateStr);
                 const docSnap = await getDoc(docRef);
@@ -364,16 +398,15 @@
                 } else {
                     currentData = {};
                 }
-                document.getElementById('firebaseStatusText').textContent = "Connecté à Firebase";
+                setFirebaseStatusUI('connected', 'Connecté à Firebase');
                 renderTable();
             } catch (err) {
                 console.error("Erreur de chargement:", err);
                 currentData = {};
+                setFirebaseStatusUI('offline', 'Erreur de chargement');
                 renderTable();
             }
         }
-
-        window.onload = initApp;
     </script>
 </head>
 <body>
@@ -384,7 +417,7 @@
             <h1>Contrôle des Équipements Hivernaux</h1>
             <p>Suivi global des bottes et crampons par module</p>
             <div class="firebase-indicator">
-                <span id="indicatorDot" class="indicator-dot connected"></span>
+                <span id="indicatorDot" class="indicator-dot"></span>
                 <span id="firebaseStatusText">Connexion à Firebase...</span>
             </div>
         </div>
