@@ -157,17 +157,218 @@
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
+        .btn-info { background: #0284c7; color: white; }
+
+        .firebase-status {
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* Styles spécifiques pour l'impression */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #sectionImpressionRapport, #sectionImpressionRapport * {
+                visibility: visible;
+            }
+            #sectionImpressionRapport {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
     </style>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBksqM25AZOEPLmaOcbOHjORx78sGyGicc",
+            authDomain: "postesst.firebaseapp.com",
+            projectId: "postesst",
+            storageBucket: "postesst.firebasestorage.app",
+            messagingSenderId: "39362155503",
+            appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let listeEmployesMemoire = [];
+        let isManualEntry = false;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('firebaseStatus').textContent = "Connecté à Firebase. Chargement des employés...";
+                await chargerEmployes();
+            } else {
+                document.getElementById('firebaseStatus').textContent = "Mode invité / Non authentifié. Chargement des données locales...";
+                await chargerEmployes();
+            }
+        });
+
+        async function chargerEmployes() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "employes"));
+                listeEmployesMemoire = [];
+                querySnapshot.forEach((docSnap) => {
+                    listeEmployesMemoire.push(docSnap.data());
+                });
+
+                listeEmployesMemoire.sort((a, b) => {
+                    let nomA = (a.nom || '').toLowerCase();
+                    let nomB = (b.nom || '').toLowerCase();
+                    if (nomA < nomB) return -1;
+                    if (nomA > nomB) return 1;
+                    let prenomA = (a.prenom || '').toLowerCase();
+                    let prenomB = (b.prenom || '').toLowerCase();
+                    return prenomA.localeCompare(prenomB);
+                });
+
+                renderNomField();
+                document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${listeEmployesMemoire.length} employés chargés).`;
+            } catch (e) {
+                console.error("Erreur chargement employés: ", e);
+                document.getElementById('firebaseStatus').textContent = "⚠️ Mode hors ligne ou erreur de chargement Firestore.";
+            }
+        }
+
+        window.toggleManualEntry = function() {
+            isManualEntry = !isManualEntry;
+            renderNomField();
+            const btnToggle = document.getElementById('toggleModeBtn');
+            const idInput = document.getElementById('idInput');
+            const ancienneteInput = document.getElementById('ancienneteInput');
+
+            if (isManualEntry) {
+                btnToggle.textContent = "📋 Liste";
+                idInput.readOnly = false;
+                idInput.style.background = "white";
+                ancienneteInput.readOnly = false;
+                ancienneteInput.style.background = "white";
+                ancienneteInput.value = "";
+                idInput.value = "";
+            } else {
+                btnToggle.textContent = "✍️ Manuel";
+                idInput.readOnly = false;
+                idInput.style.background = "white";
+                ancienneteInput.readOnly = true;
+                ancienneteInput.style.background = "#e2e8f0";
+            }
+        };
+
+        function renderNomField() {
+            const container = document.getElementById('nomContainer');
+            container.innerHTML = '';
+
+            if (!isManualEntry) {
+                const select = document.createElement('select');
+                select.id = 'employeSelect';
+                select.className = 'form-control';
+                select.required = true;
+                select.onchange = function() { remplirParNom(this); };
+
+                let defaultOpt = document.createElement('option');
+                defaultOpt.value = "";
+                defaultOpt.textContent = "-- Choisir par nom --";
+                select.appendChild(defaultOpt);
+
+                listeEmployesMemoire.forEach((emp) => {
+                    let option = document.createElement('option');
+                    let nomComplet = `${emp.nom || ''} ${emp.prenom || ''}`.trim();
+                    let employeId = emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '');
+                    
+                    option.value = nomComplet; 
+                    option.dataset.id = employeId; 
+                    option.dataset.anciennete = emp.anciennete || 'Non spécifiée';
+                    
+                    option.textContent = `${emp.nom || ''}, ${emp.prenom || ''} (ID: ${employeId})`;
+                    select.appendChild(option);
+                });
+                container.appendChild(select);
+            } else {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'employeSelect';
+                input.className = 'form-control';
+                input.placeholder = "Nom Prénom manuel...";
+                input.required = true;
+                container.appendChild(input);
+            }
+        }
+
+        window.remplirParNom = (selectElement) => {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const checkboxesGroup = document.getElementById('externalCheckboxesGroup');
+
+            if (selectedOption.value) {
+                document.getElementById('idInput').value = selectedOption.dataset.id || '';
+                document.getElementById('ancienneteInput').value = selectedOption.dataset.anciennete || '';
+                if(checkboxesGroup) checkboxesGroup.style.display = 'none';
+            } else {
+                document.getElementById('idInput').value = '';
+                document.getElementById('ancienneteInput').value = '-';
+            }
+        };
+
+        window.remplirParId = (inputElement) => {
+            if (isManualEntry) return;
+            const saisieId = inputElement.value.trim().toLowerCase();
+            const selectEmp = document.getElementById('employeSelect');
+            const checkboxesGroup = document.getElementById('externalCheckboxesGroup');
+
+            if (!saisieId) {
+                if(selectEmp && selectEmp.tagName === 'SELECT') selectEmp.value = '';
+                document.getElementById('ancienneteInput').value = '-';
+                if(checkboxesGroup) checkboxesGroup.style.display = 'none';
+                return;
+            }
+
+            let trouve = listeEmployesMemoire.find(emp => {
+                let idEmp = String(emp.idEmploye !== undefined ? emp.idEmploye : (emp.id !== undefined ? emp.id : '')).toLowerCase();
+                return idEmp === saisieId;
+            });
+
+            if (trouve) {
+                let nomComplet = `${trouve.nom || ''} ${trouve.prenom || ''}`.trim();
+                if(selectEmp && selectEmp.tagName === 'SELECT') selectEmp.value = nomComplet;
+                document.getElementById('ancienneteInput').value = trouve.anciennete || 'Non spécifiée';
+                if(checkboxesGroup) checkboxesGroup.style.display = 'none';
+            } else {
+                if(selectEmp && selectEmp.tagName === 'SELECT') selectEmp.value = '';
+                document.getElementById('ancienneteInput').value = '-';
+                if(checkboxesGroup) {
+                    checkboxesGroup.style.display = 'flex';
+                    checkboxesGroup.style.flexDirection = 'column';
+                }
+            }
+        };
+    </script>
 </head>
 <body>
 
 <div class="container">
     <h1>Gestion des Prêts de Clés - Aéroport</h1>
+    <div id="firebaseStatus" class="firebase-status">Initialisation de Firebase...</div>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab(event, 'saisieTab')">Saisie des Prêts</button>
         <button class="tab-btn" onclick="switchTab(event, 'routesTab')">Gestion des Routes & Clés</button>
         <button class="tab-btn" onclick="switchTab(event, 'historiqueTab')">Historique des Prêts</button>
+        <button class="tab-btn" onclick="switchTab(event, 'rapportTab')">Rapport Clés Prêtes</button>
     </div>
 
     <!-- ONGLET 1 : SAISIE DES PRÊTS -->
@@ -183,20 +384,39 @@
                     <label for="dateRetourPrevue">Date de Retour Prévue :</label>
                     <input type="date" id="dateRetourPrevue">
                 </div>
+                
                 <div class="form-group">
-                    <label for="employeSelect">Employé (Nom ou ID) :</label>
-                    <select id="employeSelect" onchange="gererSaisieEmploye()" required>
-                        <option value="">-- Sélectionner un employé --</option>
-                        <option value="10001">10001 - Jean Dupont</option>
-                        <option value="11097">11097 - Marie Tremblay</option>
-                        <option value="13090">13090 - Marc Lefebvre</option>
-                        <option value="autre">Autre (Créer manuellement)</option>
-                    </select>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label for="employeSelect" style="margin-bottom: 0;">Employé (Nom ou ID) :</label>
+                        <button type="button" id="toggleModeBtn" class="btn-warning" onclick="toggleManualEntry()" style="padding: 2px 8px; height: 24px; font-size: 0.75rem; border: none; border-radius: 4px; cursor: pointer;">✍️ Manuel</button>
+                    </div>
+                    <div id="nomContainer">
+                        <select id="employeSelect" class="form-control" onchange="remplirParNom(this)" required>
+                            <option value="">-- Choisir par nom --</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group" id="autreEmployeDiv" style="display: none;">
-                    <label for="employeManuel">Nom / ID de l'employé :</label>
-                    <input type="text" id="employeManuel" placeholder="Ex: Paul Martin (ID: 10500)">
+
+                <div class="form-group">
+                    <label for="idInput">ID / Matricule :</label>
+                    <input type="text" id="idInput" placeholder="ID..." required oninput="remplirParId(this)">
                 </div>
+
+                <div class="form-group">
+                    <label for="ancienneteInput">Ancienneté :</label>
+                    <input type="text" id="ancienneteInput" placeholder="-" value="-" readonly style="background: #e2e8f0;">
+                </div>
+            </div>
+
+            <div id="externalCheckboxesGroup" style="display: none; margin-bottom: 20px; background: #fef3c7; padding: 12px; border-radius: 6px; border: 1px solid #f59e0b;">
+                <label style="display: flex; align-items: center; cursor: pointer; color: #92400e; font-weight: bold; margin-bottom: 6px;">
+                    <input type="checkbox" id="employeExterneInput" style="margin-right: 8px; width: 16px; height: 16px;">
+                    Employé externe
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer; color: #92400e; font-weight: bold;">
+                    <input type="checkbox" id="temporaireInput" style="margin-right: 8px; width: 16px; height: 16px;">
+                    Temporaire
+                </label>
             </div>
 
             <div class="form-group">
@@ -207,7 +427,7 @@
             </div>
 
             <div class="form-group">
-                <label>Clés de la route (Numéros de série automatiques incluant la colonne B & Champ pour numéro individuel) :</label>
+                <label>Clés de la route :</label>
                 <div id="clesDynamiquesContainer" class="keys-container">
                     <p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>
                 </div>
@@ -220,15 +440,11 @@
     <!-- ONGLET 2 : GESTION DES ROUTES ET CLÉS -->
     <div id="routesTab" class="tab-content">
         <h2>Configuration des Routes et Séries de Clés</h2>
-        <p>Visualisez, modifiez, ajoutez ou retirez des numéros de série de clés (colonnes B et suivantes) pour chaque route.</p>
-        
         <div class="form-group" style="max-width: 350px;">
             <label for="selectRouteConfig">Route à configurer :</label>
             <select id="selectRouteConfig" onchange="chargerConfigRoute()"></select>
         </div>
-
         <div id="configRouteContent"></div>
-
         <button type="button" class="btn-primary" onclick="ajouterNouvelleRoute()" style="margin-top: 15px;">Ajouter une Nouvelle Route</button>
     </div>
 
@@ -240,22 +456,63 @@
                 <tr>
                     <th>Date Prêt</th>
                     <th>Employé</th>
+                    <th>ID</th>
                     <th>Route</th>
-                    <th>Détails Clés (Série / Individuel)</th>
+                    <th>Détails Clés</th>
                     <th>Retour Prévu / Effectif</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="historiqueTableBody">
-                <!-- Rempli dynamiquement -->
-            </tbody>
+            <tbody id="historiqueTableBody"></tbody>
         </table>
+    </div>
+
+    <!-- ONGLET 4 : RAPPORT CLÉS PRÊTES (SANS RETOUR) -->
+    <div id="rapportTab" class="tab-content">
+        <h2>Rapport des Clés Prêtées (Sans Retour)</h2>
+        <p>Sélectionnez une date précise ou une tranche de dates pour générer et imprimer la liste des clés actuellement en cours de prêt.</p>
+        
+        <div class="row-grid no-print" style="margin-bottom: 20px; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="dateDebutRapport">Date de début :</label>
+                <input type="date" id="dateDebutRapport" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="dateFinRapport">Date de fin :</label>
+                <input type="date" id="dateFinRapport" class="form-control">
+            </div>
+            <div>
+                <button type="button" class="btn-primary" onclick="genererRapportCles()" style="width: 100%;">Générer le Rapport</button>
+            </div>
+        </div>
+
+        <div id="sectionImpressionRapport">
+            <h3 id="titreRapportPeriode" style="margin-top: 20px; color: var(--primary-color);">Rapport global des clés en cours</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date du Prêt</th>
+                        <th>Employé</th>
+                        <th>ID</th>
+                        <th>Route</th>
+                        <th>Détails des Clés (Série / Individuel)</th>
+                        <th>Retour Prévu</th>
+                    </tr>
+                </thead>
+                <tbody id="rapportTableBody">
+                    <!-- Rempli dynamiquement -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="no-print" style="margin-top: 20px;">
+            <button type="button" class="btn-info" onclick="window.print()" style="padding: 12px 24px; font-size: 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🖨️ Imprimer ce Rapport</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // Données incluant la colonne B et toutes les colonnes de clés extraites du fichier d'origine
     let routesData = JSON.parse(localStorage.getItem('routesData')) || {
         "1": ["STD", "13394", "13937", "25229"],
         "2": ["10001", "13937", "25229"],
@@ -399,6 +656,7 @@
 
         if (tabName === 'routesTab') initialiserConfigRoutes();
         if (tabName === 'historiqueTab') afficherHistorique();
+        if (tabName === 'rapportTab') genererRapportCles();
     }
 
     function initialiserSelectRoutes() {
@@ -409,18 +667,6 @@
             opt.value = route;
             opt.textContent = `Route ${route}`;
             routeSelect.appendChild(opt);
-        }
-    }
-
-    function gererSaisieEmploye() {
-        const val = document.getElementById('employeSelect').value;
-        const autreDiv = document.getElementById('autreEmployeDiv');
-        if (val === 'autre') {
-            autreDiv.style.display = 'block';
-            document.getElementById('employeManuel').required = true;
-        } else {
-            autreDiv.style.display = 'none';
-            document.getElementById('employeManuel').required = false;
         }
     }
 
@@ -452,10 +698,9 @@
         const datePret = document.getElementById('datePret').value;
         const dateRetour = document.getElementById('dateRetourPrevue').value;
         
-        let employe = document.getElementById('employeSelect').value;
-        if (employe === 'autre') {
-            employe = document.getElementById('employeManuel').value;
-        }
+        const employeSelectElem = document.getElementById('employeSelect');
+        const employe = employeSelectElem ? employeSelectElem.value : '';
+        const idEmploye = document.getElementById('idInput').value;
 
         const route = document.getElementById('routeSelect').value;
         const container = document.getElementById('clesDynamiquesContainer');
@@ -473,6 +718,7 @@
             datePret,
             dateRetour,
             employe,
+            idEmploye,
             route,
             cles: clesDetails,
             statut: 'En cours'
@@ -485,6 +731,8 @@
         document.getElementById('pretForm').reset();
         document.getElementById('datePret').valueAsDate = new Date();
         document.getElementById('clesDynamiquesContainer').innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>';
+        document.getElementById('ancienneteInput').value = '-';
+        if (isManualEntry) toggleManualEntry();
     }
 
     function initialiserConfigRoutes() {
@@ -570,6 +818,7 @@
             tr.innerHTML = `
                 <td>${pret.datePret}</td>
                 <td>${pret.employe}</td>
+                <td>${pret.idEmploye || '-'}</td>
                 <td>Route ${pret.route}</td>
                 <td>${clesStr}</td>
                 <td>${pret.dateRetour || 'Non spécifiée'}</td>
@@ -578,6 +827,47 @@
                     ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.id})">Marquer Retour</button>` : ''}
                     <button class="btn-danger" onclick="supprimerPret(${pret.id})">Supprimer</button>
                 </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function genererRapportCles() {
+        const dateDebut = document.getElementById('dateDebutRapport').value;
+        const dateFin = document.getElementById('dateFinRapport').value;
+        const tbody = document.getElementById('rapportTableBody');
+        const titrePeriode = document.getElementById('titreRapportPeriode');
+        tbody.innerHTML = '';
+
+        // Filtrer uniquement les prêts actifs (sans retour / "En cours")
+        let pretsActifs = pretsData.filter(p => p.statut === 'En cours');
+
+        // Filtrer par date ou tranche de date si renseignées
+        if (dateDebut && dateFin) {
+            pretsActifs = pretsActifs.filter(p => p.datePret >= dateDebut && p.datePret <= dateFin);
+            titrePeriode.textContent = `Rapport des clés en cours du ${dateDebut} au ${dateFin}`;
+        } else if (dateDebut) {
+            pretsActifs = pretsActifs.filter(p => p.datePret === dateDebut);
+            titrePeriode.textContent = `Rapport des clés en cours pour la date du ${dateDebut}`;
+        } else {
+            titrePeriode.textContent = `Rapport global de toutes les clés en cours (Sans retour)`;
+        }
+
+        if (pretsActifs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Aucune clé en cours de prêt pour cette période.</td></tr>`;
+            return;
+        }
+
+        pretsActifs.forEach(pret => {
+            let clesStr = pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>');
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${pret.datePret}</td>
+                <td>${pret.employe}</td>
+                <td>${pret.idEmploye || '-'}</td>
+                <td>Route ${pret.route}</td>
+                <td>${clesStr}</td>
+                <td>${pret.dateRetour || 'Non spécifiée'}</td>
             `;
             tbody.appendChild(tr);
         });
