@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Prêts de Clés - Routes & Aéroports</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .row-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        button.btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button.btn-primary:hover {
+            background: var(--secondary-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .keys-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .key-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .actions-cell button {
+            padding: 6px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Gestion des Prêts de Clés - Aérogare</h1>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'saisieTab')">Saisie des Prêts</button>
+        <button class="tab-btn" onclick="switchTab(event, 'routesTab')">Gestion des Routes & Clés</button>
+        <button class="tab-btn" onclick="switchTab(event, 'historiqueTab')">Historique des Prêts</button>
+    </div>
+
+    <!-- ONGLET 1 : SAISIE DES PRÊTS -->
+    <div id="saisieTab" class="tab-content active">
+        <h2>Nouveau Prêt de Clés</h2>
+        <form id="pretForm" onsubmit="enregisterPret(event)">
+            <div class="row-grid">
+                <div class="form-group">
+                    <label for="datePret">Date du Prêt :</label>
+                    <input type="date" id="datePret" required>
+                </div>
+                <div class="form-group">
+                    <label for="dateRetourPrevue">Date de Retour Prévue :</label>
+                    <input type="date" id="dateRetourPrevue">
+                </div>
+                <div class="form-group">
+                    <label for="employeSelect">Employé (Nom ou ID) :</label>
+                    <select id="employeSelect" onchange="gererSaisieEmploye()" required>
+                        <option value="">-- Sélectionner un employé --</option>
+                        <option value="10001">10001 - Jean Dupont</option>
+                        <option value="11097">11097 - Marie Tremblay</option>
+                        <option value="13090">13090 - Marc Lefebvre</option>
+                        <option value="autre">Autre (Créer manuellement)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="autreEmployeDiv" style="display: none;">
+                    <label for="employeManuel">Nom / ID de l'employé :</label>
+                    <input type="text" id="employeManuel" placeholder="Ex: Paul Martin (ID: 10500)">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="routeSelect">Sélectionner la Route :</label>
+                <select id="routeSelect" onchange="chargerClesRoute()" required>
+                    <option value="">-- Choisir une route --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Clés de la route (Numéros de série automatiques incluant la colonne B & Champ pour numéro individuel) :</label>
+                <div id="clesDynamiquesContainer" class="keys-container">
+                    <p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Enregistrer le Prêt</button>
+        </form>
+    </div>
+
+    <!-- ONGLET 2 : GESTION DES ROUTES ET CLÉS -->
+    <div id="routesTab" class="tab-content">
+        <h2>Configuration des Routes et Séries de Clés</h2>
+        <p>Visualisez, modifiez, ajoutez ou retirez des numéros de série de clés (colonnes B et suivantes) pour chaque route.</p>
+        
+        <div class="form-group" style="max-width: 350px;">
+            <label for="selectRouteConfig">Route à configurer :</label>
+            <select id="selectRouteConfig" onchange="chargerConfigRoute()"></select>
+        </div>
+
+        <div id="configRouteContent"></div>
+
+        <button type="button" class="btn-primary" onclick="ajouterNouvelleRoute()" style="margin-top: 15px;">Ajouter une Nouvelle Route</button>
+    </div>
+
+    <!-- ONGLET 3 : HISTORIQUE -->
+    <div id="historiqueTab" class="tab-content">
+        <h2>Historique des Prêts en Cours et Terminés</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date Prêt</th>
+                    <th>Employé</th>
+                    <th>Route</th>
+                    <th>Détails Clés (Série / Individuel)</th>
+                    <th>Retour Prévu / Effectif</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="historiqueTableBody">
+                <!-- Rempli dynamiquement -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Données incluant la colonne B et toutes les colonnes de clés extraites du fichier d'origine
+    let routesData = JSON.parse(localStorage.getItem('routesData')) || {
+        "1": ["STD", "13394", "13937", "25229"],
+        "2": ["10001", "13937", "25229"],
+        "3": ["10001", "25300"],
+        "4": ["13937", "25227", "25229"],
+        "5": ["25228"],
+        "6": ["11225", "13394", "13937", "25229"],
+        "7": ["10001", "CROWN", "11190", "25227"],
+        "8": ["11225", "25300"],
+        "9": ["13090", "25213"],
+        "10": ["10001", "13937"],
+        "11": ["10001", "CROWN", "25226"],
+        "12": ["10001", "25227", "25228"],
+        "13": ["10001", "25226"],
+        "14": ["10001", "13937", "25222", "25226", "25227", "25229"],
+        "15": ["13090", "10011", "13999"],
+        "16": ["11225", "25300"],
+        "17": ["13090", "25213"],
+        "18": ["10001", "11098", "25227", "25229"],
+        "19": ["13090", "10011", "25213"],
+        "20": ["11225"],
+        "21": ["13090", "10870", "25213"],
+        "22": ["10001", "25227", "25228"],
+        "23": ["11097", "25213"],
+        "24": ["10001", "25226"],
+        "25": ["13090", "10011", "10870", "11098", "25213"],
+        "26": ["11190", "11225", "14394", "25226", "25227", "25300"],
+        "27": ["25208", "25212"],
+        "28": ["10001", "11098", "13937", "25226", "25229"],
+        "29": ["25213"],
+        "30": ["10001", "25226", "25227"],
+        "31": ["25213"],
+        "32": ["10001", "11190", "14394", "25223", "25226"],
+        "33": ["13090", "11097", "25213"],
+        "34": ["14394", "25227", "25228"],
+        "35": ["13090", "13999", "25213"],
+        "36": ["13090", "25212", "25213"],
+        "37": ["13090", "25208"],
+        "38": ["25208", "45183"],
+        "40": ["13090", "10011", "25212", "25213"],
+        "42": ["25208"],
+        "44": ["10011", "25208", "25212"],
+        "46": ["10011", "10870", "13999"],
+        "48": ["10011", "25212"],
+        "50": ["13090"],
+        "52": ["13090", "10011", "25208", "25213"],
+        "54": ["13999", "25213"],
+        "56": ["10011", "13999"],
+        "58": ["13090", "13999", "25213"],
+        "60": ["13090", "10011", "25208"],
+        "62": ["13090", "25213"],
+        "64": ["10001", "11190", "14394", "25226", "25227"],
+        "66": ["13090"],
+        "68": ["13090", "25213"],
+        "70": ["11190", "25226"],
+        "72": ["10011", "25208", "45183"],
+        "76": ["25213"],
+        "78": ["13090", "25213"],
+        "80": ["11097"],
+        "84": ["STD", "25208", "25212", "25213"],
+        "88": ["13090", "25213"],
+        "90TP": ["10870", "11097", "14139", "25208", "25213"],
+        "94TP": ["13090"],
+        "96TP": ["10001"],
+        "201": ["10001", "13393", "25215"],
+        "202": ["10001", "25215"],
+        "203": ["10001", "25215"],
+        "204": ["10001", "CROWN", "13393", "25215"],
+        "205": ["STD", "CROWN", "13533", "25223", "25224"],
+        "206": ["10001", "13393", "13394"],
+        "207": ["10001", "11190", "25223"],
+        "208": ["10001", "13393", "13394", "25215", "25216"],
+        "209": ["10001", "25220"],
+        "210": ["10001", "13393", "13394", "25215", "25216"],
+        "211": ["25216", "25298"],
+        "212": ["10001", "25219"],
+        "213": ["25217"],
+        "214": ["10001", "11190", "25219"],
+        "215": ["13090", "25214"],
+        "216": ["10001", "CROWN", "25223", "25224"],
+        "217": ["13090", "25214"],
+        "218": ["10001", "25223"],
+        "219": ["25224"],
+        "220": ["25219", "25220"],
+        "221": ["25225"],
+        "222": ["10001", "STD", "11190", "25223", "25224"],
+        "223": ["10001", "CROWN", "25218"],
+        "224": ["10001", "CROWN", "11190", "14139", "25219", "25220", "25221"],
+        "225": ["13090"],
+        "226": ["10001", "CROWN", "14139", "25219", "25220"],
+        "227": ["10001", "25224"],
+        "228": ["STD", "25221"],
+        "230": ["25221"],
+        "232": ["10001", "25218", "25221", "25299"],
+        "234": ["10001", "CROWN", "25220", "25221"],
+        "236": ["10001", "CROWN", "25216"],
+        "238": ["10001", "11190", "14139", "25218", "25221"],
+        "240": ["10001", "CROWN", "25216", "25217", "25298"],
+        "242": ["10001", "25216", "25217"],
+        "244": ["10001", "STD", "CROWN", "25217", "25298"],
+        "246": ["10001", "25216", "25217", "25298"],
+        "248": ["25214", "25297"],
+        "250": ["10001", "25218", "25298"],
+        "252": ["10001", "25224", "25225"],
+        "254": ["25214"],
+        "256": ["13090", "25214", "25297", "45183"],
+        "258": ["10001", "25218", "25298"],
+        "260": ["13090", "25214", "45183"],
+        "262": ["10001", "STD", "CROWN", "13393", "25217", "25298"],
+        "264": ["10001", "STD", "11190", "25224"],
+        "266": ["10001", "14139", "25218", "25221", "25222"],
+        "268": ["10001", "25224", "25225", "25299"],
+        "270": ["25222"],
+        "272": ["25214", "45183"],
+        "274": ["10001", "STD", "25223", "25224"],
+        "278": ["10001", "STD", "25223", "25224"],
+        "282": ["13090", "25214"],
+        "286": ["10001", "STD", "25224", "25225", "25299"],
+        "290": ["13090", "25214"],
+        "302TP": ["10001", "13090"],
+        "306TP": ["10001"],
+        "310TP": ["25224", "25225"],
+        "192": ["10870", "25296"],
+        "193": ["10011", "25296", "45140", "13999"],
+        "195": ["10011", "10870", "13999", "25296"]
+    };
+
+    let pretsData = JSON.parse(localStorage.getItem('pretsData')) || [];
+
+    document.getElementById('datePret').valueAsDate = new Date();
+
+    function switchTab(evt, tabName) {
+        let contents = document.getElementsByClassName("tab-content");
+        for (let c of contents) c.classList.remove("active");
+
+        let buttons = document.getElementsByClassName("tab-btn");
+        for (let b of buttons) b.classList.remove("active");
+
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+
+        if (tabName === 'routesTab') initialiserConfigRoutes();
+        if (tabName === 'historiqueTab') afficherHistorique();
+    }
+
+    function initialiserSelectRoutes() {
+        const routeSelect = document.getElementById('routeSelect');
+        routeSelect.innerHTML = '<option value="">-- Choisir une route --</option>';
+        for (let route in routesData) {
+            let opt = document.createElement('option');
+            opt.value = route;
+            opt.textContent = `Route ${route}`;
+            routeSelect.appendChild(opt);
+        }
+    }
+
+    function gererSaisieEmploye() {
+        const val = document.getElementById('employeSelect').value;
+        const autreDiv = document.getElementById('autreEmployeDiv');
+        if (val === 'autre') {
+            autreDiv.style.display = 'block';
+            document.getElementById('employeManuel').required = true;
+        } else {
+            autreDiv.style.display = 'none';
+            document.getElementById('employeManuel').required = false;
+        }
+    }
+
+    function chargerClesRoute() {
+        const route = document.getElementById('routeSelect').value;
+        const container = document.getElementById('clesDynamiquesContainer');
+        container.innerHTML = '';
+
+        if (!route || !routesData[route]) {
+            container.innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route valide.</p>';
+            return;
+        }
+
+        const series = routesData[route];
+        series.forEach((serie, index) => {
+            let div = document.createElement('div');
+            div.className = 'key-item';
+            div.innerHTML = `
+                <label>Série : <strong>${serie}</strong></label>
+                <input type="hidden" name="serie_${index}" value="${serie}">
+                <input type="text" name="individuel_${index}" placeholder="N° individuel de la clé" required>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function enregisterPret(e) {
+        e.preventDefault();
+        const datePret = document.getElementById('datePret').value;
+        const dateRetour = document.getElementById('dateRetourPrevue').value;
+        
+        let employe = document.getElementById('employeSelect').value;
+        if (employe === 'autre') {
+            employe = document.getElementById('employeManuel').value;
+        }
+
+        const route = document.getElementById('routeSelect').value;
+        const container = document.getElementById('clesDynamiquesContainer');
+        const items = container.getElementsByClassName('key-item');
+
+        let clesDetails = [];
+        for (let item of items) {
+            let serie = item.querySelector('input[type="hidden"]').value;
+            let individuel = item.querySelector('input[type="text"]').value;
+            clesDetails.push({ serie, individuel });
+        }
+
+        let nouveauPret = {
+            id: Date.now(),
+            datePret,
+            dateRetour,
+            employe,
+            route,
+            cles: clesDetails,
+            statut: 'En cours'
+        };
+
+        pretsData.push(nouveauPret);
+        localStorage.setItem('pretsData', JSON.stringify(pretsData));
+
+        alert('Prêt enregistré avec succès !');
+        document.getElementById('pretForm').reset();
+        document.getElementById('datePret').valueAsDate = new Date();
+        document.getElementById('clesDynamiquesContainer').innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>';
+    }
+
+    function initialiserConfigRoutes() {
+        const select = document.getElementById('selectRouteConfig');
+        select.innerHTML = '';
+        for (let route in routesData) {
+            let opt = document.createElement('option');
+            opt.value = route;
+            opt.textContent = `Route ${route}`;
+            select.appendChild(opt);
+        }
+        chargerConfigRoute();
+    }
+
+    function chargerConfigRoute() {
+        const route = document.getElementById('selectRouteConfig').value;
+        const content = document.getElementById('configRouteContent');
+        if (!route) return;
+
+        let html = `<h3>Numéros de série pour la Route ${route}</h3>`;
+        html += `<table><thead><tr><th>Index</th><th>Numéro de Série</th><th>Action</th></tr></thead><tbody>`;
+        
+        routesData[route].forEach((serie, idx) => {
+            html += `<tr>
+                <td>${idx + 1}</td>
+                <td><input type="text" id="serie_edit_${route}_${idx}" value="${serie}"></td>
+                <td>
+                    <button type="button" class="btn-success" onclick="modifierSerie('${route}', ${idx})">Modifier</button>
+                    <button type="button" class="btn-danger" onclick="supprimerSerie('${route}', ${idx})">Retirer</button>
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        html += `<div style="margin-top: 10px;">
+                    <input type="text" id="nouvelleSerie_${route}" placeholder="Nouveau N° de série" style="width: 200px; display: inline-block; margin-right: 10px;">
+                    <button type="button" class="btn-primary" onclick="ajouterSerie('${route}')" style="width: auto;">Ajouter une clé</button>
+                 </div>`;
+        content.innerHTML = html;
+    }
+
+    function modifierSerie(route, idx) {
+        const newVal = document.getElementById(`serie_edit_${route}_${idx}`).value;
+        if(newVal) {
+            routesData[route][idx] = newVal;
+            localStorage.setItem('routesData', JSON.stringify(routesData));
+            alert('Modification enregistrée !');
+            chargerConfigRoute();
+        }
+    }
+
+    function supprimerSerie(route, idx) {
+        routesData[route].splice(idx, 1);
+        localStorage.setItem('routesData', JSON.stringify(routesData));
+        chargerConfigRoute();
+    }
+
+    function ajouterSerie(route) {
+        const val = document.getElementById(`nouvelleSerie_${route}`).value;
+        if(val) {
+            routesData[route].push(val);
+            localStorage.setItem('routesData', JSON.stringify(routesData));
+            chargerConfigRoute();
+        }
+    }
+
+    function ajouterNouvelleRoute() {
+        const nouvelleRouteNom = prompt("Entrez le numéro ou le nom de la nouvelle route :");
+        if(nouvelleRouteNom && !routesData[nouvelleRouteNom]) {
+            routesData[nouvelleRouteNom] = [];
+            localStorage.setItem('routesData', JSON.stringify(routesData));
+            initialiserConfigRoutes();
+            initialiserSelectRoutes();
+        }
+    }
+
+    function afficherHistorique() {
+        const tbody = document.getElementById('historiqueTableBody');
+        tbody.innerHTML = '';
+
+        pretsData.forEach(pret => {
+            let clesStr = pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>');
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${pret.datePret}</td>
+                <td>${pret.employe}</td>
+                <td>Route ${pret.route}</td>
+                <td>${clesStr}</td>
+                <td>${pret.dateRetour || 'Non spécifiée'}</td>
+                <td><span style="color: ${pret.statut === 'En cours' ? '#d97706' : '#059669'}; font-weight: bold;">${pret.statut}</span></td>
+                <td class="actions-cell">
+                    ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.id})">Marquer Retour</button>` : ''}
+                    <button class="btn-danger" onclick="supprimerPret(${pret.id})">Supprimer</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function marquerRetour(id) {
+        let pret = pretsData.find(p => p.id === id);
+        if(pret) {
+            pret.statut = 'Retourné';
+            pret.dateRetourEffective = new Date().toISOString().split('T')[0];
+            localStorage.setItem('pretsData', JSON.stringify(pretsData));
+            afficherHistorique();
+        }
+    }
+
+    function supprimerPret(id) {
+        pretsData = pretsData.filter(p => p.id !== id);
+        localStorage.setItem('pretsData', JSON.stringify(pretsData));
+        afficherHistorique();
+    }
+
+    window.onload = function() {
+        initialiserSelectRoutes();
+    };
+</script>
+
+</body>
+</html>
