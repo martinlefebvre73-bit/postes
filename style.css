@@ -611,4 +611,8 @@ color: #0f172a !important;
 -webkit-print-color-adjust: exact;
 print-color-adjust: exact;
 }
+
+.bg-yellow-600 { background-color: #ca8a04; }
+.hover\:bg-yellow-700:hover { background-color: #a16207; }
+  
 }
