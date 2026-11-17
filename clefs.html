@@ -243,6 +243,7 @@
             } catch (e) {
                 console.error("Erreur chargement employés: ", e);
                 document.getElementById('firebaseStatus').textContent = "⚠️ Mode hors ligne ou erreur de chargement Firestore.";
+                renderNomField();
             }
         }
 
@@ -255,6 +256,7 @@
 
             if (isManualEntry) {
                 btnToggle.textContent = "📋 Liste";
+                btnToggle.title = "Revenir à la liste déroulante";
                 idInput.readOnly = false;
                 idInput.style.background = "white";
                 ancienneteInput.readOnly = false;
@@ -263,6 +265,7 @@
                 idInput.value = "";
             } else {
                 btnToggle.textContent = "✍️ Manuel";
+                btnToggle.title = "Permettre la saisie manuelle";
                 idInput.readOnly = false;
                 idInput.style.background = "white";
                 ancienneteInput.readOnly = true;
@@ -388,7 +391,7 @@
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <label for="employeSelect" style="margin-bottom: 0;">Employé (Nom ou ID) :</label>
-                        <button type="button" id="toggleModeBtn" class="btn-warning" onclick="toggleManualEntry()" style="padding: 2px 8px; height: 24px; font-size: 0.75rem; border: none; border-radius: 4px; cursor: pointer;">✍️ Manuel</button>
+                        <button type="button" id="toggleModeBtn" class="btn-warning" onclick="toggleManualEntry()" style="padding: 2px 8px; height: 24px; font-size: 0.75rem; border: none; border-radius: 4px; cursor: pointer;" title="Permettre la saisie manuelle">✍️ Manuel</button>
                     </div>
                     <div id="nomContainer">
                         <select id="employeSelect" class="form-control" onchange="remplirParNom(this)" required>
@@ -839,10 +842,8 @@
         const titrePeriode = document.getElementById('titreRapportPeriode');
         tbody.innerHTML = '';
 
-        // Filtrer uniquement les prêts actifs (sans retour / "En cours")
         let pretsActifs = pretsData.filter(p => p.statut === 'En cours');
 
-        // Filtrer par date ou tranche de date si renseignées
         if (dateDebut && dateFin) {
             pretsActifs = pretsActifs.filter(p => p.datePret >= dateDebut && p.datePret <= dateFin);
             titrePeriode.textContent = `Rapport des clés en cours du ${dateDebut} au ${dateFin}`;
