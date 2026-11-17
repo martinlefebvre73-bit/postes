@@ -798,15 +798,15 @@
                         tr.style.opacity = "0.55"; // Grise les anciennes semaines déplacées en bas
                         tr.style.backgroundColor = "#f8fafc";
                     } else if (index === currentIndex) {
-                        tr.style.borderLeft = "4px solid #f59e0b"; // Surligne la semaine en cours
-                        tr.style.backgroundColor = "#fffbeb";
+                        tr.style.borderLeft = "4px solid #3b82f6"; // Bordure bleu moyen-foncé
+                        tr.style.backgroundColor = "rgba(30, 58, 138, 0.4)"; // Fond bleu moyen-foncé translucide
                     }
                     
                     let html = `
                         <td class="week-cell">
                             <span class="week-dot"></span>
                             ${weekItem.week}
-                            ${index === currentIndex ? '<br><span style="font-size:0.75em; color:#d97706; font-weight:bold;">(En cours)</span>' : ''}
+                            ${index === currentIndex ? '<br><span style="font-size:0.75em; color:#60a5fa; font-weight:bold;">(En cours)</span>' : ''}
                         </td>
                     `;
 
