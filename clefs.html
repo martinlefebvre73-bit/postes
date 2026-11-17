@@ -166,9 +166,9 @@
             background: #f1f5f9;
             border-radius: 6px;
             border-left: 4px solid var(--primary-color);
+            font-weight: 500;
         }
 
-        /* Styles spécifiques pour l'impression */
         @media print {
             body * {
                 visibility: hidden;
@@ -191,7 +191,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -209,22 +209,153 @@
 
         let listeEmployesMemoire = [];
         let isManualEntry = false;
+        
+        // Données globales stockées en mémoire et synchronisées
+        window.routesData = JSON.parse(localStorage.getItem('routesData')) || {
+            "1": ["STD", "13394", "13937", "25229"],
+            "2": ["10001", "13937", "25229"],
+            "3": ["10001", "25300"],
+            "4": ["13937", "25227", "25229"],
+            "5": ["25228"],
+            "6": ["11225", "13394", "13937", "25229"],
+            "7": ["10001", "CROWN", "11190", "25227"],
+            "8": ["11225", "25300"],
+            "9": ["13090", "25213"],
+            "10": ["10001", "13937"],
+            "11": ["10001", "CROWN", "25226"],
+            "12": ["10001", "25227", "25228"],
+            "13": ["10001", "25226"],
+            "14": ["10001", "13937", "25222", "25226", "25227", "25229"],
+            "15": ["13090", "10011", "13999"],
+            "16": ["11225", "25300"],
+            "17": ["13090", "25213"],
+            "18": ["10001", "11098", "25227", "25229"],
+            "19": ["13090", "10011", "25213"],
+            "20": ["11225"],
+            "21": ["13090", "10870", "25213"],
+            "22": ["10001", "25227", "25228"],
+            "23": ["11097", "25213"],
+            "24": ["10001", "25226"],
+            "25": ["13090", "10011", "10870", "11098", "25213"],
+            "26": ["11190", "11225", "14394", "25226", "25227", "25300"],
+            "27": ["25208", "25212"],
+            "28": ["10001", "11098", "13937", "25226", "25229"],
+            "29": ["25213"],
+            "30": ["10001", "25226", "25227"],
+            "31": ["25213"],
+            "32": ["10001", "11190", "14394", "25223", "25226"],
+            "33": ["13090", "11097", "25213"],
+            "34": ["14394", "25227", "25228"],
+            "35": ["13090", "13999", "25213"],
+            "36": ["13090", "25212", "25213"],
+            "37": ["13090", "25208"],
+            "38": ["25208", "45183"],
+            "40": ["13090", "10011", "25212", "25213"],
+            "42": ["25208"],
+            "44": ["10011", "25208", "25212"],
+            "46": ["10011", "10870", "13999"],
+            "48": ["10011", "25212"],
+            "50": ["13090"],
+            "52": ["13090", "10011", "25208", "25213"],
+            "54": ["13999", "25213"],
+            "56": ["10011", "13999"],
+            "58": ["13090", "13999", "25213"],
+            "60": ["13090", "10011", "25208"],
+            "62": ["13090", "25213"],
+            "64": ["10001", "11190", "14394", "25226", "25227"],
+            "66": ["13090"],
+            "68": ["13090", "25213"],
+            "70": ["11190", "25226"],
+            "72": ["10011", "25208", "45183"],
+            "76": ["25213"],
+            "78": ["13090", "25213"],
+            "80": ["11097"],
+            "84": ["STD", "25208", "25212", "25213"],
+            "88": ["13090", "25213"],
+            "90TP": ["10870", "11097", "14139", "25208", "25213"],
+            "94TP": ["13090"],
+            "96TP": ["10001"],
+            "201": ["10001", "13393", "25215"],
+            "202": ["10001", "25215"],
+            "203": ["10001", "25215"],
+            "204": ["10001", "CROWN", "13393", "25215"],
+            "205": ["STD", "CROWN", "13533", "25223", "25224"],
+            "206": ["10001", "13393", "13394"],
+            "207": ["10001", "11190", "25223"],
+            "208": ["10001", "13393", "13394", "25215", "25216"],
+            "209": ["10001", "25220"],
+            "210": ["10001", "13393", "13394", "25215", "25216"],
+            "211": ["25216", "25298"],
+            "212": ["10001", "25219"],
+            "213": ["25217"],
+            "214": ["10001", "11190", "25219"],
+            "215": ["13090", "25214"],
+            "216": ["10001", "CROWN", "25223", "25224"],
+            "217": ["13090", "25214"],
+            "218": ["10001", "25223"],
+            "219": ["25224"],
+            "220": ["25219", "25220"],
+            "221": ["25225"],
+            "222": ["10001", "STD", "11190", "25223", "25224"],
+            "223": ["10001", "CROWN", "25218"],
+            "224": ["10001", "CROWN", "11190", "14139", "25219", "25220", "25221"],
+            "225": ["13090"],
+            "226": ["10001", "CROWN", "14139", "25219", "25220"],
+            "227": ["10001", "25224"],
+            "228": ["STD", "25221"],
+            "230": ["25221"],
+            "232": ["10001", "25218", "25221", "25299"],
+            "234": ["10001", "CROWN", "25220", "25221"],
+            "236": ["10001", "CROWN", "25216"],
+            "238": ["10001", "11190", "14139", "25218", "25221"],
+            "240": ["10001", "CROWN", "25216", "25217", "25298"],
+            "242": ["10001", "25216", "25217"],
+            "244": ["10001", "STD", "CROWN", "25217", "25298"],
+            "246": ["10001", "25216", "25217", "25298"],
+            "248": ["25214", "25297"],
+            "250": ["10001", "25218", "25298"],
+            "252": ["10001", "25224", "25225"],
+            "254": ["25214"],
+            "256": ["13090", "25214", "25297", "45183"],
+            "258": ["10001", "25218", "25298"],
+            "260": ["13090", "25214", "45183"],
+            "262": ["10001", "STD", "CROWN", "13393", "25217", "25298"],
+            "264": ["10001", "STD", "11190", "25224"],
+            "266": ["10001", "14139", "25218", "25221", "25222"],
+            "268": ["10001", "25224", "25225", "25299"],
+            "270": ["25222"],
+            "272": ["25214", "45183"],
+            "274": ["10001", "STD", "25223", "25224"],
+            "278": ["10001", "STD", "25223", "25224"],
+            "282": ["13090", "25214"],
+            "286": ["10001", "STD", "25224", "25225", "25299"],
+            "290": ["13090", "25214"],
+            "302TP": ["10001", "13090"],
+            "306TP": ["10001"],
+            "310TP": ["25224", "25225"],
+            "192": ["10870", "25296"],
+            "193": ["10011", "25296", "45140", "13999"],
+            "195": ["10011", "10870", "13999", "25296"]
+        };
+
+        window.pretsData = JSON.parse(localStorage.getItem('pretsData')) || [];
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                document.getElementById('firebaseStatus').textContent = "Connecté à Firebase. Chargement des employés...";
-                await chargerEmployes();
+                document.getElementById('firebaseStatus').textContent = "Connecté à Firebase. Chargement des données...";
+                await chargerDonneesFirestore();
             } else {
                 document.getElementById('firebaseStatus').textContent = "Mode invité / Non authentifié. Chargement des données locales...";
-                await chargerEmployes();
+                await chargerDonneesFirestore();
             }
         });
 
-        async function chargerEmployes() {
+        async function chargerDonneesFirestore() {
             try {
-                const querySnapshot = await getDocs(collection(db, "employes"));
+                // 1. Chargement des employés (collection "employes")
+                const queryEmployes = await getDocs(collection(db, "employes"));
                 listeEmployesMemoire = [];
-                querySnapshot.forEach((docSnap) => {
+                queryEmployes.forEach((docSnap) => {
                     listeEmployesMemoire.push(docSnap.data());
                 });
 
@@ -239,12 +370,30 @@
                 });
 
                 renderNomField();
-                document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${listeEmployesMemoire.length} employés chargés).`;
+
+                // 2. Chargement des prêts de clés (collection "prets_cles")
+                const queryPrets = await getDocs(collection(db, "prets_cles"));
+                let pretsFirestore = [];
+                queryPrets.forEach((docSnap) => {
+                    pretsFirestore.push({ firebaseId: docSnap.id, ...docSnap.data() });
+                });
+
+                if (pretsFirestore.length > 0) {
+                    pretsData = pretsFirestore;
+                    localStorage.setItem('pretsData', JSON.stringify(pretsData));
+                }
+
+                document.getElementById('firebaseStatus').textContent = `Connecté à Firebase (${listeEmployesMemoire.length} employés, ${pretsData.length} prêts chargés).`;
+                document.getElementById('firebaseStatus').style.color = "#059669";
             } catch (e) {
-                console.error("Erreur chargement employés: ", e);
-                document.getElementById('firebaseStatus').textContent = "⚠️ Mode hors ligne ou erreur de chargement Firestore.";
+                console.error("Erreur de synchronisation Firestore: ", e);
+                document.getElementById('firebaseStatus').textContent = "⚠️ Mode hors ligne ou erreur de chargement Firestore (utilisation du cache local).";
+                document.getElementById('firebaseStatus').style.color = "#d97706";
                 renderNomField();
             }
+
+            initialiserSelectRoutes();
+            afficherHistorique();
         }
 
         window.toggleManualEntry = function() {
@@ -358,6 +507,295 @@
                     checkboxesGroup.style.flexDirection = 'column';
                 }
             }
+        };
+
+        window.enregisterPret = async function(e) {
+            e.preventDefault();
+            const datePret = document.getElementById('datePret').value;
+            const dateRetour = document.getElementById('dateRetourPrevue').value;
+            
+            const employeSelectElem = document.getElementById('employeSelect');
+            const employe = employeSelectElem ? employeSelectElem.value : '';
+            const idEmploye = document.getElementById('idInput').value;
+            const anciennete = document.getElementById('ancienneteInput').value;
+
+            const route = document.getElementById('routeSelect').value;
+            const container = document.getElementById('clesDynamiquesContainer');
+            const items = container.getElementsByClassName('key-item');
+
+            let clesDetails = [];
+            for (let item of items) {
+                let serie = item.querySelector('input[type="hidden"]').value;
+                let individuel = item.querySelector('input[type="text"]').value;
+                clesDetails.push({ serie, individuel });
+            }
+
+            let nouveauPret = {
+                idUnique: Date.now(),
+                datePret,
+                dateRetour,
+                employe,
+                idEmploye,
+                anciennete,
+                route,
+                cles: clesDetails,
+                statut: 'En cours',
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, "prets_cles"), nouveauPret);
+                nouveauPret.firebaseId = docRef.id;
+            } catch (fbErr) {
+                console.warn("Sauvegarde locale uniquement (Hors ligne)");
+            }
+
+            pretsData.push(nouveauPret);
+            localStorage.setItem('pretsData', JSON.stringify(pretsData));
+
+            alert('Prêt enregistré et synchronisé avec succès !');
+            document.getElementById('pretForm').reset();
+            document.getElementById('datePret').valueAsDate = new Date();
+            document.getElementById('clesDynamiquesContainer').innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>';
+            document.getElementById('ancienneteInput').value = '-';
+            if (isManualEntry) toggleManualEntry();
+            afficherHistorique();
+        }
+
+        window.marquerRetour = async function(idUnique) {
+            let pret = pretsData.find(p => p.idUnique === idUnique);
+            if(pret) {
+                pret.statut = 'Retourné';
+                pret.dateRetourEffective = new Date().toISOString().split('T')[0];
+
+                if (pret.firebaseId) {
+                    try {
+                        await updateDoc(doc(db, "prets_cles", pret.firebaseId), {
+                            statut: 'Retourné',
+                            dateRetourEffective: pret.dateRetourEffective
+                        });
+                    } catch (err) {
+                        console.warn("Mise à jour hors ligne effectuée.");
+                    }
+                }
+
+                localStorage.setItem('pretsData', JSON.stringify(pretsData));
+                afficherHistorique();
+            }
+        }
+
+        window.supprimerPret = async function(idUnique) {
+            let pret = pretsData.find(p => p.idUnique === idUnique);
+            if (pret && pret.firebaseId) {
+                try {
+                    await deleteDoc(doc(db, "prets_cles", pret.firebaseId));
+                } catch (err) {
+                    console.warn("Suppression hors ligne effectuée.");
+                }
+            }
+
+            pretsData = pretsData.filter(p => p.idUnique !== idUnique);
+            localStorage.setItem('pretsData', JSON.stringify(pretsData));
+            afficherHistorique();
+        }
+
+        window.initialiserSelectRoutes = function() {
+            const routeSelect = document.getElementById('routeSelect');
+            if(!routeSelect) return;
+            routeSelect.innerHTML = '<option value="">-- Choisir une route --</option>';
+            for (let route in routesData) {
+                let opt = document.createElement('option');
+                opt.value = route;
+                opt.textContent = `Route ${route}`;
+                routeSelect.appendChild(opt);
+            }
+        }
+
+        window.chargerClesRoute = function() {
+            const route = document.getElementById('routeSelect').value;
+            const container = document.getElementById('clesDynamiquesContainer');
+            container.innerHTML = '';
+
+            if (!route || !routesData[route]) {
+                container.innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route valide.</p>';
+                return;
+            }
+
+            const series = routesData[route];
+            series.forEach((serie, index) => {
+                let div = document.createElement('div');
+                div.className = 'key-item';
+                div.innerHTML = `
+                    <label>Série : <strong>${serie}</strong></label>
+                    <input type="hidden" name="serie_${index}" value="${serie}">
+                    <input type="text" name="individuel_${index}" placeholder="N° individuel de la clé" required>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.initialiserConfigRoutes = function() {
+            const select = document.getElementById('selectRouteConfig');
+            if(!select) return;
+            select.innerHTML = '';
+            for (let route in routesData) {
+                let opt = document.createElement('option');
+                opt.value = route;
+                opt.textContent = `Route ${route}`;
+                select.appendChild(opt);
+            }
+            chargerConfigRoute();
+        }
+
+        window.chargerConfigRoute = function() {
+            const route = document.getElementById('selectRouteConfig').value;
+            const content = document.getElementById('configRouteContent');
+            if (!route) return;
+
+            let html = `<h3>Numéros de série pour la Route ${route}</h3>`;
+            html += `<table><thead><tr><th>Index</th><th>Numéro de Série</th><th>Action</th></tr></thead><tbody>`;
+            
+            routesData[route].forEach((serie, idx) => {
+                html += `<tr>
+                    <td>${idx + 1}</td>
+                    <td><input type="text" id="serie_edit_${route}_${idx}" value="${serie}"></td>
+                    <td>
+                        <button type="button" class="btn-success" onclick="modifierSerie('${route}', ${idx})">Modifier</button>
+                        <button type="button" class="btn-danger" onclick="supprimerSerie('${route}', ${idx})">Retirer</button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            html += `<div style="margin-top: 10px;">
+                        <input type="text" id="nouvelleSerie_${route}" placeholder="Nouveau N° de série" style="width: 200px; display: inline-block; margin-right: 10px;">
+                        <button type="button" class="btn-primary" onclick="ajouterSerie('${route}')" style="width: auto;">Ajouter une clé</button>
+                     </div>`;
+            content.innerHTML = html;
+        }
+
+        window.modifierSerie = function(route, idx) {
+            const newVal = document.getElementById(`serie_edit_${route}_${idx}`).value;
+            if(newVal) {
+                routesData[route][idx] = newVal;
+                localStorage.setItem('routesData', JSON.stringify(routesData));
+                alert('Modification enregistrée !');
+                chargerConfigRoute();
+            }
+        }
+
+        window.supprimerSerie = function(route, idx) {
+            routesData[route].splice(idx, 1);
+            localStorage.setItem('routesData', JSON.stringify(routesData));
+            chargerConfigRoute();
+        }
+
+        window.ajouterSerie = function(route) {
+            const val = document.getElementById(`nouvelleSerie_${route}`).value;
+            if(val) {
+                routesData[route].push(val);
+                localStorage.setItem('routesData', JSON.stringify(routesData));
+                chargerConfigRoute();
+            }
+        }
+
+        window.ajouterNouvelleRoute = function() {
+            const nouvelleRouteNom = prompt("Entrez le numéro ou le nom de la nouvelle route :");
+            if(nouvelleRouteNom && !routesData[nouvelleRouteNom]) {
+                routesData[nouvelleRouteNom] = [];
+                localStorage.setItem('routesData', JSON.stringify(routesData));
+                initialiserConfigRoutes();
+                initialiserSelectRoutes();
+            }
+        }
+
+        window.afficherHistorique = function() {
+            const tbody = document.getElementById('historiqueTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if (pretsData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #9ca3af;">Aucun prêt enregistré.</td></tr>`;
+                return;
+            }
+
+            pretsData.forEach(pret => {
+                let clesStr = pret.cles ? pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>') : '';
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pret.datePret}</td>
+                    <td>${pret.employe}</td>
+                    <td>${pret.idEmploye || '-'}</td>
+                    <td>Route ${pret.route}</td>
+                    <td>${clesStr}</td>
+                    <td>${pret.dateRetour || 'Non spécifiée'}</td>
+                    <td><span style="color: ${pret.statut === 'En cours' ? '#d97706' : '#059669'}; font-weight: bold;">${pret.statut}</span></td>
+                    <td class="actions-cell">
+                        ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.idUnique})">Marquer Retour</button>` : ''}
+                        <button class="btn-danger" onclick="supprimerPret(${pret.idUnique})">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.genererRapportCles = function() {
+            const dateDebut = document.getElementById('dateDebutRapport').value;
+            const dateFin = document.getElementById('dateFinRapport').value;
+            const tbody = document.getElementById('rapportTableBody');
+            const titrePeriode = document.getElementById('titreRapportPeriode');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let pretsActifs = pretsData.filter(p => p.statut === 'En cours');
+
+            if (dateDebut && dateFin) {
+                pretsActifs = pretsActifs.filter(p => p.datePret >= dateDebut && p.datePret <= dateFin);
+                titrePeriode.textContent = `Rapport des clés en cours du ${dateDebut} au ${dateFin}`;
+            } else if (dateDebut) {
+                pretsActifs = pretsActifs.filter(p => p.datePret === dateDebut);
+                titrePeriode.textContent = `Rapport des clés en cours pour la date du ${dateDebut}`;
+            } else {
+                titrePeriode.textContent = `Rapport global de toutes les clés en cours (Sans retour)`;
+            }
+
+            if (pretsActifs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Aucune clé en cours de prêt pour cette période.</td></tr>`;
+                return;
+            }
+
+            pretsActifs.forEach(pret => {
+                let clesStr = pret.cles ? pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>') : '';
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pret.datePret}</td>
+                    <td>${pret.employe}</td>
+                    <td>${pret.idEmploye || '-'}</td>
+                    <td>Route ${pret.route}</td>
+                    <td>${clesStr}</td>
+                    <td>${pret.dateRetour || 'Non spécifiée'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.switchTab = function(evt, tabName) {
+            let contents = document.getElementsByClassName("tab-content");
+            for (let c of contents) c.classList.remove("active");
+
+            let buttons = document.getElementsByClassName("tab-btn");
+            for (let b of buttons) b.classList.remove("active");
+
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+
+            if (tabName === 'routesTab') initialiserConfigRoutes();
+            if (tabName === 'historiqueTab') afficherHistorique();
+            if (tabName === 'rapportTab') genererRapportCles();
+        }
+
+        window.onload = function() {
+            document.getElementById('datePret').valueAsDate = new Date();
+            initialiserSelectRoutes();
         };
     </script>
 </head>
@@ -514,386 +952,6 @@
         </div>
     </div>
 </div>
-
-<script>
-    let routesData = JSON.parse(localStorage.getItem('routesData')) || {
-        "1": ["STD", "13394", "13937", "25229"],
-        "2": ["10001", "13937", "25229"],
-        "3": ["10001", "25300"],
-        "4": ["13937", "25227", "25229"],
-        "5": ["25228"],
-        "6": ["11225", "13394", "13937", "25229"],
-        "7": ["10001", "CROWN", "11190", "25227"],
-        "8": ["11225", "25300"],
-        "9": ["13090", "25213"],
-        "10": ["10001", "13937"],
-        "11": ["10001", "CROWN", "25226"],
-        "12": ["10001", "25227", "25228"],
-        "13": ["10001", "25226"],
-        "14": ["10001", "13937", "25222", "25226", "25227", "25229"],
-        "15": ["13090", "10011", "13999"],
-        "16": ["11225", "25300"],
-        "17": ["13090", "25213"],
-        "18": ["10001", "11098", "25227", "25229"],
-        "19": ["13090", "10011", "25213"],
-        "20": ["11225"],
-        "21": ["13090", "10870", "25213"],
-        "22": ["10001", "25227", "25228"],
-        "23": ["11097", "25213"],
-        "24": ["10001", "25226"],
-        "25": ["13090", "10011", "10870", "11098", "25213"],
-        "26": ["11190", "11225", "14394", "25226", "25227", "25300"],
-        "27": ["25208", "25212"],
-        "28": ["10001", "11098", "13937", "25226", "25229"],
-        "29": ["25213"],
-        "30": ["10001", "25226", "25227"],
-        "31": ["25213"],
-        "32": ["10001", "11190", "14394", "25223", "25226"],
-        "33": ["13090", "11097", "25213"],
-        "34": ["14394", "25227", "25228"],
-        "35": ["13090", "13999", "25213"],
-        "36": ["13090", "25212", "25213"],
-        "37": ["13090", "25208"],
-        "38": ["25208", "45183"],
-        "40": ["13090", "10011", "25212", "25213"],
-        "42": ["25208"],
-        "44": ["10011", "25208", "25212"],
-        "46": ["10011", "10870", "13999"],
-        "48": ["10011", "25212"],
-        "50": ["13090"],
-        "52": ["13090", "10011", "25208", "25213"],
-        "54": ["13999", "25213"],
-        "56": ["10011", "13999"],
-        "58": ["13090", "13999", "25213"],
-        "60": ["13090", "10011", "25208"],
-        "62": ["13090", "25213"],
-        "64": ["10001", "11190", "14394", "25226", "25227"],
-        "66": ["13090"],
-        "68": ["13090", "25213"],
-        "70": ["11190", "25226"],
-        "72": ["10011", "25208", "45183"],
-        "76": ["25213"],
-        "78": ["13090", "25213"],
-        "80": ["11097"],
-        "84": ["STD", "25208", "25212", "25213"],
-        "88": ["13090", "25213"],
-        "90TP": ["10870", "11097", "14139", "25208", "25213"],
-        "94TP": ["13090"],
-        "96TP": ["10001"],
-        "201": ["10001", "13393", "25215"],
-        "202": ["10001", "25215"],
-        "203": ["10001", "25215"],
-        "204": ["10001", "CROWN", "13393", "25215"],
-        "205": ["STD", "CROWN", "13533", "25223", "25224"],
-        "206": ["10001", "13393", "13394"],
-        "207": ["10001", "11190", "25223"],
-        "208": ["10001", "13393", "13394", "25215", "25216"],
-        "209": ["10001", "25220"],
-        "210": ["10001", "13393", "13394", "25215", "25216"],
-        "211": ["25216", "25298"],
-        "212": ["10001", "25219"],
-        "213": ["25217"],
-        "214": ["10001", "11190", "25219"],
-        "215": ["13090", "25214"],
-        "216": ["10001", "CROWN", "25223", "25224"],
-        "217": ["13090", "25214"],
-        "218": ["10001", "25223"],
-        "219": ["25224"],
-        "220": ["25219", "25220"],
-        "221": ["25225"],
-        "222": ["10001", "STD", "11190", "25223", "25224"],
-        "223": ["10001", "CROWN", "25218"],
-        "224": ["10001", "CROWN", "11190", "14139", "25219", "25220", "25221"],
-        "225": ["13090"],
-        "226": ["10001", "CROWN", "14139", "25219", "25220"],
-        "227": ["10001", "25224"],
-        "228": ["STD", "25221"],
-        "230": ["25221"],
-        "232": ["10001", "25218", "25221", "25299"],
-        "234": ["10001", "CROWN", "25220", "25221"],
-        "236": ["10001", "CROWN", "25216"],
-        "238": ["10001", "11190", "14139", "25218", "25221"],
-        "240": ["10001", "CROWN", "25216", "25217", "25298"],
-        "242": ["10001", "25216", "25217"],
-        "244": ["10001", "STD", "CROWN", "25217", "25298"],
-        "246": ["10001", "25216", "25217", "25298"],
-        "248": ["25214", "25297"],
-        "250": ["10001", "25218", "25298"],
-        "252": ["10001", "25224", "25225"],
-        "254": ["25214"],
-        "256": ["13090", "25214", "25297", "45183"],
-        "258": ["10001", "25218", "25298"],
-        "260": ["13090", "25214", "45183"],
-        "262": ["10001", "STD", "CROWN", "13393", "25217", "25298"],
-        "264": ["10001", "STD", "11190", "25224"],
-        "266": ["10001", "14139", "25218", "25221", "25222"],
-        "268": ["10001", "25224", "25225", "25299"],
-        "270": ["25222"],
-        "272": ["25214", "45183"],
-        "274": ["10001", "STD", "25223", "25224"],
-        "278": ["10001", "STD", "25223", "25224"],
-        "282": ["13090", "25214"],
-        "286": ["10001", "STD", "25224", "25225", "25299"],
-        "290": ["13090", "25214"],
-        "302TP": ["10001", "13090"],
-        "306TP": ["10001"],
-        "310TP": ["25224", "25225"],
-        "192": ["10870", "25296"],
-        "193": ["10011", "25296", "45140", "13999"],
-        "195": ["10011", "10870", "13999", "25296"]
-    };
-
-    let pretsData = JSON.parse(localStorage.getItem('pretsData')) || [];
-
-    document.getElementById('datePret').valueAsDate = new Date();
-
-    function switchTab(evt, tabName) {
-        let contents = document.getElementsByClassName("tab-content");
-        for (let c of contents) c.classList.remove("active");
-
-        let buttons = document.getElementsByClassName("tab-btn");
-        for (let b of buttons) b.classList.remove("active");
-
-        document.getElementById(tabName).classList.add("active");
-        evt.currentTarget.classList.add("active");
-
-        if (tabName === 'routesTab') initialiserConfigRoutes();
-        if (tabName === 'historiqueTab') afficherHistorique();
-        if (tabName === 'rapportTab') genererRapportCles();
-    }
-
-    function initialiserSelectRoutes() {
-        const routeSelect = document.getElementById('routeSelect');
-        routeSelect.innerHTML = '<option value="">-- Choisir une route --</option>';
-        for (let route in routesData) {
-            let opt = document.createElement('option');
-            opt.value = route;
-            opt.textContent = `Route ${route}`;
-            routeSelect.appendChild(opt);
-        }
-    }
-
-    function chargerClesRoute() {
-        const route = document.getElementById('routeSelect').value;
-        const container = document.getElementById('clesDynamiquesContainer');
-        container.innerHTML = '';
-
-        if (!route || !routesData[route]) {
-            container.innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route valide.</p>';
-            return;
-        }
-
-        const series = routesData[route];
-        series.forEach((serie, index) => {
-            let div = document.createElement('div');
-            div.className = 'key-item';
-            div.innerHTML = `
-                <label>Série : <strong>${serie}</strong></label>
-                <input type="hidden" name="serie_${index}" value="${serie}">
-                <input type="text" name="individuel_${index}" placeholder="N° individuel de la clé" required>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    function enregisterPret(e) {
-        e.preventDefault();
-        const datePret = document.getElementById('datePret').value;
-        const dateRetour = document.getElementById('dateRetourPrevue').value;
-        
-        const employeSelectElem = document.getElementById('employeSelect');
-        const employe = employeSelectElem ? employeSelectElem.value : '';
-        const idEmploye = document.getElementById('idInput').value;
-
-        const route = document.getElementById('routeSelect').value;
-        const container = document.getElementById('clesDynamiquesContainer');
-        const items = container.getElementsByClassName('key-item');
-
-        let clesDetails = [];
-        for (let item of items) {
-            let serie = item.querySelector('input[type="hidden"]').value;
-            let individuel = item.querySelector('input[type="text"]').value;
-            clesDetails.push({ serie, individuel });
-        }
-
-        let nouveauPret = {
-            id: Date.now(),
-            datePret,
-            dateRetour,
-            employe,
-            idEmploye,
-            route,
-            cles: clesDetails,
-            statut: 'En cours'
-        };
-
-        pretsData.push(nouveauPret);
-        localStorage.setItem('pretsData', JSON.stringify(pretsData));
-
-        alert('Prêt enregistré avec succès !');
-        document.getElementById('pretForm').reset();
-        document.getElementById('datePret').valueAsDate = new Date();
-        document.getElementById('clesDynamiquesContainer').innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>';
-        document.getElementById('ancienneteInput').value = '-';
-        if (isManualEntry) toggleManualEntry();
-    }
-
-    function initialiserConfigRoutes() {
-        const select = document.getElementById('selectRouteConfig');
-        select.innerHTML = '';
-        for (let route in routesData) {
-            let opt = document.createElement('option');
-            opt.value = route;
-            opt.textContent = `Route ${route}`;
-            select.appendChild(opt);
-        }
-        chargerConfigRoute();
-    }
-
-    function chargerConfigRoute() {
-        const route = document.getElementById('selectRouteConfig').value;
-        const content = document.getElementById('configRouteContent');
-        if (!route) return;
-
-        let html = `<h3>Numéros de série pour la Route ${route}</h3>`;
-        html += `<table><thead><tr><th>Index</th><th>Numéro de Série</th><th>Action</th></tr></thead><tbody>`;
-        
-        routesData[route].forEach((serie, idx) => {
-            html += `<tr>
-                <td>${idx + 1}</td>
-                <td><input type="text" id="serie_edit_${route}_${idx}" value="${serie}"></td>
-                <td>
-                    <button type="button" class="btn-success" onclick="modifierSerie('${route}', ${idx})">Modifier</button>
-                    <button type="button" class="btn-danger" onclick="supprimerSerie('${route}', ${idx})">Retirer</button>
-                </td>
-            </tr>`;
-        });
-        html += `</tbody></table>`;
-        html += `<div style="margin-top: 10px;">
-                    <input type="text" id="nouvelleSerie_${route}" placeholder="Nouveau N° de série" style="width: 200px; display: inline-block; margin-right: 10px;">
-                    <button type="button" class="btn-primary" onclick="ajouterSerie('${route}')" style="width: auto;">Ajouter une clé</button>
-                 </div>`;
-        content.innerHTML = html;
-    }
-
-    function modifierSerie(route, idx) {
-        const newVal = document.getElementById(`serie_edit_${route}_${idx}`).value;
-        if(newVal) {
-            routesData[route][idx] = newVal;
-            localStorage.setItem('routesData', JSON.stringify(routesData));
-            alert('Modification enregistrée !');
-            chargerConfigRoute();
-        }
-    }
-
-    function supprimerSerie(route, idx) {
-        routesData[route].splice(idx, 1);
-        localStorage.setItem('routesData', JSON.stringify(routesData));
-        chargerConfigRoute();
-    }
-
-    function ajouterSerie(route) {
-        const val = document.getElementById(`nouvelleSerie_${route}`).value;
-        if(val) {
-            routesData[route].push(val);
-            localStorage.setItem('routesData', JSON.stringify(routesData));
-            chargerConfigRoute();
-        }
-    }
-
-    function ajouterNouvelleRoute() {
-        const nouvelleRouteNom = prompt("Entrez le numéro ou le nom de la nouvelle route :");
-        if(nouvelleRouteNom && !routesData[nouvelleRouteNom]) {
-            routesData[nouvelleRouteNom] = [];
-            localStorage.setItem('routesData', JSON.stringify(routesData));
-            initialiserConfigRoutes();
-            initialiserSelectRoutes();
-        }
-    }
-
-    function afficherHistorique() {
-        const tbody = document.getElementById('historiqueTableBody');
-        tbody.innerHTML = '';
-
-        pretsData.forEach(pret => {
-            let clesStr = pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>');
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${pret.datePret}</td>
-                <td>${pret.employe}</td>
-                <td>${pret.idEmploye || '-'}</td>
-                <td>Route ${pret.route}</td>
-                <td>${clesStr}</td>
-                <td>${pret.dateRetour || 'Non spécifiée'}</td>
-                <td><span style="color: ${pret.statut === 'En cours' ? '#d97706' : '#059669'}; font-weight: bold;">${pret.statut}</span></td>
-                <td class="actions-cell">
-                    ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.id})">Marquer Retour</button>` : ''}
-                    <button class="btn-danger" onclick="supprimerPret(${pret.id})">Supprimer</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function genererRapportCles() {
-        const dateDebut = document.getElementById('dateDebutRapport').value;
-        const dateFin = document.getElementById('dateFinRapport').value;
-        const tbody = document.getElementById('rapportTableBody');
-        const titrePeriode = document.getElementById('titreRapportPeriode');
-        tbody.innerHTML = '';
-
-        let pretsActifs = pretsData.filter(p => p.statut === 'En cours');
-
-        if (dateDebut && dateFin) {
-            pretsActifs = pretsActifs.filter(p => p.datePret >= dateDebut && p.datePret <= dateFin);
-            titrePeriode.textContent = `Rapport des clés en cours du ${dateDebut} au ${dateFin}`;
-        } else if (dateDebut) {
-            pretsActifs = pretsActifs.filter(p => p.datePret === dateDebut);
-            titrePeriode.textContent = `Rapport des clés en cours pour la date du ${dateDebut}`;
-        } else {
-            titrePeriode.textContent = `Rapport global de toutes les clés en cours (Sans retour)`;
-        }
-
-        if (pretsActifs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Aucune clé en cours de prêt pour cette période.</td></tr>`;
-            return;
-        }
-
-        pretsActifs.forEach(pret => {
-            let clesStr = pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>');
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${pret.datePret}</td>
-                <td>${pret.employe}</td>
-                <td>${pret.idEmploye || '-'}</td>
-                <td>Route ${pret.route}</td>
-                <td>${clesStr}</td>
-                <td>${pret.dateRetour || 'Non spécifiée'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function marquerRetour(id) {
-        let pret = pretsData.find(p => p.id === id);
-        if(pret) {
-            pret.statut = 'Retourné';
-            pret.dateRetourEffective = new Date().toISOString().split('T')[0];
-            localStorage.setItem('pretsData', JSON.stringify(pretsData));
-            afficherHistorique();
-        }
-    }
-
-    function supprimerPret(id) {
-        pretsData = pretsData.filter(p => p.id !== id);
-        localStorage.setItem('pretsData', JSON.stringify(pretsData));
-        afficherHistorique();
-    }
-
-    window.onload = function() {
-        initialiserSelectRoutes();
-    };
-</script>
 
 </body>
 </html>
