@@ -12,37 +12,43 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Fichier CSS externe -->
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Ajustements de compactage pour format 8.5 x 5.5 po */
+    .compact-textarea {
+      height: 70px !important;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-2 sm:p-4 text-black text-xs">
+<body class="min-h-screen flex flex-col items-center p-2 text-black text-[11px]">
 
   <!-- Top Toolbar (No print) -->
-  <div class="no-print mb-4 w-full max-w-4xl flex flex-wrap justify-between items-center gap-2 bg-white p-3 rounded-lg shadow border border-gray-300">
-    <button onclick="window.location.href='index.html'" class="px-3 py-2 bg-slate-700 text-white rounded font-bold hover:bg-slate-800 transition cursor-pointer flex items-center space-x-1">
+  <div class="no-print mb-2 w-full max-w-4xl flex flex-wrap justify-between items-center gap-2 bg-white p-2 rounded-lg shadow border border-gray-300">
+    <button onclick="window.location.href='index.html'" class="px-3 py-1.5 bg-slate-700 text-white rounded font-bold hover:bg-slate-800 transition cursor-pointer flex items-center space-x-1 text-xs">
       <i class="fa-solid fa-arrow-left"></i>
       <span>Retour au menu</span>
     </button>
     
     <div class="flex flex-wrap items-center gap-2">
       <!-- Search Button -->
-      <button id="btnRecherche" type="button" class="px-3 py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition cursor-pointer flex items-center space-x-1 shadow">
+      <button id="btnRecherche" type="button" class="px-3 py-1.5 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition cursor-pointer flex items-center space-x-1 shadow text-xs">
         <i class="fa-solid fa-magnifying-glass"></i>
         <span>Rechercher</span>
       </button>
 
       <!-- Save to Firebase Button -->
-      <button id="btnEnregistrer" type="button" class="px-3 py-2 bg-emerald-600 text-white rounded font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center space-x-1 shadow">
+      <button id="btnEnregistrer" type="button" class="px-3 py-1.5 bg-emerald-600 text-white rounded font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center space-x-1 shadow text-xs">
         <i class="fa-solid fa-floppy-disk"></i>
         <span>Enregistrer Firebase</span>
       </button>
 
       <!-- Email Dispatch Button -->
-      <button id="btnExpedier" type="button" class="px-3 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition cursor-pointer flex items-center space-x-1 shadow">
+      <button id="btnExpedier" type="button" class="px-3 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition cursor-pointer flex items-center space-x-1 shadow text-xs">
         <i class="fa-solid fa-envelope"></i>
         <span>Expédier</span>
       </button>
 
       <!-- Print / PDF Button -->
-      <button onclick="window.print()" class="px-3 py-2 bg-gray-600 text-white rounded font-bold hover:bg-gray-700 transition cursor-pointer flex items-center space-x-1">
+      <button onclick="window.print()" class="px-3 py-1.5 bg-gray-600 text-white rounded font-bold hover:bg-gray-700 transition cursor-pointer flex items-center space-x-1 text-xs">
         <i class="fa-solid fa-print"></i>
         <span>Imprimer / PDF</span>
       </button>
@@ -50,29 +56,29 @@
   </div>
 
   <!-- Notification Banner -->
-  <div id="toast" class="hidden w-full max-w-4xl mb-3 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm flex items-center justify-between no-print shadow">
+  <div id="toast" class="hidden w-full max-w-4xl mb-2 p-2 bg-green-100 border border-green-400 text-green-700 rounded text-xs flex items-center justify-between no-print shadow">
     <span id="toast-msg">Action effectuée avec succès.</span>
     <button onclick="document.getElementById('toast').classList.add('hidden')" class="font-bold">&times;</button>
   </div>
 
-  <!-- Main Document Container matching Postes Canada Vehicle Defect Report PDF -->
-  <div id="formulaireContent" class="page-container w-full max-w-4xl bg-white form-border p-4 shadow-xl space-y-3">
+  <!-- Main Document Container matching Postes Canada Vehicle Defect Report PDF (8.5 x 5.5 format) -->
+  <div id="formulaireContent" class="page-container w-full max-w-4xl bg-white form-border p-3 shadow-xl space-y-2">
     
     <!-- Header: Canada Post / Postes Canada & Title -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 border-b-2 border-black gap-2">
-      <div class="flex items-center space-x-3">
-        <div class="border-2 border-red-600 px-2 py-1 bg-red-50 text-red-600 font-black text-xl tracking-tighter uppercase">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b-2 border-black gap-2">
+      <div class="flex items-center space-x-2">
+        <div class="border-2 border-red-600 px-1.5 py-0.5 bg-red-50 text-red-600 font-black text-base tracking-tighter uppercase">
           CANADA POST
         </div>
-        <div class="font-bold text-sm leading-tight uppercase border-l-2 border-black pl-2">
+        <div class="font-bold text-xs leading-tight uppercase border-l-2 border-black pl-2">
           POSTES<br>CANADA
         </div>
       </div>
       <div class="text-center flex-1">
-        <h1 class="font-bold text-sm sm:text-base uppercase tracking-wide">Driver's Vehicle Defect Report</h1>
-        <h2 class="font-bold text-xs sm:text-sm text-gray-700 uppercase">Rapport du chauffeur sur les défauts du véhicule</h2>
+        <h1 class="font-bold text-xs sm:text-sm uppercase tracking-wide">Driver's Vehicle Defect Report</h1>
+        <h2 class="font-bold text-[10px] sm:text-xs text-gray-700 uppercase">Rapport du chauffeur sur les défauts du véhicule</h2>
       </div>
-      <div class="text-right text-[10px] font-mono font-bold text-gray-600">
+      <div class="text-right text-[9px] font-mono font-bold text-gray-600">
         34-093-200 (17-02)
       </div>
     </div>
@@ -81,34 +87,34 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 form-border bg-gray-50">
       
       <!-- Vehicle no. with Voice Dictation -->
-      <div class="p-2 form-border-b sm:form-border-b-0 sm:form-border-r">
+      <div class="p-1.5 form-border-b sm:form-border-b-0 sm:form-border-r">
         <div class="flex justify-between items-center">
-          <label class="block font-bold text-[10px] uppercase">Vehicle no. / N° du véhicule</label>
-          <button type="button" onclick="activerDictee('numVehicule', this)" class="no-print p-1 text-gray-600 hover:text-red-600 text-xs transition cursor-pointer" title="Dictée vocale">
+          <label class="block font-bold text-[9px] uppercase">Vehicle no. / N° du véhicule</label>
+          <button type="button" onclick="activerDictee('numVehicule', this)" class="no-print p-0.5 text-gray-600 hover:text-red-600 text-[11px] transition cursor-pointer" title="Dictée vocale">
             <i class="fa-solid fa-microphone"></i>
           </button>
         </div>
         <input type="text" id="numVehicule" value="7299" placeholder="Ex: 7299" 
-               class="w-full bg-transparent border-b border-black font-bold text-base focus:outline-none py-1">
+               class="w-full bg-transparent border-b border-black font-bold text-sm focus:outline-none py-0.5">
       </div>
 
       <!-- Driver's location / Depot aeroport with Voice Dictation -->
-      <div class="p-2 form-border-b sm:form-border-b-0 sm:form-border-r">
+      <div class="p-1.5 form-border-b sm:form-border-b-0 sm:form-border-r">
         <div class="flex justify-between items-center">
-          <label class="block font-bold text-[10px] uppercase">Driver's location / Local du chauffeur</label>
-          <button type="button" onclick="activerDictee('depotChauffeur', this)" class="no-print p-1 text-gray-600 hover:text-red-600 text-xs transition cursor-pointer" title="Dictée vocale">
+          <label class="block font-bold text-[9px] uppercase">Driver's location / Local du chauffeur</label>
+          <button type="button" onclick="activerDictee('depotChauffeur', this)" class="no-print p-0.5 text-gray-600 hover:text-red-600 text-[11px] transition cursor-pointer" title="Dictée vocale">
             <i class="fa-solid fa-microphone"></i>
           </button>
         </div>
         <input type="text" id="depotChauffeur" value="aeroport" placeholder="aeroport" 
-               class="w-full bg-transparent border-b border-black font-bold text-base focus:outline-none py-1">
+               class="w-full bg-transparent border-b border-black font-bold text-sm focus:outline-none py-0.5">
       </div>
 
       <!-- Odometer reading -->
-      <div class="p-2">
-        <label class="block font-bold text-[10px] uppercase">Odometer reading / Indication du compteur</label>
+      <div class="p-1.5">
+        <label class="block font-bold text-[9px] uppercase">Odometer reading / Indication du compteur</label>
         <input type="text" id="odometerReading" value="7299" placeholder="Ex: 142850" 
-               class="w-full bg-transparent border-b border-black font-bold text-base focus:outline-none py-1">
+               class="w-full bg-transparent border-b border-black font-bold text-sm focus:outline-none py-0.5">
       </div>
 
     </div>
@@ -117,37 +123,37 @@
     <div class="grid grid-cols-1 md:grid-cols-2 form-border">
       
       <!-- Details of vehicle defect(s) with Voice Dictation -->
-      <div class="p-2 form-border-b md:form-border-b-0 md:form-border-r flex flex-col justify-between h-48 bg-white">
+      <div class="p-1.5 form-border-b md:form-border-b-0 md:form-border-r flex flex-col justify-between bg-white">
         <div>
-          <div class="flex justify-between items-center border-b border-black pb-1 mb-2">
-            <label class="font-bold text-xs uppercase">
+          <div class="flex justify-between items-center border-b border-black pb-0.5 mb-1">
+            <label class="font-bold text-[10px] uppercase">
               Details of vehicle defect(s) / Exposé du problème
             </label>
-            <button type="button" onclick="activerDictee('descriptionDefaut', this)" class="no-print px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded text-[11px] font-bold flex items-center space-x-1 transition cursor-pointer shadow">
-              <i class="fa-solid fa-microphone text-[10px]"></i>
-              <span>Dictée vocale</span>
+            <button type="button" onclick="activerDictee('descriptionDefaut', this)" class="no-print px-1.5 py-0.2 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold flex items-center space-x-1 transition cursor-pointer shadow">
+              <i class="fa-solid fa-microphone text-[9px]"></i>
+              <span>Dictée</span>
             </button>
           </div>
-          <textarea id="descriptionDefaut" class="w-full h-32 p-1 resize-none font-medium text-sm focus:outline-none bg-transparent" placeholder="Saisir ou dicter les détails du problème...">le bouton du shifter reste bloquer enfoncé, ceci empeche le retrait de la clef</textarea>
+          <textarea id="descriptionDefaut" class="w-full compact-textarea p-1 resize-none font-medium text-xs focus:outline-none bg-transparent" placeholder="Saisir ou dicter les détails du problème...">le bouton du shifter reste bloquer enfoncé, ceci empeche le retrait de la clef</textarea>
         </div>
       </div>
 
       <!-- Repair(s) completed -->
-      <div class="p-2 flex flex-col justify-between h-48 bg-white">
+      <div class="p-1.5 flex flex-col justify-between bg-white">
         <div>
-          <label class="block font-bold text-xs uppercase border-b border-black pb-1 mb-2">
+          <label class="block font-bold text-[10px] uppercase border-b border-black pb-0.5 mb-1">
             Repair(s) completed / Réparation effectuée
           </label>
-          <textarea id="reparationEffectuee" class="w-full h-32 p-1 resize-none font-medium text-sm focus:outline-none bg-transparent" placeholder="Réservé aux réparations effectuées..."></textarea>
+          <textarea id="reparationEffectuee" class="w-full compact-textarea p-1 resize-none font-medium text-xs focus:outline-none bg-transparent" placeholder="Réservé aux réparations effectuées..."></textarea>
         </div>
       </div>
 
     </div>
 
     <!-- Certification Banner -->
-    <div class="form-border bg-gray-100 p-2 flex items-center space-x-2">
-      <input type="checkbox" id="certify" checked class="w-4 h-4 border-black rounded-none cursor-pointer">
-      <label for="certify" class="font-bold text-[11px] cursor-pointer uppercase">
+    <div class="form-border bg-gray-100 p-1.5 flex items-center space-x-2">
+      <input type="checkbox" id="certify" checked class="w-3.5 h-3.5 border-black rounded-none cursor-pointer">
+      <label for="certify" class="font-bold text-[10px] cursor-pointer uppercase">
         I certify that all defects have been corrected and communicated. / J'atteste que toutes les anomalies ont été corrigées et signalées.
       </label>
     </div>
@@ -159,55 +165,55 @@
       <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black">
         
         <!-- Column 1: Driver Signature & Time/Date -->
-        <div class="p-3 space-y-3">
+        <div class="p-2 space-y-1.5">
           <div>
-            <label class="block text-[10px] font-bold uppercase">Driver's signature / Signature du chauffeur</label>
-            <input type="text" id="driverSignature" value="M. Lefebvre" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
+            <label class="block text-[9px] font-bold uppercase">Driver's signature / Signature du chauffeur</label>
+            <input type="text" id="driverSignature" value="M. Lefebvre" class="w-full border-b border-black bg-gray-50 italic font-serif text-xs py-0.5">
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-1.5">
             <div>
-              <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
-              <input type="text" id="driverTime" value="08:30" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
+              <label class="block text-[8px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="driverTime" value="08:30" class="w-full border-b border-black text-center text-xs py-0.5 focus:outline-none">
             </div>
             <div>
-              <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
-              <input type="text" id="driverDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
+              <label class="block text-[8px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="driverDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-xs font-semibold py-0.5 focus:outline-none">
             </div>
           </div>
         </div>
 
         <!-- Column 2: Mechanic Signature & Time/Date -->
-        <div class="p-3 space-y-3">
+        <div class="p-2 space-y-1.5">
           <div>
-            <label class="block text-[10px] font-bold uppercase">Mechanic's signature / Signature du mécanicien</label>
-            <input type="text" id="mechanicSignature" value="L. Bouchard" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
+            <label class="block text-[9px] font-bold uppercase">Mechanic's signature / Signature du mécanicien</label>
+            <input type="text" id="mechanicSignature" value="L. Bouchard" class="w-full border-b border-black bg-gray-50 italic font-serif text-xs py-0.5">
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-1.5">
             <div>
-              <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
-              <input type="text" id="mechanicTime" value="11:15" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
+              <label class="block text-[8px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="mechanicTime" value="11:15" class="w-full border-b border-black text-center text-xs py-0.5 focus:outline-none">
             </div>
             <div>
-              <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
-              <input type="text" id="mechanicDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
+              <label class="block text-[8px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="mechanicDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-xs font-semibold py-0.5 focus:outline-none">
             </div>
           </div>
         </div>
 
         <!-- Column 3: Supervisor Signature & Time/Date -->
-        <div class="p-3 space-y-3 bg-red-50/30">
+        <div class="p-2 space-y-1.5 bg-red-50/30">
           <div>
-            <label class="block text-[10px] font-bold uppercase">Supervisor's signature / Signature du surveillant</label>
-            <input type="text" id="supervisorSignature" value="M. Lefebvre (Approuvé)" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
+            <label class="block text-[9px] font-bold uppercase">Supervisor's signature / Signature du surveillant</label>
+            <input type="text" id="supervisorSignature" value="M. Lefebvre (Approuvé)" class="w-full border-b border-black bg-gray-50 italic font-serif text-xs py-0.5">
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-1.5">
             <div>
-              <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
-              <input type="text" id="supervisorTime" placeholder="--:--" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
+              <label class="block text-[8px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="supervisorTime" placeholder="--:--" class="w-full border-b border-black text-center text-xs py-0.5 focus:outline-none">
             </div>
             <div>
-              <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
-              <input type="text" id="supervisorDate" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
+              <label class="block text-[8px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="supervisorDate" class="champ-date-aujourdhui w-full border-b border-black text-center text-xs font-semibold py-0.5 focus:outline-none">
             </div>
           </div>
         </div>
@@ -215,20 +221,20 @@
       </div>
 
       <!-- Bottom Part: Nom chauffeur, nom mécanicien et nom surveillant sur une même ligne au bas -->
-      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black bg-gray-50 p-3 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black bg-gray-50 p-2 gap-2">
         <div>
-          <label class="block text-[10px] font-bold uppercase">Driver's Name / Nom du conducteur</label>
-          <input type="text" id="driverName" value="martin lefebvre" class="w-full border-b border-black bg-transparent text-sm font-semibold focus:outline-none py-1">
+          <label class="block text-[9px] font-bold uppercase">Driver's Name / Nom du conducteur</label>
+          <input type="text" id="driverName" value="martin lefebvre" class="w-full border-b border-black bg-transparent text-xs font-semibold focus:outline-none py-0.5">
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase">Mechanic's name / Nom du mécanicien</label>
-          <input type="text" id="mechanicName" value="Luc Bouchard" class="w-full border-b border-black bg-transparent text-sm font-semibold py-1 focus:outline-none">
+          <label class="block text-[9px] font-bold uppercase">Mechanic's name / Nom du mécanicien</label>
+          <input type="text" id="mechanicName" value="Luc Bouchard" class="w-full border-b border-black bg-transparent text-xs font-semibold py-0.5 focus:outline-none">
         </div>
-        <div class="bg-red-50/30 p-1 -m-1 rounded">
-          <label for="supervisorName" class="block text-[10px] font-bold uppercase text-red-900">
+        <div class="bg-red-50/30 p-0.5 rounded">
+          <label for="supervisorName" class="block text-[9px] font-bold uppercase text-red-900">
             Supervisor's Name / Nom du surveillant <span class="text-red-600">*</span>
           </label>
-          <select id="supervisorName" class="w-full mt-1 border-2 border-red-500 rounded bg-white font-bold text-sm py-1 px-2 cursor-pointer shadow-sm">
+          <select id="supervisorName" class="w-full mt-0.5 border border-red-500 rounded bg-white font-bold text-xs py-0.5 px-1 cursor-pointer shadow-sm">
             <option value="Martin Lefebvre" selected>Martin Lefebvre</option>
             <option value="Pierre-Stephane Moreau">Pierre-Stephane Moreau</option>
             <option value="Jonathan Foucreault">Jonathan Foucreault</option>
@@ -244,17 +250,17 @@
     </div>
 
     <!-- Footer Notice & Distribution Categories -->
-    <div class="form-border p-2 flex flex-col sm:flex-row justify-between items-center bg-gray-50 gap-2">
-      <div class="flex items-center space-x-2">
-        <input type="checkbox" id="returned" checked class="w-4 h-4 border-black rounded-none cursor-pointer">
-        <label for="returned" class="font-bold text-[10px] cursor-pointer uppercase">
+    <div class="form-border p-1.5 flex flex-col sm:flex-row justify-between items-center bg-gray-50 gap-2">
+      <div class="flex items-center space-x-1.5">
+        <input type="checkbox" id="returned" checked class="w-3.5 h-3.5 border-black rounded-none cursor-pointer">
+        <label for="returned" class="font-bold text-[9px] cursor-pointer uppercase">
           Completed DVDR must be returned with vehicle / Le Rapport dûment rempli doit être retourné avec le véhicule
         </label>
       </div>
-      <div class="flex items-center space-x-3 text-[10px] font-bold">
-        <span class="border border-black px-1.5 py-0.5 bg-white">1. Service Centre</span>
-        <span class="border border-black px-1.5 py-0.5 bg-white">2. Driver</span>
-        <span class="border border-black px-1.5 py-0.5 bg-white">3. Operations</span>
+      <div class="flex items-center space-x-2 text-[9px] font-bold">
+        <span class="border border-black px-1 py-0.2 bg-white">1. Service Centre</span>
+        <span class="border border-black px-1 py-0.2 bg-white">2. Driver</span>
+        <span class="border border-black px-1 py-0.2 bg-white">3. Operations</span>
       </div>
     </div>
 
@@ -282,7 +288,7 @@
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toast-msg');
       toastMsg.innerText = message;
-      toast.className = `w-full max-w-4xl mb-3 p-3 border rounded text-sm flex items-center justify-between no-print shadow ${isError ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'}`;
+      toast.className = `w-full max-w-4xl mb-2 p-2 border rounded text-xs flex items-center justify-between no-print shadow ${isError ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'}`;
       toast.classList.remove('hidden');
       setTimeout(() => { toast.classList.add('hidden'); }, 5000);
     }
@@ -384,11 +390,11 @@
       const nomFichier = `Rapport_Defaut_Vehicule_${numCamion}.pdf`;
 
       const opt = {
-        margin: 5,
+        margin: 2,
         filename: nomFichier,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        jsPDF: { unit: 'in', format: [8.5, 5.5], orientation: 'landscape' }
       };
 
       try {
