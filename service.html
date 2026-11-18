@@ -29,6 +29,12 @@
         <span>Rechercher</span>
       </button>
 
+      <!-- Liste Véhicules Partis Button -->
+      <button id="btnListePartis" type="button" class="btn btn-liste" style="background-color: #7c3aed;">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Véhicules partis</span>
+      </button>
+
       <!-- Save to Firebase Button -->
       <button id="btnEnregistrer" type="button" class="btn btn-enregistrer">
         <i class="fa-solid fa-floppy-disk"></i>
@@ -255,6 +261,34 @@
 
   </div>
 
+  <!-- ZONE DE SUIVI OPÉRATIONNEL (HORS IMPRESSION ET HORS PDF) -->
+  <div class="no-print tracking-container" style="width: 100%; max-width: 790px; margin-top: 15px; background: #ffffff; border: 2px dashed #0284c7; padding: 12px; border-radius: 6px;">
+    <h3 style="font-size: 11px; text-transform: uppercase; color: #0369a1; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+      <i class="fa-solid fa-clock-rotate-left"></i> Suivi des dates de départ et de retour (Interne - Hors impression)
+    </h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div>
+        <label style="display: block; font-weight: bold; font-size: 9px; text-transform: uppercase; margin-bottom: 3px;">Date et heure de départ / Departure</label>
+        <input type="datetime-local" id="dateDepart" class="form-input" style="border: 1px solid #cbd5e1; padding: 4px; border-radius: 4px; background: #f8fafc;">
+      </div>
+      <div>
+        <label style="display: block; font-weight: bold; font-size: 9px; text-transform: uppercase; margin-bottom: 3px;">Date et heure de retour / Return</label>
+        <input type="datetime-local" id="dateRetour" class="form-input" style="border: 1px solid #cbd5e1; padding: 4px; border-radius: 4px; background: #f8fafc;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal / Conteneur de Liste des Véhicules Partis (Hors impression) -->
+  <div id="modalListePartis" class="no-print hidden" style="width: 100%; max-width: 790px; margin-top: 10px; background: #fff; border: 2px solid #7c3aed; padding: 12px; border-radius: 6px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+      <h3 style="font-size: 12px; color: #7c3aed; text-transform: uppercase;"><i class="fa-solid fa-truck-fast"></i> Liste des véhicules partis (En cours)</h3>
+      <button onclick="document.getElementById('modalListePartis').classList.add('hidden')" style="background:none; border:none; font-weight:bold; cursor:pointer; font-size: 14px;">&times;</button>
+    </div>
+    <div id="contenuListePartis" style="max-height: 200px; overflow-y: auto; font-size: 10px;">
+      <!-- Rempli dynamiquement -->
+    </div>
+  </div>
+
   <!-- Firebase SDK Integration & Core Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -282,7 +316,7 @@
       setTimeout(() => { toast.classList.add('hidden'); }, 5000);
     }
 
-    // Save to Firebase Firestore
+    // Save to Firebase Firestore (Incluant les dates de départ et retour)
     document.getElementById('btnEnregistrer').addEventListener('click', async () => {
       const btn = document.getElementById('btnEnregistrer');
       btn.disabled = true;
@@ -290,7 +324,7 @@
 
       try {
         const donneesRapport = {
-          numVehicule: document.getElementById('numVehicule').value,
+          numVehicule: document.getElementById('numVehicule').value.trim(),
           depotChauffeur: document.getElementById('depotChauffeur').value,
           odometerReading: document.getElementById('odometerReading').value,
           descriptionDefaut: document.getElementById('descriptionDefaut').value,
@@ -306,6 +340,9 @@
           supervisorTime: document.getElementById('supervisorTime').value,
           supervisorDate: document.getElementById('supervisorDate').value,
           formulaireRetourne: document.getElementById('returned').checked,
+          // Nouveaux champs de suivi (hors zone d'impression)
+          dateDepart: document.getElementById('dateDepart').value,
+          dateRetour: document.getElementById('dateRetour').value,
           creeLe: serverTimestamp()
         };
 
@@ -320,22 +357,37 @@
       }
     });
 
-    // Search from Firebase Firestore
+    // Search from Firebase Firestore (Par numéro de camion ou par date)
     document.getElementById('btnRecherche').addEventListener('click', async () => {
-      const numRecherche = prompt("Entrez le numéro du véhicule à rechercher (ex: 7299) :");
-      if (!numRecherche || numRecherche.trim() === '') return;
+      const saisieRecherche = prompt("Entrez un numéro de véhicule (ex: 7299) ou une date (AAAA-MM-JJ) :");
+      if (!saisieRecherche || saisieRecherche.trim() === '') return;
 
+      const critere = saisieRecherche.trim();
       const btn = document.getElementById('btnRecherche');
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Recherche...';
 
       try {
         const camionRef = collection(db, "camion");
-        const q = query(camionRef, where("numVehicule", "==", numRecherche.trim()), orderBy("creeLe", "desc"));
-        const querySnapshot = await getDocs(q);
+        let q;
+
+        // Déterminer si la recherche est une date (contient des tirets) ou un numéro de camion
+        if (critere.includes('-')) {
+          q = query(camionRef, where("driverDate", "==", critere), orderBy("creeLe", "desc"));
+        } else {
+          q = query(camionRef, where("numVehicule", "==", critere), orderBy("creeLe", "desc"));
+        }
+
+        let querySnapshot = await getDocs(q);
+
+        // Si aucune correspondance exacte sur driverDate, essayer sur dateDepart
+        if (querySnapshot.empty && critere.includes('-')) {
+          const q2 = query(camionRef, where("dateDepart", ">=", critere + "T00:00"), where("dateDepart", "<=", critere + "T23:59"));
+          querySnapshot = await getDocs(q2);
+        }
 
         if (querySnapshot.empty) {
-          showToast(`Aucune fiche trouvée pour le véhicule N° ${numRecherche.trim()}.`, true);
+          showToast(`Aucune fiche trouvée pour : "${critere}".`, true);
         } else {
           const docData = querySnapshot.docs[0].data();
 
@@ -355,8 +407,10 @@
           document.getElementById('supervisorTime').value = docData.supervisorTime || '';
           document.getElementById('supervisorDate').value = docData.supervisorDate || '';
           document.getElementById('returned').checked = !!docData.formulaireRetourne;
+          document.getElementById('dateDepart').value = docData.dateDepart || '';
+          document.getElementById('dateRetour').value = docData.dateRetour || '';
 
-          showToast(`Fiche du véhicule N° ${numRecherche.trim()} chargée avec succès !`);
+          showToast(`Fiche chargée avec succès pour "${critere}" !`);
         }
       } catch (error) {
         console.error("Erreur de recherche Firebase :", error);
@@ -364,6 +418,60 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Rechercher';
+      }
+    });
+
+    // Générer la liste des véhicules partis (sans date de retour renseignée ou ayant une date de départ valide)
+    document.getElementById('btnListePartis').addEventListener('click', async () => {
+      const btn = document.getElementById('btnListePartis');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Chargement...';
+
+      try {
+        const camionRef = collection(db, "camion");
+        const querySnapshot = await getDocs(camionRef);
+        const conteneurListe = document.getElementById('contenuListePartis');
+        conteneurListe.innerHTML = '';
+
+        let htmlTable = `<table style="width:100%; border-collapse: collapse; text-align: left;">
+          <tr style="border-bottom: 1px solid #7c3aed; background: #f3e8ff;">
+            <th style="padding: 4px;">Véhicule</th>
+            <th style="padding: 4px;">Chauffeur</th>
+            <th style="padding: 4px;">Départ</th>
+            <th style="padding: 4px;">Retour</th>
+          </tr>`;
+
+        let countPartis = 0;
+        querySnapshot.forEach((doc) => {
+          const d = doc.data();
+          // Considéré comme parti si dateDepart existe et (dateRetour est vide ou non renseignée)
+          if (d.dateDepart && (!d.dateRetour || d.dateRetour.trim() === '')) {
+            countPartis++;
+            htmlTable += `<tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 4px; font-weight: bold;">#${d.numVehicule || 'N/A'}</td>
+              <td style="padding: 4px;">${d.driverName || 'N/A'}</td>
+              <td style="padding: 4px;">${d.dateDepart.replace('T', ' ')}</td>
+              <td style="padding: 4px; color: #dc2626; font-weight: bold;">En route / Non retourné</td>
+            </tr>`;
+          }
+        });
+
+        htmlTable += `</table>`;
+
+        if (countPartis === 0) {
+          conteneurListe.innerHTML = '<p style="padding: 6px; color: #64748b;">Aucun véhicule actuellement enregistré comme étant en déplacement (tous sont retournés).</p>';
+        } else {
+          conteneurListe.innerHTML = htmlTable;
+        }
+
+        document.getElementById('modalListePartis').classList.remove('hidden');
+        showToast(`${countPartis} véhicule(s) actuellement en service (partis).`);
+      } catch (error) {
+        console.error("Erreur liste véhicules partis :", error);
+        showToast("Erreur lors de la récupération de la liste.", true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-list-check"></i> Véhicules partis';
       }
     });
 
