@@ -23,32 +23,32 @@ body {
 }
 
 .toolbar {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   width: 100%;
-  max-width: 900px;
+  max-width: 800px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
   background-color: #ffffff;
-  padding: 10px 15px;
+  padding: 8px 12px;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   border: 1px solid #d1d5db;
 }
 
 .btn {
-  padding: 8px 12px;
+  padding: 6px 10px;
   color: #fff;
   border: none;
   border-radius: 4px;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: background-color 0.2s;
 }
 
@@ -71,14 +71,14 @@ body {
 .toast {
   display: none;
   width: 100%;
-  max-width: 900px;
-  margin-bottom: 10px;
-  padding: 10px;
+  max-width: 800px;
+  margin-bottom: 8px;
+  padding: 8px;
   background-color: #d1fae5;
   border: 1px solid #34d399;
   color: #065f46;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -94,17 +94,17 @@ body {
   display: none !important;
 }
 
-/* --- Conteneur Principal du Document --- */
+/* --- Conteneur Principal du Document (8.5 x 11 Portrait optimisé) --- */
 .page-container {
   width: 100%;
-  max-width: 900px;
+  max-width: 790px;
   background-color: #ffffff;
   border: 2px solid #000;
-  padding: 12px;
+  padding: 10px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* --- En-tête du Formulaire --- */
@@ -112,34 +112,34 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 2px solid #000;
 }
 
 .logo-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .logo-canada {
   border: 2px solid #dc2626;
-  padding: 4px 8px;
+  padding: 3px 6px;
   background-color: #fef2f2;
   color: #dc2626;
   font-weight: 900;
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: -1px;
   text-transform: uppercase;
 }
 
 .logo-postes {
   font-weight: bold;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.1;
   text-transform: uppercase;
   border-left: 2px solid #000;
-  padding-left: 8px;
+  padding-left: 6px;
 }
 
 .form-title {
@@ -148,14 +148,14 @@ body {
 }
 
 .form-title h1 {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .form-title h2 {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: bold;
   color: #374151;
   text-transform: uppercase;
@@ -178,7 +178,7 @@ body {
 }
 
 .col-vehicule {
-  padding: 6px;
+  padding: 5px;
 }
 
 .col-vehicule:not(:last-child) {
@@ -203,7 +203,7 @@ body {
   border: none;
   cursor: pointer;
   color: #4b5563;
-  font-size: 11px;
+  font-size: 10px;
   padding: 2px;
 }
 
@@ -217,8 +217,8 @@ body {
   border: none;
   border-bottom: 1px solid #000;
   font-weight: bold;
-  font-size: 13px;
-  padding: 3px 0;
+  font-size: 12px;
+  padding: 2px 0;
   outline: none;
 }
 
@@ -234,7 +234,7 @@ body {
 }
 
 .col-detail {
-  padding: 6px;
+  padding: 5px;
   background-color: #fff;
   display: flex;
   flex-direction: column;
@@ -250,8 +250,8 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #000;
-  padding-bottom: 3px;
-  margin-bottom: 5px;
+  padding-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .btn-mic-text {
@@ -259,13 +259,13 @@ body {
   color: #fff;
   border: none;
   border-radius: 3px;
-  padding: 2px 6px;
-  font-size: 10px;
+  padding: 2px 5px;
+  font-size: 9px;
   font-weight: bold;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .btn-mic-text:hover {
@@ -274,7 +274,7 @@ body {
 
 .form-textarea {
   width: 100%;
-  height: 65px;
+  height: 80px;
   padding: 4px;
   resize: none;
   font-family: inherit;
@@ -293,15 +293,15 @@ body {
 .certification-banner {
   border: 1.5px solid #000;
   background-color: #f3f4f6;
-  padding: 6px 8px;
+  padding: 5px 8px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .certification-banner input[type="checkbox"] {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   cursor: pointer;
 }
 
@@ -326,10 +326,10 @@ body {
 }
 
 .sig-col {
-  padding: 8px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .sig-col:not(:last-child) {
@@ -343,7 +343,7 @@ body {
 .sub-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
 }
 
 .sig-input {
@@ -363,7 +363,7 @@ body {
   border: none;
   border-bottom: 1px solid #000;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   padding: 2px 0;
   outline: none;
   background: transparent;
@@ -379,13 +379,13 @@ body {
   grid-template-columns: repeat(3, 1fr);
   border-top: 1.5px solid #000;
   background-color: #f9fafb;
-  padding: 8px;
-  gap: 8px;
+  padding: 6px;
+  gap: 6px;
 }
 
 .name-field-item label {
   display: block;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: bold;
   text-transform: uppercase;
   margin-bottom: 2px;
@@ -397,8 +397,8 @@ body {
   border-radius: 3px;
   background-color: #fff;
   font-weight: bold;
-  font-size: 11px;
-  padding: 3px 6px;
+  font-size: 10px;
+  padding: 2px 4px;
   cursor: pointer;
   outline: none;
 }
@@ -406,7 +406,7 @@ body {
 /* --- Footer --- */
 .footer-box {
   border: 1.5px solid #000;
-  padding: 6px 10px;
+  padding: 5px 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -421,29 +421,29 @@ body {
 
 .footer-left label {
   font-weight: bold;
-  font-size: 9px;
+  font-size: 8px;
   text-transform: uppercase;
   cursor: pointer;
 }
 
 .footer-badges {
   display: flex;
-  gap: 6px;
-  font-size: 9px;
+  gap: 5px;
+  font-size: 8px;
   font-weight: bold;
 }
 
 .badge-item {
   border: 1px solid #000;
-  padding: 2px 6px;
+  padding: 2px 5px;
   background-color: #fff;
 }
 
-/* --- Format Impression / PDF (8.5 x 5.5 pouces Paysage) --- */
+/* --- Format Impression / PDF (8.5 x 11 pouces Portrait) --- */
 @media print {
   @page {
-    size: 8.5in 5.5in;
-    margin: 3mm;
+    size: 8.5in 11in;
+    margin: 8mm;
   }
   body {
     background-color: white;
@@ -460,3 +460,47 @@ body {
     padding: 6px !important;
   }
 }
+```[file-tag: code-generated-file-551a1455-2747-4a5e-b889-cb01f1e6b24b]
+
+---
+
+### 2. Le script JavaScript d'export PDF mis à jour dans `service (5).html`
+Dans votre fonction d'expédition/génération PDF de votre fichier HTML, assurez-vous que les options `jsPDF` sont bien configurées en mode **portrait** (`format: 'letter'` ou `format: [8.5, 11]`, `orientation: 'portrait'`) comme ceci :
+
+```javascript
+    // Email Dispatch Button using html2pdf and mailto
+    document.getElementById('btnExpedier').addEventListener('click', async () => {
+      const btn = document.getElementById('btnExpedier');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Génération PDF...';
+
+      const element = document.getElementById('formulaireContent');
+      const numCamion = document.getElementById('numVehicule').value || '7299';
+      const supervisor = document.getElementById('supervisorName').value;
+      const nomFichier = `Rapport_Defaut_Vehicule_${numCamion}.pdf`;
+
+      const opt = {
+        margin: 5,
+        filename: nomFichier,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+      };
+
+      try {
+        await html2pdf().set(opt).from(element).save();
+
+        const emailDestinataire = "Garage.Prefontaine@canadapost.postescanada.ca";
+        const sujet = encodeURIComponent(`Rapport de défaut de véhicule - Véhicule #${numCamion}`);
+        const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le rapport de défaut concernant le véhicule #${numCamion}.\nSuperviseur assigné : ${supervisor}\n\n(Note: Si le PDF téléchargé ne s'est pas joint automatiquement, veuillez joindre le fichier "${nomFichier}" à ce courriel).\n\nCordialement,\nMartin Lefebvre`);
+
+        window.location.href = `mailto:${emailDestinataire}?subject=${sujet}&body=${corps}`;
+        showToast("PDF généré et client de messagerie ouvert avec succès !");
+      } catch (err) {
+        console.error("Erreur lors de l'export PDF :", err);
+        showToast("Erreur lors de la génération du fichier PDF.", true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Expédier';
+      }
+    });
