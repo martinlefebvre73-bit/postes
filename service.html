@@ -55,7 +55,7 @@
     <button onclick="document.getElementById('toast').classList.add('hidden')" style="background:none; border:none; font-weight:bold; cursor:pointer;">&times;</button>
   </div>
 
-  <!-- Main Document Container matching Postes Canada Vehicle Defect Report PDF (8.5 x 5.5 format) -->
+  <!-- Main Document Container matching Postes Canada Vehicle Defect Report PDF (8.5 x 11 format) -->
   <div id="formulaireContent" class="page-container">
     
     <!-- Header: Canada Post / Postes Canada & Title -->
@@ -88,7 +88,7 @@
             <i class="fa-solid fa-microphone"></i>
           </button>
         </div>
-        <input type="text" id="numVehicule" value="7299" placeholder="Ex: 7299" class="form-input">
+        <input type="text" id="numVehicule" value="" placeholder="Ex: 7299" class="form-input">
       </div>
 
       <!-- Driver's location / Depot aeroport with Voice Dictation -->
@@ -105,7 +105,7 @@
       <!-- Odometer reading -->
       <div class="col-vehicule">
         <label class="form-label">Odometer reading / Indication du compteur</label>
-        <input type="text" id="odometerReading" value="7299" placeholder="Ex: 142850" class="form-input">
+        <input type="text" id="odometerReading" value="" placeholder="Ex: 142850" class="form-input">
       </div>
 
     </div>
@@ -125,7 +125,7 @@
               <span>Dictée</span>
             </button>
           </div>
-          <textarea id="descriptionDefaut" class="form-textarea" placeholder="Saisir ou dicter les détails du problème...">le bouton du shifter reste bloquer enfoncé, ceci empeche le retrait de la clef</textarea>
+          <textarea id="descriptionDefaut" class="form-textarea" placeholder="Saisir ou dicter les détails du problème..."></textarea>
         </div>
       </div>
 
@@ -159,16 +159,16 @@
         <div class="sig-col">
           <div>
             <label style="display: block; font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Driver's signature / Signature du chauffeur</label>
-            <input type="text" id="driverSignature" value="M. Lefebvre" class="sig-input">
+            <input type="text" id="driverSignature" value="" class="sig-input">
           </div>
           <div class="sub-grid-2">
             <div>
               <label style="display: block; font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Time / Heure</label>
-              <input type="text" id="driverTime" value="08:30" class="time-date-input">
+              <input type="text" id="driverTime" value="" class="time-date-input" placeholder="--:--">
             </div>
             <div>
               <label style="display: block; font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Date (A / M / J)</label>
-              <input type="text" id="driverDate" value="2026-09-17" class="champ-date-aujourdhui time-date-input bold">
+              <input type="text" id="driverDate" value="" class="champ-date-aujourdhui time-date-input bold" placeholder="AAAA-MM-JJ">
             </div>
           </div>
         </div>
@@ -177,16 +177,16 @@
         <div class="sig-col">
           <div>
             <label style="display: block; font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Mechanic's signature / Signature du mécanicien</label>
-            <input type="text" id="mechanicSignature" value="L. Bouchard" class="sig-input">
+            <input type="text" id="mechanicSignature" value="" class="sig-input">
           </div>
           <div class="sub-grid-2">
             <div>
               <label style="display: block; font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Time / Heure</label>
-              <input type="text" id="mechanicTime" value="11:15" class="time-date-input">
+              <input type="text" id="mechanicTime" value="" class="time-date-input" placeholder="--:--">
             </div>
             <div>
               <label style="display: block; font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Date (A / M / J)</label>
-              <input type="text" id="mechanicDate" value="2026-09-17" class="champ-date-aujourdhui time-date-input bold">
+              <input type="text" id="mechanicDate" value="" class="champ-date-aujourdhui time-date-input bold" placeholder="AAAA-MM-JJ">
             </div>
           </div>
         </div>
@@ -195,7 +195,7 @@
         <div class="sig-col supervisor-bg">
           <div>
             <label style="display: block; font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Supervisor's signature / Signature du surveillant</label>
-            <input type="text" id="supervisorSignature" value="M. Lefebvre (Approuvé)" class="sig-input">
+            <input type="text" id="supervisorSignature" value="" class="sig-input">
           </div>
           <div class="sub-grid-2">
             <div>
@@ -204,7 +204,7 @@
             </div>
             <div>
               <label style="display: block; font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">Date (A / M / J)</label>
-              <input type="text" id="supervisorDate" class="champ-date-aujourdhui time-date-input bold">
+              <input type="text" id="supervisorDate" value="" class="champ-date-aujourdhui time-date-input bold" placeholder="AAAA-MM-JJ">
             </div>
           </div>
         </div>
@@ -379,11 +379,11 @@
       const nomFichier = `Rapport_Defaut_Vehicule_${numCamion}.pdf`;
 
       const opt = {
-        margin: 2,
+        margin: 5,
         filename: nomFichier,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: [8.5, 5.5], orientation: 'landscape' }
+        jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
       };
 
       try {
@@ -405,17 +405,12 @@
     });
   </script>
 
-  <!-- Script for Date Auto-population and Web Speech API Dictation -->
+  <!-- Script pour initialiser les champs dates vides au démarrage -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const aujourdhui = new Date();
-      const annee = aujourdhui.getFullYear();
-      const mois = String(aujourdhui.getMonth() + 1).padStart(2, '0');
-      const jour = String(aujourdhui.getDate()).padStart(2, '0');
-      const dateFormatee = `${annee}-${mois}-${jour}`;
-
+      // Les champs dates démarrent vides à l'ouverture du fichier
       document.querySelectorAll('.champ-date-aujourdhui').forEach(input => {
-        input.value = dateFormatee;
+        input.value = '';
       });
     });
 
