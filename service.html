@@ -153,55 +153,78 @@
     </div>
 
     <!-- Signatures & Names Grid (Driver, Mechanic, Supervisor) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 form-border gap-0 divide-y md:divide-y-0 md:divide-x divide-black bg-white">
+    <div class="form-border bg-white divide-y divide-black">
       
-      <!-- Column 1: Driver -->
-      <div class="p-3 space-y-3">
+      <!-- Top Part: Signatures and Times/Dates in 3 columns -->
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black">
+        
+        <!-- Column 1: Driver Signature & Time/Date -->
+        <div class="p-3 space-y-3">
+          <div>
+            <label class="block text-[10px] font-bold uppercase">Driver's signature / Signature du chauffeur</label>
+            <input type="text" id="driverSignature" value="M. Lefebvre" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="driverTime" value="08:30" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="driverDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Mechanic Signature & Time/Date -->
+        <div class="p-3 space-y-3">
+          <div>
+            <label class="block text-[10px] font-bold uppercase">Mechanic's signature / Signature du mécanicien</label>
+            <input type="text" id="mechanicSignature" value="L. Bouchard" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="mechanicTime" value="11:15" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="mechanicDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Supervisor Signature & Time/Date -->
+        <div class="p-3 space-y-3 bg-red-50/30">
+          <div>
+            <label class="block text-[10px] font-bold uppercase">Supervisor's signature / Signature du surveillant</label>
+            <input type="text" id="supervisorSignature" value="M. Lefebvre (Approuvé)" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="supervisorTime" placeholder="--:--" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="supervisorDate" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Part: Nom chauffeur, nom mécanicien et nom surveillant sur une même ligne au bas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black bg-gray-50 p-3 gap-3">
         <div>
           <label class="block text-[10px] font-bold uppercase">Driver's Name / Nom du conducteur</label>
           <input type="text" id="driverName" value="martin lefebvre" class="w-full border-b border-black bg-transparent text-sm font-semibold focus:outline-none py-1">
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase">Driver's signature / Signature du chauffeur</label>
-          <input type="text" id="driverSignature" value="M. Lefebvre" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
-            <input type="text" id="driverTime" value="08:30" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
-            <input type="text" id="driverDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
-          </div>
-        </div>
-      </div>
-
-      <!-- Column 2: Mechanic -->
-      <div class="p-3 space-y-3">
-        <div>
-          <label class="block text-[10px] font-bold uppercase">Mechanic's or supervisor's name / Nom du mécanicien</label>
+          <label class="block text-[10px] font-bold uppercase">Mechanic's name / Nom du mécanicien</label>
           <input type="text" id="mechanicName" value="Luc Bouchard" class="w-full border-b border-black bg-transparent text-sm font-semibold py-1 focus:outline-none">
         </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase">Mechanic's signature / Signature du mécanicien</label>
-          <input type="text" id="mechanicSignature" value="L. Bouchard" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
-            <input type="text" id="mechanicTime" value="11:15" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
-            <input type="text" id="mechanicDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
-          </div>
-        </div>
-      </div>
-
-      <!-- Column 3: Supervisor Dropdown & Signatures -->
-      <div class="p-3 space-y-3 bg-red-50/30">
-        <div>
+        <div class="bg-red-50/30 p-1 -m-1 rounded">
           <label for="supervisorName" class="block text-[10px] font-bold uppercase text-red-900">
             Supervisor's Name / Nom du surveillant <span class="text-red-600">*</span>
           </label>
@@ -215,20 +238,6 @@
             <option value="Yves Moukoue">Yves Moukoue</option>
             <option value="Arianne Lavigueur">Arianne Lavigueur</option>
           </select>
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase">Supervisor's signature / Signature du surveillant</label>
-          <input type="text" id="supervisorSignature" value="M. Lefebvre (Approuvé)" class="w-full border-b border-black bg-gray-50 italic font-serif text-sm py-1">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[9px] font-bold uppercase">Time / Heure</label>
-            <input type="text" id="supervisorTime" placeholder="--:--" class="w-full border-b border-black text-center text-sm py-1 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-[9px] font-bold uppercase">Date (A / M / J)</label>
-            <input type="text" id="supervisorDate" class="champ-date-aujourdhui w-full border-b border-black text-center text-sm font-semibold py-1 focus:outline-none">
-          </div>
         </div>
       </div>
 
