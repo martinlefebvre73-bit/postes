@@ -1,10 +1,11 @@
 body {
   font-family: Arial, Helvetica, sans-serif;
   background-color: #f1f5f9;
+  font-size: 11px;
 }
 
 .form-border {
-  border: 2px solid #000;
+  border: 1.5px solid #000;
 }
 
 .form-border-b {
@@ -28,7 +29,12 @@ input:focus, textarea:focus, select:focus {
   background-color: #eff6ff;
 }
 
+/* Format 8.5 x 5.5 pouces (Landscape Statement / Half-Letter) */
 @media print {
+  @page {
+    size: 8.5in 5.5in;
+    margin: 4mm;
+  }
   body {
     background-color: white;
     padding: 0;
@@ -37,9 +43,492 @@ input:focus, textarea:focus, select:focus {
     display: none !important;
   }
   .page-container {
-    border: 2px solid black !important;
+    border: 1.5px solid black !important;
     box-shadow: none !important;
     margin: 0;
     width: 100%;
+    padding: 8px !important;
   }
 }
+```[file-tag: code-generated-file-style-8x5.css]
+
+---
+
+### 2. Le fichier HTML mis à jour (`service (5).html`)
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport du chauffeur sur les défauts du véhicule — Postes Canada</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf.js pour la génération et l'export PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Fichier CSS externe -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Ajustements de compactage pour format 8.5 x 5.5 po */
+    .compact-textarea {
+      height: 70px !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-2 text-black text-[11px]">
+
+  <!-- Top Toolbar (No print) -->
+  <div class="no-print mb-2 w-full max-w-4xl flex flex-wrap justify-between items-center gap-2 bg-white p-2 rounded-lg shadow border border-gray-300">
+    <button onclick="window.location.href='index.html'" class="px-3 py-1.5 bg-slate-700 text-white rounded font-bold hover:bg-slate-850 transition cursor-pointer flex items-center space-x-1 text-xs">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Retour au menu</span>
+    </button>
+    
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Search Button -->
+      <button id="btnRecherche" type="button" class="px-3 py-1.5 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition cursor-pointer flex items-center space-x-1 shadow text-xs">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>Rechercher</span>
+      </button>
+
+      <!-- Save to Firebase Button -->
+      <button id="btnEnregistrer" type="button" class="px-3 py-1.5 bg-emerald-600 text-white rounded font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center space-x-1 shadow text-xs">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>Enregistrer Firebase</span>
+      </button>
+
+      <!-- Email Dispatch Button -->
+      <button id="btnExpedier" type="button" class="px-3 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition cursor-pointer flex items-center space-x-1 shadow text-xs">
+        <i class="fa-solid fa-envelope"></i>
+        <span>Expédier</span>
+      </button>
+
+      <!-- Print / PDF Button -->
+      <button onclick="window.print()" class="px-3 py-1.5 bg-gray-600 text-white rounded font-bold hover:bg-gray-700 transition cursor-pointer flex items-center space-x-1 text-xs">
+        <i class="fa-solid fa-print"></i>
+        <span>Imprimer / PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="toast" class="hidden w-full max-w-4xl mb-2 p-2 bg-green-100 border border-green-400 text-green-700 rounded text-xs flex items-center justify-between no-print shadow">
+    <span id="toast-msg">Action effectuée avec succès.</span>
+    <button onclick="document.getElementById('toast').classList.add('hidden')" class="font-bold">&times;</button>
+  </div>
+
+  <!-- Main Document Container matching Postes Canada Vehicle Defect Report PDF (8.5 x 5.5 format) -->
+  <div id="formulaireContent" class="page-container w-full max-w-4xl bg-white form-border p-3 shadow-xl space-y-2">
+    
+    <!-- Header: Canada Post / Postes Canada & Title -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b-2 border-black gap-2">
+      <div class="flex items-center space-x-2">
+        <div class="border-2 border-red-600 px-1.5 py-0.5 bg-red-50 text-red-600 font-black text-base tracking-tighter uppercase">
+          CANADA POST
+        </div>
+        <div class="font-bold text-xs leading-tight uppercase border-l-2 border-black pl-2">
+          POSTES<br>CANADA
+        </div>
+      </div>
+      <div class="text-center flex-1">
+        <h1 class="font-bold text-xs sm:text-sm uppercase tracking-wide">Driver's Vehicle Defect Report</h1>
+        <h2 class="font-bold text-[10px] sm:text-xs text-gray-700 uppercase">Rapport du chauffeur sur les défauts du véhicule</h2>
+      </div>
+      <div class="text-right text-[9px] font-mono font-bold text-gray-600">
+        34-093-200 (17-02)
+      </div>
+    </div>
+
+    <!-- Row 1: Vehicle No, Odometer reading, Driver's location -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 form-border bg-gray-50">
+      
+      <!-- Vehicle no. with Voice Dictation -->
+      <div class="p-1.5 form-border-b sm:form-border-b-0 sm:form-border-r">
+        <div class="flex justify-between items-center">
+          <label class="block font-bold text-[9px] uppercase">Vehicle no. / N° du véhicule</label>
+          <button type="button" onclick="activerDictee('numVehicule', this)" class="no-print p-0.5 text-gray-600 hover:text-red-600 text-[11px] transition cursor-pointer" title="Dictée vocale">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+        </div>
+        <input type="text" id="numVehicule" value="7299" placeholder="Ex: 7299" 
+               class="w-full bg-transparent border-b border-black font-bold text-sm focus:outline-none py-0.5">
+      </div>
+
+      <!-- Driver's location / Depot aeroport with Voice Dictation -->
+      <div class="p-1.5 form-border-b sm:form-border-b-0 sm:form-border-r">
+        <div class="flex justify-between items-center">
+          <label class="block font-bold text-[9px] uppercase">Driver's location / Local du chauffeur</label>
+          <button type="button" onclick="activerDictee('depotChauffeur', this)" class="no-print p-0.5 text-gray-600 hover:text-red-600 text-[11px] transition cursor-pointer" title="Dictée vocale">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+        </div>
+        <input type="text" id="depotChauffeur" value="aeroport" placeholder="aeroport" 
+               class="w-full bg-transparent border-b border-black font-bold text-sm focus:outline-none py-0.5">
+      </div>
+
+      <!-- Odometer reading -->
+      <div class="p-1.5">
+        <label class="block font-bold text-[9px] uppercase">Odometer reading / Indication du compteur</label>
+        <input type="text" id="odometerReading" value="7299" placeholder="Ex: 142850" 
+               class="w-full bg-transparent border-b border-black font-bold text-sm focus:outline-none py-0.5">
+      </div>
+
+    </div>
+
+    <!-- Main Section: Details of vehicle defect(s) & Repair(s) completed -->
+    <div class="grid grid-cols-1 md:grid-cols-2 form-border">
+      
+      <!-- Details of vehicle defect(s) with Voice Dictation -->
+      <div class="p-1.5 form-border-b md:form-border-b-0 md:form-border-r flex flex-col justify-between bg-white">
+        <div>
+          <div class="flex justify-between items-center border-b border-black pb-0.5 mb-1">
+            <label class="font-bold text-[10px] uppercase">
+              Details of vehicle defect(s) / Exposé du problème
+            </label>
+            <button type="button" onclick="activerDictee('descriptionDefaut', this)" class="no-print px-1.5 py-0.2 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold flex items-center space-x-1 transition cursor-pointer shadow">
+              <i class="fa-solid fa-microphone text-[9px]"></i>
+              <span>Dictée</span>
+            </button>
+          </div>
+          <textarea id="descriptionDefaut" class="w-full compact-textarea p-1 resize-none font-medium text-xs focus:outline-none bg-transparent" placeholder="Saisir ou dicter les détails du problème...">le bouton du shifter reste bloquer enfoncé, ceci empeche le retrait de la clef</textarea>
+        </div>
+      </div>
+
+      <!-- Repair(s) completed -->
+      <div class="p-1.5 flex flex-col justify-between bg-white">
+        <div>
+          <label class="block font-bold text-[10px] uppercase border-b border-black pb-0.5 mb-1">
+            Repair(s) completed / Réparation effectuée
+          </label>
+          <textarea id="reparationEffectuee" class="w-full compact-textarea p-1 resize-none font-medium text-xs focus:outline-none bg-transparent" placeholder="Réservé aux réparations effectuées..."></textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Certification Banner -->
+    <div class="form-border bg-gray-100 p-1.5 flex items-center space-x-2">
+      <input type="checkbox" id="certify" checked class="w-3.5 h-3.5 border-black rounded-none cursor-pointer">
+      <label for="certify" class="font-bold text-[10px] cursor-pointer uppercase">
+        I certify that all defects have been corrected and communicated. / J'atteste que toutes les anomalies ont été corrigées et signalées.
+      </label>
+    </div>
+
+    <!-- Signatures & Names Grid (Driver, Mechanic, Supervisor) -->
+    <div class="form-border bg-white divide-y divide-black">
+      
+      <!-- Top Part: Signatures and Times/Dates in 3 columns -->
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black">
+        
+        <!-- Column 1: Driver Signature & Time/Date -->
+        <div class="p-2 space-y-1.5">
+          <div>
+            <label class="block text-[9px] font-bold uppercase">Driver's signature / Signature du chauffeur</label>
+            <input type="text" id="driverSignature" value="M. Lefebvre" class="w-full border-b border-black bg-gray-50 italic font-serif text-xs py-0.5">
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div>
+              <label class="block text-[8px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="driverTime" value="08:30" class="w-full border-b border-black text-center text-xs py-0.5 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[8px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="driverDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-xs font-semibold py-0.5 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Mechanic Signature & Time/Date -->
+        <div class="p-2 space-y-1.5">
+          <div>
+            <label class="block text-[9px] font-bold uppercase">Mechanic's signature / Signature du mécanicien</label>
+            <input type="text" id="mechanicSignature" value="L. Bouchard" class="w-full border-b border-black bg-gray-50 italic font-serif text-xs py-0.5">
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div>
+              <label class="block text-[8px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="mechanicTime" value="11:15" class="w-full border-b border-black text-center text-xs py-0.5 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[8px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="mechanicDate" value="2026-09-17" class="champ-date-aujourdhui w-full border-b border-black text-center text-xs font-semibold py-0.5 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Supervisor Signature & Time/Date -->
+        <div class="p-2 space-y-1.5 bg-red-50/30">
+          <div>
+            <label class="block text-[9px] font-bold uppercase">Supervisor's signature / Signature du surveillant</label>
+            <input type="text" id="supervisorSignature" value="M. Lefebvre (Approuvé)" class="w-full border-b border-black bg-gray-50 italic font-serif text-xs py-0.5">
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div>
+              <label class="block text-[8px] font-bold uppercase">Time / Heure</label>
+              <input type="text" id="supervisorTime" placeholder="--:--" class="w-full border-b border-black text-center text-xs py-0.5 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[8px] font-bold uppercase">Date (A / M / J)</label>
+              <input type="text" id="supervisorDate" class="champ-date-aujourdhui w-full border-b border-black text-center text-xs font-semibold py-0.5 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Part: Nom chauffeur, nom mécanicien et nom surveillant sur une même ligne au bas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-black bg-gray-50 p-2 gap-2">
+        <div>
+          <label class="block text-[9px] font-bold uppercase">Driver's Name / Nom du conducteur</label>
+          <input type="text" id="driverName" value="martin lefebvre" class="w-full border-b border-black bg-transparent text-xs font-semibold focus:outline-none py-0.5">
+        </div>
+        <div>
+          <label class="block text-[9px] font-bold uppercase">Mechanic's name / Nom du mécanicien</label>
+          <input type="text" id="mechanicName" value="Luc Bouchard" class="w-full border-b border-black bg-transparent text-xs font-semibold py-0.5 focus:outline-none">
+        </div>
+        <div class="bg-red-50/30 p-0.5 rounded">
+          <label for="supervisorName" class="block text-[9px] font-bold uppercase text-red-900">
+            Supervisor's Name / Nom du surveillant <span class="text-red-600">*</span>
+          </label>
+          <select id="supervisorName" class="w-full mt-0.5 border border-red-500 rounded bg-white font-bold text-xs py-0.5 px-1 cursor-pointer shadow-sm">
+            <option value="Martin Lefebvre" selected>Martin Lefebvre</option>
+            <option value="Pierre-Stephane Moreau">Pierre-Stephane Moreau</option>
+            <option value="Jonathan Foucreault">Jonathan Foucreault</option>
+            <option value="Edgar Raigosa">Edgar Raigosa</option>
+            <option value="Jean Petit">Jean Petit</option>
+            <option value="Yanick Dussault">Yanick Dussault</option>
+            <option value="Yves Moukoue">Yves Moukoue</option>
+            <option value="Arianne Lavigueur">Arianne Lavigueur</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Notice & Distribution Categories -->
+    <div class="form-border p-1.5 flex flex-col sm:flex-row justify-between items-center bg-gray-50 gap-2">
+      <div class="flex items-center space-x-1.5">
+        <input type="checkbox" id="returned" checked class="w-3.5 h-3.5 border-black rounded-none cursor-pointer">
+        <label for="returned" class="font-bold text-[9px] cursor-pointer uppercase">
+          Completed DVDR must be returned with vehicle / Le Rapport dûment rempli doit être retourné avec le véhicule
+        </label>
+      </div>
+      <div class="flex items-center space-x-2 text-[9px] font-bold">
+        <span class="border border-black px-1 py-0.2 bg-white">1. Service Centre</span>
+        <span class="border border-black px-1 py-0.2 bg-white">2. Driver</span>
+        <span class="border border-black px-1 py-0.2 bg-white">3. Operations</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Firebase SDK Integration & Core Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD11KHhTufTrL0eGBKGWglghoArZhca3OI",
+      authDomain: "postes-26884.firebaseapp.com",
+      projectId: "postes-26884",
+      storageBucket: "postes-26884.firebasestorage.app",
+      messagingSenderId: "75974397689",
+      appId: "1:75974397689:web:5fd12942788612c62b1c28",
+      measurementId: "G-83YPF62ET5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.innerText = message;
+      toast.className = `w-full max-w-4xl mb-2 p-2 border rounded text-xs flex items-center justify-between no-print shadow ${isError ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'}`;
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+    }
+
+    // Save to Firebase Firestore
+    document.getElementById('btnEnregistrer').addEventListener('click', async () => {
+      const btn = document.getElementById('btnEnregistrer');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Enregistrement...';
+
+      try {
+        const donneesRapport = {
+          numVehicule: document.getElementById('numVehicule').value,
+          depotChauffeur: document.getElementById('depotChauffeur').value,
+          odometerReading: document.getElementById('odometerReading').value,
+          descriptionDefaut: document.getElementById('descriptionDefaut').value,
+          reparationEffectuee: document.getElementById('reparationEffectuee').value,
+          certifieCorrection: document.getElementById('certify').checked,
+          driverName: document.getElementById('driverName').value,
+          driverTime: document.getElementById('driverTime').value,
+          driverDate: document.getElementById('driverDate').value,
+          mechanicName: document.getElementById('mechanicName').value,
+          mechanicTime: document.getElementById('mechanicTime').value,
+          mechanicDate: document.getElementById('mechanicDate').value,
+          supervisorName: document.getElementById('supervisorName').value,
+          supervisorTime: document.getElementById('supervisorTime').value,
+          supervisorDate: document.getElementById('supervisorDate').value,
+          formulaireRetourne: document.getElementById('returned').checked,
+          creeLe: serverTimestamp()
+        };
+
+        const docRef = await addDoc(collection(db, "camion"), donneesRapport);
+        showToast(`Rapport enregistré avec succès dans Firebase ! ID : ${docRef.id}`);
+      } catch (error) {
+        console.error("Erreur d'enregistrement Firebase :", error);
+        showToast("Erreur lors de l'enregistrement : " + error.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Enregistrer Firebase';
+      }
+    });
+
+    // Search from Firebase Firestore
+    document.getElementById('btnRecherche').addEventListener('click', async () => {
+      const numRecherche = prompt("Entrez le numéro du véhicule à rechercher (ex: 7299) :");
+      if (!numRecherche || numRecherche.trim() === '') return;
+
+      const btn = document.getElementById('btnRecherche');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Recherche...';
+
+      try {
+        const camionRef = collection(db, "camion");
+        const q = query(camionRef, where("numVehicule", "==", numRecherche.trim()), orderBy("creeLe", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          showToast(`Aucune fiche trouvée pour le véhicule N° ${numRecherche.trim()}.`, true);
+        } else {
+          const docData = querySnapshot.docs[0].data();
+
+          document.getElementById('numVehicule').value = docData.numVehicule || '';
+          document.getElementById('depotChauffeur').value = docData.depotChauffeur || '';
+          document.getElementById('odometerReading').value = docData.odometerReading || '';
+          document.getElementById('descriptionDefaut').value = docData.descriptionDefaut || '';
+          document.getElementById('reparationEffectuee').value = docData.reparationEffectuee || '';
+          document.getElementById('certify').checked = !!docData.certifieCorrection;
+          document.getElementById('driverName').value = docData.driverName || '';
+          document.getElementById('driverTime').value = docData.driverTime || '';
+          document.getElementById('driverDate').value = docData.driverDate || '';
+          document.getElementById('mechanicName').value = docData.mechanicName || '';
+          document.getElementById('mechanicTime').value = docData.mechanicTime || '';
+          document.getElementById('mechanicDate').value = docData.mechanicDate || '';
+          document.getElementById('supervisorName').value = docData.supervisorName || 'Martin Lefebvre';
+          document.getElementById('supervisorTime').value = docData.supervisorTime || '';
+          document.getElementById('supervisorDate').value = docData.supervisorDate || '';
+          document.getElementById('returned').checked = !!docData.formulaireRetourne;
+
+          showToast(`Fiche du véhicule N° ${numRecherche.trim()} chargée avec succès !`);
+        }
+      } catch (error) {
+        console.error("Erreur de recherche Firebase :", error);
+        showToast("Erreur lors de la recherche : " + error.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Rechercher';
+      }
+    });
+
+    // Email Dispatch Button using html2pdf and mailto
+    document.getElementById('btnExpedier').addEventListener('click', async () => {
+      const btn = document.getElementById('btnExpedier');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Génération PDF...';
+
+      const element = document.getElementById('formulaireContent');
+      const numCamion = document.getElementById('numVehicule').value || '7299';
+      const supervisor = document.getElementById('supervisorName').value;
+      const nomFichier = `Rapport_Defaut_Vehicule_${numCamion}.pdf`;
+
+      const opt = {
+        margin: 2,
+        filename: nomFichier,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: [8.5, 5.5], orientation: 'landscape' }
+      };
+
+      try {
+        await html2pdf().set(opt).from(element).save();
+
+        const emailDestinataire = "Garage.Prefontaine@canadapost.postescanada.ca";
+        const sujet = encodeURIComponent(`Rapport de défaut de véhicule - Véhicule #${numCamion}`);
+        const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le rapport de défaut concernant le véhicule #${numCamion}.\nSuperviseur assigné : ${supervisor}\n\n(Note: Si le PDF téléchargé ne s'est pas joint automatiquement, veuillez joindre le fichier "${nomFichier}" à ce courriel).\n\nCordialement,\nMartin Lefebvre`);
+
+        window.location.href = `mailto:${emailDestinataire}?subject=${sujet}&body=${corps}`;
+        showToast("PDF généré et client de messagerie ouvert avec succès !");
+      } catch (err) {
+        console.error("Erreur lors de l'export PDF :", err);
+        showToast("Erreur lors de la génération du fichier PDF.", true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Expédier';
+      }
+    });
+  </script>
+
+  <!-- Script for Date Auto-population and Web Speech API Dictation -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const aujourdhui = new Date();
+      const annee = aujourdhui.getFullYear();
+      const mois = String(aujourdhui.getMonth() + 1).padStart(2, '0');
+      const jour = String(aujourdhui.getDate()).padStart(2, '0');
+      const dateFormatee = `${annee}-${mois}-${jour}`;
+
+      document.querySelectorAll('.champ-date-aujourdhui').forEach(input => {
+        input.value = dateFormatee;
+      });
+    });
+
+    // Voice Dictation (Web Speech API)
+    function activerDictee(idElement, bouton) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert("La dictée vocale n'est pas supportée par votre navigateur (essayez Google Chrome).");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-CA';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      const champCible = document.getElementById(idElement);
+
+      recognition.onstart = () => {
+        bouton.classList.add('text-red-600', 'animate-pulse');
+      };
+
+      recognition.onresult = (event) => {
+        const texteDicte = event.results[0][0].transcript;
+        if (champCible.value.trim() === '') {
+          champCible.value = texteDicte;
+        } else {
+          champCible.value += ' ' + texteDicte;
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Erreur de dictée vocale :", event.error);
+      };
+
+      recognition.onend = () => {
+        bouton.classList.remove('text-red-600', 'animate-pulse');
+      };
+
+      recognition.start();
+    }
+  </script>
+
+</body>
+</html>
+```[file-tag: code-generated-file-service-8x5.html]
