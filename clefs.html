@@ -121,6 +121,7 @@
             border: 1px solid var(--border-color);
             padding: 12px;
             text-align: left;
+            vertical-align: top;
         }
 
         th {
@@ -147,17 +148,50 @@
         }
 
         .actions-cell button {
-            padding: 6px 12px;
+            padding: 6px 10px;
             margin-right: 5px;
+            margin-bottom: 5px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
         .btn-info { background: #0284c7; color: white; }
+
+        .btn-mini {
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 6px;
+            background: #10b981;
+            color: white;
+        }
+
+        .cle-ligne {
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 3px;
+        }
+
+        .cle-ligne:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .cle-retournee {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
 
         .firebase-status {
             font-size: 0.85rem;
@@ -167,6 +201,37 @@
             border-radius: 6px;
             border-left: 4px solid var(--primary-color);
             font-weight: 500;
+        }
+
+        /* Fenêtre Modale pour Modification */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .search-box {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
         }
 
         @media print {
@@ -191,7 +256,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -210,7 +275,6 @@
         let listeEmployesMemoire = [];
         let isManualEntry = false;
         
-        // Données globales stockées en mémoire et synchronisées
         window.routesData = JSON.parse(localStorage.getItem('routesData')) || {
             "1": ["STD", "13394", "13937", "25229"],
             "2": ["10001", "13937", "25229"],
@@ -352,7 +416,6 @@
 
         async function chargerDonneesFirestore() {
             try {
-                // 1. Chargement des employés (collection "employes")
                 const queryEmployes = await getDocs(collection(db, "employes"));
                 listeEmployesMemoire = [];
                 queryEmployes.forEach((docSnap) => {
@@ -371,7 +434,6 @@
 
                 renderNomField();
 
-                // 2. Chargement des prêts de clés (collection "prets_cles")
                 const queryPrets = await getDocs(collection(db, "prets_cles"));
                 let pretsFirestore = [];
                 queryPrets.forEach((docSnap) => {
@@ -393,7 +455,15 @@
             }
 
             initialiserSelectRoutes();
+            rafraichirVues();
+        }
+
+        window.rafraichirVues = function() {
             afficherHistorique();
+            genererRapportCles();
+            if (document.getElementById('rechercheTab').classList.contains('active')) {
+                executerRecherche();
+            }
         }
 
         window.toggleManualEntry = function() {
@@ -527,7 +597,7 @@
             for (let item of items) {
                 let serie = item.querySelector('input[type="hidden"]').value;
                 let individuel = item.querySelector('input[type="text"]').value;
-                clesDetails.push({ serie, individuel });
+                clesDetails.push({ serie, individuel, retournee: false });
             }
 
             let nouveauPret = {
@@ -559,20 +629,31 @@
             document.getElementById('clesDynamiquesContainer').innerHTML = '<p style="color: #64748b;">Veuillez sélectionner une route pour afficher les clés.</p>';
             document.getElementById('ancienneteInput').value = '-';
             if (isManualEntry) toggleManualEntry();
-            afficherHistorique();
+            rafraichirVues();
         }
 
+        // Retour complet d'un prêt
         window.marquerRetour = async function(idUnique) {
             let pret = pretsData.find(p => p.idUnique === idUnique);
             if(pret) {
+                const today = new Date().toISOString().split('T')[0];
                 pret.statut = 'Retourné';
-                pret.dateRetourEffective = new Date().toISOString().split('T')[0];
+                pret.dateRetourEffective = today;
+                if (pret.cles) {
+                    pret.cles.forEach(c => {
+                        if (!c.retournee) {
+                            c.retournee = true;
+                            c.dateRetourCle = today;
+                        }
+                    });
+                }
 
                 if (pret.firebaseId) {
                     try {
                         await updateDoc(doc(db, "prets_cles", pret.firebaseId), {
                             statut: 'Retourné',
-                            dateRetourEffective: pret.dateRetourEffective
+                            dateRetourEffective: pret.dateRetourEffective,
+                            cles: pret.cles
                         });
                     } catch (err) {
                         console.warn("Mise à jour hors ligne effectuée.");
@@ -580,11 +661,146 @@
                 }
 
                 localStorage.setItem('pretsData', JSON.stringify(pretsData));
-                afficherHistorique();
+                rafraichirVues();
             }
         }
 
+        // Retour individuel d'une seule clé dans un prêt
+        window.marquerRetourCleIndividuelle = async function(idUnique, cleIndex) {
+            let pret = pretsData.find(p => p.idUnique === idUnique);
+            if (pret && pret.cles && pret.cles[cleIndex]) {
+                const today = new Date().toISOString().split('T')[0];
+                pret.cles[cleIndex].retournee = true;
+                pret.cles[cleIndex].dateRetourCle = today;
+
+                // Vérifier si toutes les clés sont maintenant retournées
+                const toutesRetournees = pret.cles.every(c => c.retournee);
+                if (toutesRetournees) {
+                    pret.statut = 'Retourné';
+                    pret.dateRetourEffective = today;
+                }
+
+                if (pret.firebaseId) {
+                    try {
+                        await updateDoc(doc(db, "prets_cles", pret.firebaseId), {
+                            cles: pret.cles,
+                            statut: pret.statut,
+                            ...(toutesRetournees ? { dateRetourEffective: today } : {})
+                        });
+                    } catch (err) {
+                        console.warn("Mise à jour clé individuelle hors ligne.");
+                    }
+                }
+
+                localStorage.setItem('pretsData', JSON.stringify(pretsData));
+                rafraichirVues();
+            }
+        }
+
+        // Ouvrir la fenêtre modale de modification d'un prêt
+        window.ouvrirModaleModification = function(idUnique) {
+            const pret = pretsData.find(p => p.idUnique === idUnique);
+            if (!pret) return;
+
+            document.getElementById('editIdUnique').value = pret.idUnique;
+            document.getElementById('editEmploye').value = pret.employe || '';
+            document.getElementById('editIdEmploye').value = pret.idEmploye || '';
+            document.getElementById('editDatePret').value = pret.datePret || '';
+            document.getElementById('editDateRetour').value = pret.dateRetour || '';
+            document.getElementById('editStatut').value = pret.statut || 'En cours';
+
+            const clesListDiv = document.getElementById('editClesContainer');
+            clesListDiv.innerHTML = '';
+
+            if (pret.cles && pret.cles.length > 0) {
+                pret.cles.forEach((cle, idx) => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 10px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;';
+                    row.innerHTML = `
+                        <div style="flex: 1;">
+                            <small style="color: #64748b;">Série</small>
+                            <input type="text" class="edit-cle-serie" value="${cle.serie}" style="padding: 6px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <small style="color: #64748b;">N° Individuel</small>
+                            <input type="text" class="edit-cle-indiv" value="${cle.individuel}" style="padding: 6px;">
+                        </div>
+                        <div style="padding-top: 14px;">
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem; margin: 0; cursor: pointer;">
+                                <input type="checkbox" class="edit-cle-retournee" ${cle.retournee ? 'checked' : ''} style="width: auto;">
+                                Retournée
+                            </label>
+                        </div>
+                    `;
+                    clesListDiv.appendChild(row);
+                });
+            }
+
+            document.getElementById('editPretModal').style.display = 'flex';
+        }
+
+        window.fermerModaleModification = function() {
+            document.getElementById('editPretModal').style.display = 'none';
+        }
+
+        window.sauvegarderModificationPret = async function(e) {
+            e.preventDefault();
+            const idUnique = Number(document.getElementById('editIdUnique').value);
+            const pret = pretsData.find(p => p.idUnique === idUnique);
+            if (!pret) return;
+
+            pret.employe = document.getElementById('editEmploye').value.trim();
+            pret.idEmploye = document.getElementById('editIdEmploye').value.trim();
+            pret.datePret = document.getElementById('editDatePret').value;
+            pret.dateRetour = document.getElementById('editDateRetour').value;
+            pret.statut = document.getElementById('editStatut').value;
+
+            const seriesInputs = document.querySelectorAll('.edit-cle-serie');
+            const indivInputs = document.querySelectorAll('.edit-cle-indiv');
+            const retourChecks = document.querySelectorAll('.edit-cle-retournee');
+
+            const nouvellesCles = [];
+            for (let i = 0; i < seriesInputs.length; i++) {
+                nouvellesCles.push({
+                    serie: seriesInputs[i].value.trim(),
+                    individuel: indivInputs[i].value.trim(),
+                    retournee: retourChecks[i].checked
+                });
+            }
+            pret.cles = nouvellesCles;
+
+            // Si toutes les clés sont cochées retournées, basculer le statut
+            if (pret.cles.length > 0 && pret.cles.every(c => c.retournee) && pret.statut === 'En cours') {
+                pret.statut = 'Retourné';
+                pret.dateRetourEffective = new Date().toISOString().split('T')[0];
+            } else if (pret.cles.some(c => !c.retournee) && pret.statut === 'Retourné') {
+                pret.statut = 'En cours';
+            }
+
+            if (pret.firebaseId) {
+                try {
+                    await updateDoc(doc(db, "prets_cles", pret.firebaseId), {
+                        employe: pret.employe,
+                        idEmploye: pret.idEmploye,
+                        datePret: pret.datePret,
+                        dateRetour: pret.dateRetour,
+                        statut: pret.statut,
+                        cles: pret.cles,
+                        dateRetourEffective: pret.dateRetourEffective || null
+                    });
+                } catch (err) {
+                    console.warn("Mise à jour hors ligne effectuée.");
+                }
+            }
+
+            localStorage.setItem('pretsData', JSON.stringify(pretsData));
+            fermerModaleModification();
+            rafraichirVues();
+            alert('Prêt modifié avec succès !');
+        }
+
         window.supprimerPret = async function(idUnique) {
+            if (!confirm("Voulez-vous vraiment supprimer ce prêt ?")) return;
             let pret = pretsData.find(p => p.idUnique === idUnique);
             if (pret && pret.firebaseId) {
                 try {
@@ -596,7 +812,7 @@
 
             pretsData = pretsData.filter(p => p.idUnique !== idUnique);
             localStorage.setItem('pretsData', JSON.stringify(pretsData));
-            afficherHistorique();
+            rafraichirVues();
         }
 
         window.initialiserSelectRoutes = function() {
@@ -708,6 +924,22 @@
             }
         }
 
+        function formaterListeClesHTML(pret, avecBoutonRetourIndividuel = false) {
+            if (!pret.cles || pret.cles.length === 0) return '-';
+            return pret.cles.map((c, idx) => {
+                const estRetournee = c.retournee === true;
+                const texteCle = `Série: <strong>${c.serie}</strong> / Indiv: <strong>${c.individuel}</strong>`;
+                if (estRetournee) {
+                    return `<div class="cle-ligne"><span class="cle-retournee">${texteCle} ✓</span></div>`;
+                } else {
+                    const btn = avecBoutonRetourIndividuel
+                        ? `<button type="button" class="btn-mini no-print" title="Enregistrer le retour de cette clé uniquement" onclick="marquerRetourCleIndividuelle(${pret.idUnique}, ${idx})">✓ Retour clé</button>`
+                        : '';
+                    return `<div class="cle-ligne"><span>${texteCle}</span>${btn}</div>`;
+                }
+            }).join('');
+        }
+
         window.afficherHistorique = function() {
             const tbody = document.getElementById('historiqueTableBody');
             if(!tbody) return;
@@ -719,7 +951,7 @@
             }
 
             pretsData.forEach(pret => {
-                let clesStr = pret.cles ? pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>') : '';
+                let clesStr = formaterListeClesHTML(pret, pret.statut === 'En cours');
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${pret.datePret}</td>
@@ -727,11 +959,73 @@
                     <td>${pret.idEmploye || '-'}</td>
                     <td>Route ${pret.route}</td>
                     <td>${clesStr}</td>
-                    <td>${pret.dateRetour || 'Non spécifiée'}</td>
+                    <td>${pret.dateRetourEffective ? `Retourné le ${pret.dateRetourEffective}` : (pret.dateRetour || 'Non spécifiée')}</td>
                     <td><span style="color: ${pret.statut === 'En cours' ? '#d97706' : '#059669'}; font-weight: bold;">${pret.statut}</span></td>
                     <td class="actions-cell">
-                        ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.idUnique})">Marquer Retour</button>` : ''}
+                        ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.idUnique})">Retour Complet</button>` : ''}
+                        <button class="btn-warning" onclick="ouvrirModaleModification(${pret.idUnique})">Modifier</button>
                         <button class="btn-danger" onclick="supprimerPret(${pret.idUnique})">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Fonction de recherche (par clé ou par employé)
+        window.executerRecherche = function() {
+            const typeRecherche = document.getElementById('typeRechercheSelect').value;
+            const terme = document.getElementById('champRechercheInput').value.trim().toLowerCase();
+            const filtreStatut = document.getElementById('filtreStatutRecherche').value;
+            const tbody = document.getElementById('rechercheTableBody');
+            const resumeDiv = document.getElementById('resumeRecherche');
+
+            tbody.innerHTML = '';
+
+            if (!terme) {
+                resumeDiv.textContent = "Entrez un numéro de clé ou le nom/ID d'un employé pour lancer la recherche.";
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #9ca3af;">En attente d'un critère de recherche...</td></tr>`;
+                return;
+            }
+
+            let resultats = pretsData.filter(pret => {
+                if (filtreStatut !== 'TOUS' && pret.statut !== filtreStatut) {
+                    return false;
+                }
+
+                if (typeRecherche === 'cle') {
+                    if (!pret.cles || pret.cles.length === 0) return false;
+                    return pret.cles.some(c =>
+                        (c.serie && c.serie.toLowerCase().includes(terme)) ||
+                        (c.individuel && c.individuel.toLowerCase().includes(terme))
+                    );
+                } else {
+                    const nomMatch = pret.employe && pret.employe.toLowerCase().includes(terme);
+                    const idMatch = pret.idEmploye && String(pret.idEmploye).toLowerCase().includes(terme);
+                    return nomMatch || idMatch;
+                }
+            });
+
+            resumeDiv.textContent = `${resultats.length} prêt(s) trouvé(s) pour « ${document.getElementById('champRechercheInput').value} ».`;
+
+            if (resultats.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #9ca3af;">Aucun résultat correspondant à votre recherche.</td></tr>`;
+                return;
+            }
+
+            resultats.forEach(pret => {
+                let clesStr = formaterListeClesHTML(pret, pret.statut === 'En cours');
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pret.datePret}</td>
+                    <td><strong>${pret.employe}</strong></td>
+                    <td>${pret.idEmploye || '-'}</td>
+                    <td>Route ${pret.route}</td>
+                    <td>${clesStr}</td>
+                    <td>${pret.dateRetourEffective ? `Retourné le ${pret.dateRetourEffective}` : (pret.dateRetour || 'Non spécifiée')}</td>
+                    <td><span style="color: ${pret.statut === 'En cours' ? '#d97706' : '#059669'}; font-weight: bold;">${pret.statut}</span></td>
+                    <td class="actions-cell">
+                        ${pret.statut === 'En cours' ? `<button class="btn-success" onclick="marquerRetour(${pret.idUnique})">Retour Complet</button>` : ''}
+                        <button class="btn-warning" onclick="ouvrirModaleModification(${pret.idUnique})">Modifier</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -759,12 +1053,12 @@
             }
 
             if (pretsActifs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #9ca3af;">Aucune clé en cours de prêt pour cette période.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #9ca3af;">Aucune clé en cours de prêt pour cette période.</td></tr>`;
                 return;
             }
 
             pretsActifs.forEach(pret => {
-                let clesStr = pret.cles ? pret.cles.map(c => `Série: ${c.serie} / Indiv: ${c.individuel}`).join('<br>') : '';
+                let clesStr = formaterListeClesHTML(pret, true);
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${pret.datePret}</td>
@@ -773,6 +1067,10 @@
                     <td>Route ${pret.route}</td>
                     <td>${clesStr}</td>
                     <td>${pret.dateRetour || 'Non spécifiée'}</td>
+                    <td class="actions-cell no-print">
+                        <button type="button" class="btn-success" onclick="marquerRetour(${pret.idUnique})">✓ Retour Prêt</button>
+                        <button type="button" class="btn-warning" onclick="ouvrirModaleModification(${pret.idUnique})">✏️ Modifier</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -791,6 +1089,7 @@
             if (tabName === 'routesTab') initialiserConfigRoutes();
             if (tabName === 'historiqueTab') afficherHistorique();
             if (tabName === 'rapportTab') genererRapportCles();
+            if (tabName === 'rechercheTab') document.getElementById('champRechercheInput').focus();
         }
 
         window.onload = function() {
@@ -807,9 +1106,10 @@
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab(event, 'saisieTab')">Saisie des Prêts</button>
-        <button class="tab-btn" onclick="switchTab(event, 'routesTab')">Gestion des Routes & Clés</button>
-        <button class="tab-btn" onclick="switchTab(event, 'historiqueTab')">Historique des Prêts</button>
+        <button class="tab-btn" onclick="switchTab(event, 'rechercheTab')">🔍 Rechercher</button>
         <button class="tab-btn" onclick="switchTab(event, 'rapportTab')">Rapport Clés Prêtes</button>
+        <button class="tab-btn" onclick="switchTab(event, 'historiqueTab')">Historique des Prêts</button>
+        <button class="tab-btn" onclick="switchTab(event, 'routesTab')">Gestion des Routes & Clés</button>
     </div>
 
     <!-- ONGLET 1 : SAISIE DES PRÊTS -->
@@ -878,20 +1178,38 @@
         </form>
     </div>
 
-    <!-- ONGLET 2 : GESTION DES ROUTES ET CLÉS -->
-    <div id="routesTab" class="tab-content">
-        <h2>Configuration des Routes et Séries de Clés</h2>
-        <div class="form-group" style="max-width: 350px;">
-            <label for="selectRouteConfig">Route à configurer :</label>
-            <select id="selectRouteConfig" onchange="chargerConfigRoute()"></select>
+    <!-- ONGLET RECHERCHER -->
+    <div id="rechercheTab" class="tab-content">
+        <h2>🔍 Rechercher une Clé ou un Employé</h2>
+        <div class="search-box">
+            <div class="row-grid" style="align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="typeRechercheSelect">Rechercher par :</label>
+                    <select id="typeRechercheSelect" onchange="executerRecherche()">
+                        <option value="cle">🔑 Clé (N° Série ou N° Individuel)</option>
+                        <option value="employe">👤 Employé (Nom ou ID/Matricule)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="champRechercheInput">Terme recherché :</label>
+                    <input type="text" id="champRechercheInput" placeholder="Ex: 25229, 14, Tremblay, 12345..." oninput="executerRecherche()">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="filtreStatutRecherche">Statut des prêts :</label>
+                    <select id="filtreStatutRecherche" onchange="executerRecherche()">
+                        <option value="En cours">En cours seulement (Non retournés)</option>
+                        <option value="TOUS">Tous les prêts (En cours et Retournés)</option>
+                        <option value="Retourné">Retournés seulement</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="button" class="btn-primary" onclick="executerRecherche()" style="width: 100%;">Rechercher</button>
+                </div>
+            </div>
         </div>
-        <div id="configRouteContent"></div>
-        <button type="button" class="btn-primary" onclick="ajouterNouvelleRoute()" style="margin-top: 15px;">Ajouter une Nouvelle Route</button>
-    </div>
 
-    <!-- ONGLET 3 : HISTORIQUE -->
-    <div id="historiqueTab" class="tab-content">
-        <h2>Historique des Prêts en Cours et Terminés</h2>
+        <p id="resumeRecherche" style="font-weight: 600; color: var(--primary-color);">Entrez un numéro de clé ou le nom/ID d'un employé pour lancer la recherche.</p>
+
         <table>
             <thead>
                 <tr>
@@ -899,20 +1217,22 @@
                     <th>Employé</th>
                     <th>ID</th>
                     <th>Route</th>
-                    <th>Détails Clés</th>
+                    <th>Détails des Clés</th>
                     <th>Retour Prévu / Effectif</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="historiqueTableBody"></tbody>
+            <tbody id="rechercheTableBody">
+                <tr><td colspan="8" style="text-align: center; color: #9ca3af;">En attente d'un critère de recherche...</td></tr>
+            </tbody>
         </table>
     </div>
 
-    <!-- ONGLET 4 : RAPPORT CLÉS PRÊTES (SANS RETOUR) -->
+    <!-- ONGLET RAPPORT CLÉS PRÊTES (SANS RETOUR) -->
     <div id="rapportTab" class="tab-content">
         <h2>Rapport des Clés Prêtées (Sans Retour)</h2>
-        <p>Sélectionnez une date précise ou une tranche de dates pour générer et imprimer la liste des clés actuellement en cours de prêt.</p>
+        <p>Sélectionnez une date précise ou une tranche de dates pour générer la liste des clés actuellement en cours de prêt, enregistrer un retour ou modifier un prêt.</p>
         
         <div class="row-grid no-print" style="margin-bottom: 20px; align-items: flex-end;">
             <div class="form-group" style="margin-bottom: 0;">
@@ -939,6 +1259,7 @@
                         <th>Route</th>
                         <th>Détails des Clés (Série / Individuel)</th>
                         <th>Retour Prévu</th>
+                        <th class="no-print">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="rapportTableBody">
@@ -950,6 +1271,87 @@
         <div class="no-print" style="margin-top: 20px;">
             <button type="button" class="btn-info" onclick="window.print()" style="padding: 12px 24px; font-size: 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🖨️ Imprimer ce Rapport</button>
         </div>
+    </div>
+
+    <!-- ONGLET HISTORIQUE -->
+    <div id="historiqueTab" class="tab-content">
+        <h2>Historique des Prêts en Cours et Terminés</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date Prêt</th>
+                    <th>Employé</th>
+                    <th>ID</th>
+                    <th>Route</th>
+                    <th>Détails Clés</th>
+                    <th>Retour Prévu / Effectif</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="historiqueTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- ONGLET GESTION DES ROUTES ET CLÉS -->
+    <div id="routesTab" class="tab-content">
+        <h2>Configuration des Routes et Séries de Clés</h2>
+        <div class="form-group" style="max-width: 350px;">
+            <label for="selectRouteConfig">Route à configurer :</label>
+            <select id="selectRouteConfig" onchange="chargerConfigRoute()"></select>
+        </div>
+        <div id="configRouteContent"></div>
+        <button type="button" class="btn-primary" onclick="ajouterNouvelleRoute()" style="margin-top: 15px;">Ajouter une Nouvelle Route</button>
+    </div>
+</div>
+
+<!-- MODALE DE MODIFICATION D'UN PRÊT -->
+<div id="editPretModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 style="margin-top: 0; color: var(--primary-color);">Modifier le Prêt</h2>
+        <form onsubmit="sauvegarderModificationPret(event)">
+            <input type="hidden" id="editIdUnique">
+            
+            <div class="row-grid" style="gap: 15px;">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="editEmploye">Employé :</label>
+                    <input type="text" id="editEmploye" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="editIdEmploye">ID / Matricule :</label>
+                    <input type="text" id="editIdEmploye">
+                </div>
+            </div>
+
+            <div class="row-grid" style="gap: 15px;">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="editDatePret">Date du Prêt :</label>
+                    <input type="date" id="editDatePret" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="editDateRetour">Date de Retour Prévue :</label>
+                    <input type="date" id="editDateRetour">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="editStatut">Statut global du prêt :</label>
+                <select id="editStatut">
+                    <option value="En cours">En cours</option>
+                    <option value="Retourné">Retourné</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Clés associées à ce prêt :</label>
+                <div id="editClesContainer"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-danger" onclick="fermerModaleModification()" style="padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+            </div>
+        </form>
     </div>
 </div>
 
