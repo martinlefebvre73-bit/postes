@@ -2,25 +2,61 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Génération de Code-barres LC0001</title>
-    <!-- Chargement de la bibliothèque JsBarcode via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <title>Génération de Code QR - Camion LC0001</title>
+    <!-- Chargement de la bibliothèque QRCode.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .etiquette-qr {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px dashed #999;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .numero-camion {
+            margin-top: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #000000;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- L'élément SVG où le code-barres sera dessiné -->
-    <svg id="mon-code-barres"></svg>
+    <div class="etiquette-qr">
+        <!-- L'élément DIV où le code QR sera dessiné -->
+        <div id="mon-code-qr"></div>
+        <!-- Affichage texte du numéro sous le code QR -->
+        <div id="texte-camion" class="numero-camion"></div>
+    </div>
 
     <script>
-        // Génération automatique au chargement de la page
-        JsBarcode("#mon-code-barres", "LC0001", {
-            format: "CODE128", // Format standard
-            lineColor: "#000000", // Couleur des barres
-            width: 2, // Épaisseur des barres
-            height: 100, // Hauteur du code-barres
-            displayValue: true, // Affiche le texte "LC0001" en dessous
-            fontSize: 20
+        // Numéro du camion à encoder
+        const numeroCamion = "LC0001";
+        const urlDestination = `https://martinlefebvre73-bit.github.io/postes/service.html?camion=${encodeURIComponent(numeroCamion)}`;
+
+        // Génération automatique du code QR au chargement de la page
+        new QRCode(document.getElementById("mon-code-qr"), {
+            text: urlDestination,
+            width: 150,
+            height: 150,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
         });
+
+        // Affiche le numéro du camion sous le code QR
+        document.getElementById("texte-camion").textContent = numeroCamion;
     </script>
 
 </body>
