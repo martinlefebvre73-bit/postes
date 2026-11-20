@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Codes QR Camions - Format 8.5" x 11" (3x8)</title>
+    
+    <!-- Tailwind CSS pour l'interface utilisateur -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Police Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- SheetJS (xlsx) pour la lecture de fichiers Excel (.xlsx, .xls, .csv) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- qrcode-generator pour la génération vectorielle (SVG) ultra-nette des codes QR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+
+    <style>
+        /* Configuration générale */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* Variables CSS dynamiques pour les dimensions de la feuille US Letter (8.5in x 11in) */
+        :root {
+            --page-width: 8.5in;
+            --page-height: 11in;
+            --margin-top: 0.40in;
+            --margin-bottom: 0.40in;
+            --margin-left: 0.25in;
+            --margin-right: 0.25in;
+            --col-gap: 0.10in;
+            --row-gap: 0.05in;
+            --cell-border: 1px dashed #cbd5e1;
+        }
+
+        /* Styles de la feuille physique simulée à l'écran */
+        .print-sheet {
+            width: var(--page-width);
+            height: var(--page-height);
+            padding-top: var(--margin-top);
+            padding-bottom: var(--margin-bottom);
+            padding-left: var(--margin-left);
+            padding-right: var(--margin-right);
+            background: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            margin: 0 auto 2rem auto;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Grille stricte de 3 colonnes par 8 lignes (24 cellules par feuille) */
+        .barcode-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            column-gap: var(--col-gap);
+            row-gap: var(--row-gap);
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Chaque espace / étiquette individuel */
+        .barcode-cell {
+            border: var(--cell-border);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 4px 8px;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+            background-color: #ffffff;
+        }
+
+        .barcode-cell.layout-vertical {
+            flex-direction: column;
+            gap: 2px;
+            padding: 3px 4px;
+        }
+
+        .qr-wrapper {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-wrapper svg {
+            display: block;
+        }
+
+        .label-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        .barcode-cell.layout-vertical .label-info {
+            align-items: center;
+            text-align: center;
+        }
+
+        .truck-header-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #475569;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .truck-number-text {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .barcode-cell.layout-vertical .truck-number-text {
+            font-size: 12px;
+            line-height: 1.05;
+        }
+
+        .scan-hint-text {
+            font-size: 8px;
+            font-weight: 500;
+            color: #64748b;
+            margin-top: 2px;
+            line-height: 1.1;
+        }
+
+        .barcode-cell.layout-vertical .scan-hint-text {
+            display: none;
+        }
+
+        /* Badge numéro de page à l'écran uniquement */
+        .page-indicator {
+            position: absolute;
+            top: 6px;
+            right: 12px;
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        /* =====================================================================
+           RÈGLES D'IMPRESSION STRICTES (US LETTER 8.5" x 11")
+           ===================================================================== */
+        @page {
+            size: letter portrait; /* 8.5in x 11in */
+            margin: 0 !important;
+        }
+
+        @media print {
+            html, body {
+                width: 8.5in;
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Masquer toute l'interface de contrôle à l'impression */
+            .no-print, .page-indicator {
+                display: none !important;
+            }
+
+            /* Réinitialiser le conteneur d'aperçu */
+            #preview-wrapper {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 8.5in !important;
+                display: block !important;
+            }
+
+            #sheets-container {
+                transform: none !important;
+                width: 8.5in !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Chaque feuille devient une page imprimée exacte */
+            .print-sheet {
+                width: 8.5in !important;
+                height: 11in !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always;
+                break-after: page;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* Éviter une page blanche supplémentaire après la dernière feuille */
+            .print-sheet:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row">
+
+    <!-- =====================================================================
+         PANNEAU LATÉRAL DE CONTRÔLE (Masqué à l'impression)
+         ===================================================================== -->
+    <aside class="no-print w-full lg:w-[420px] xl:w-[450px] bg-white border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0 lg:h-screen lg:overflow-y-auto shadow-sm z-10">
+        <div class="p-6 space-y-6">
+            
+            <!-- En-tête -->
+            <div class="border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-2.5 text-blue-600 mb-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                    </svg>
+                    <span class="text-xs font-bold uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-full">Format 8,5" × 11" (3×8)</span>
+                </div>
+                <h1 class="text-xl font-bold text-slate-900">Codes QR Camions (Auto-Service)</h1>
+                <p class="text-sm text-slate-500 mt-1">Génération par lots sur grille de 24 étiquettes par page (3 colonnes × 8 lignes) avec ouverture automatique du formulaire.</p>
+            </div>
+
+            <!-- Zone de notification / messages -->
+            <div id="status-banner" class="hidden rounded-xl p-3.5 text-sm font-medium flex items-start gap-2.5 transition-all">
+                <span id="status-icon" class="mt-0.5 flex-shrink-0"></span>
+                <div id="status-text" class="flex-1"></div>
+            </div>
+
+            <!-- 1. IMPORTATION FICHIER EXCEL -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">1. Source des numéros de camions</h2>
+                    <button type="button" id="btn-load-sample" class="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+                        Charger test (117 camions)
+                    </button>
+                </div>
+
+                <!-- Zone Glisser-Déposer Excel -->
+                <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/40 rounded-xl p-5 text-center cursor-pointer transition-colors">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden">
+                    <svg class="w-9 h-9 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-sm font-semibold text-slate-700">Cliquez ou glissez un fichier Excel ici</p>
+                    <p class="text-xs text-slate-500 mt-1">Formats supportés : .xlsx, .xls, .csv</p>
+                </div>
+
+                <!-- Sélecteur de feuille et de colonne (affiché si Excel chargé) -->
+                <div id="excel-options" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Onglet Excel</label>
+                            <select id="sheet-select" class="w-full text-sm rounded-lg border-slate-300 bg-white px-2.5 py-1.5 border focus:ring-2 focus:ring-blue-500 outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Colonne des camions</label>
+                            <select id="column-select" class="w-full text-sm rounded-lg border-slate-300 bg-white px-2.5 py-1.5 border focus:ring-2 focus:ring-blue-500 outline-none"></select>
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                        <input type="checkbox" id="skip-header-checkbox" checked class="rounded text-blue-600 focus:ring-blue-500">
+                        <span>Ignorer la 1ère ligne (en-tête de colonne)</span>
+                    </label>
+                </div>
+
+                <!-- Liste éditable des numéros -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="truck-list-input" class="text-xs font-semibold text-slate-600">Liste active (1 numéro par ligne)</label>
+                        <button type="button" id="btn-clear-list" class="text-xs text-slate-400 hover:text-red-600">Vider</button>
+                    </div>
+                    <textarea id="truck-list-input" rows="4" placeholder="Ex:&#10;LC0001&#10;7299&#10;TRK-2001" class="w-full text-sm font-mono rounded-xl border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                </div>
+            </section>
+
+            <!-- STATISTIQUES DU LOT -->
+            <div class="grid grid-cols-3 gap-2.5 bg-blue-50/70 border border-blue-100 rounded-xl p-3 text-center">
+                <div>
+                    <div class="text-xs text-slate-500 font-medium">Camions</div>
+                    <div id="stat-count" class="text-lg font-bold text-blue-700">0</div>
+                </div>
+                <div class="border-x border-blue-100">
+                    <div class="text-xs text-slate-500 font-medium">Pages (3×8)</div>
+                    <div id="stat-pages" class="text-lg font-bold text-slate-800">0</div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 font-medium">Cases libres</div>
+                    <div id="stat-empty" class="text-lg font-bold text-slate-600">0</div>
+                </div>
+            </div>
+
+            <!-- 2. AUTOMATISATION & APPARENCE QR -->
+            <section class="space-y-3 border-t border-slate-100 pt-4">
+                <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">2. Action QR & Apparence</h2>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">URL de destination automatique</label>
+                    <input type="text" id="base-url" value="https://martinlefebvre73-bit.github.io/postes/service.html" class="w-full text-xs font-mono rounded-lg border border-slate-300 px-2.5 py-1.5 bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-[11px] text-slate-400 mt-1">Ajoute automatiquement <code class="bg-slate-100 px-1 rounded text-slate-600">?camion=NUMERO</code> au scan.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Disposition étiquette</label>
+                        <select id="cell-layout" class="w-full text-sm rounded-lg border border-slate-300 px-2.5 py-1.5 bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="horizontal" selected>QR à gauche + Texte</option>
+                            <option value="vertical">QR en haut + Texte</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Titre au-dessus (optionnel)</label>
+                        <input type="text" id="label-prefix" value="VÉHICULE" placeholder="Ex: CAMION #" class="w-full text-sm rounded-lg border border-slate-300 px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Taille code QR : <span id="val-qr-size">68</span>px</label>
+                        <input type="range" id="qr-size" min="48" max="88" value="68" class="w-full accent-blue-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Correction d'erreur</label>
+                        <select id="qr-ecc" class="w-full text-sm rounded-lg border border-slate-300 px-2.5 py-1.5 bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="L">L (7% - Simple)</option>
+                            <option value="M" selected>M (15% - Standard)</option>
+                            <option value="Q">Q (25% - Robuste)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-4 pt-1">
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="show-text" checked class="rounded text-blue-600 focus:ring-blue-500">
+                        <span>Afficher N° camion</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="show-hint" checked class="rounded text-blue-600 focus:ring-blue-500">
+                        <span>Texte « Scanner pour rapport »</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="show-borders" checked class="rounded text-blue-600 focus:ring-blue-500">
+                        <span>Bordures de découpe</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- 3. MISE EN PAGE 8.5" x 11" (3x8) -->
+            <section class="space-y-3 border-t border-slate-100 pt-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">3. Gabarit 8,5" × 11" (3×8)</h2>
+                    <select id="layout-preset" class="text-xs rounded-lg border border-slate-300 px-2 py-1 bg-slate-50 font-medium text-slate-700 outline-none">
+                        <option value="standard">Feuille pleine (Marges 0.4")</option>
+                        <option value="avery5160">Étiquettes 3×8 (Haut/Bas 0.5")</option>
+                        <option value="tight">Marges minimales (0.2")</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Marge Haut / Bas (po)</label>
+                        <input type="number" id="margin-tb" step="0.05" min="0" max="1.5" value="0.40" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Marge Gauche / Droite (po)</label>
+                        <input type="number" id="margin-lr" step="0.05" min="0" max="1.5" value="0.25" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Espace colonnes (po)</label>
+                        <input type="number" id="gap-col" step="0.025" min="0" max="0.5" value="0.10" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Espace lignes (po)</label>
+                        <input type="number" id="gap-row" step="0.025" min="0" max="0.5" value="0.05" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5">
+                    </div>
+                </div>
+            </section>
+
+            <!-- BOUTONS D'ACTION PRINCIPAUX -->
+            <div class="pt-3 border-t border-slate-200 space-y-2.5">
+                <button type="button" id="btn-print" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    <span>Imprimer / Enregistrer en PDF</span>
+                </button>
+                <p class="text-[11px] text-center text-slate-500">
+                    Astuce : Dans la fenêtre d'impression, sélectionnez le format <strong>Lettre (8,5 × 11 po)</strong> et l'échelle <strong>100% (Taille réelle)</strong>.
+                </p>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- =====================================================================
+         ZONE D'APERÇU DES FEUILLES 8.5" x 11"
+         ===================================================================== -->
+    <main id="preview-wrapper" class="flex-1 bg-slate-200/80 p-4 sm:p-8 overflow-auto flex flex-col items-center">
+        
+        <!-- Barre d'outils d'aperçu (masquée à l'impression) -->
+        <div class="no-print w-full max-w-[8.5in] flex flex-wrap items-center justify-between gap-3 mb-4 bg-white/90 backdrop-blur px-4 py-2.5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                <span>Aperçu réel : Feuille US Letter 8,5" × 11" — 3 colonnes × 8 lignes (24 codes QR/page)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="zoom-select" class="text-xs text-slate-500 font-medium">Zoom :</label>
+                <select id="zoom-select" class="text-xs rounded-lg border border-slate-300 px-2 py-1 bg-white font-semibold text-slate-700">
+                    <option value="0.6">60%</option>
+                    <option value="0.75">75%</option>
+                    <option value="0.9">90%</option>
+                    <option value="1" selected>100% (Taille réelle)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Conteneur des pages générées dynamiquement -->
+        <div id="sheets-container" class="origin-top transition-transform duration-200">
+            <!-- Les feuilles .print-sheet sont injectées ici par JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- =====================================================================
+         LOGIQUE JAVASCRIPT (Lecture Excel + Génération par lots QR 3x8)
+         ===================================================================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Constantes de grille imposées : 3 colonnes x 8 lignes = 24 codes par page
+            const COLS = 3;
+            const ROWS = 8;
+            const ITEMS_PER_PAGE = COLS * ROWS; // 24
+
+            // État de l'application
+            let workbookData = null;
+            let currentSheetRows = [];
+
+            // Références DOM
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('excel-file-input');
+            const excelOptions = document.getElementById('excel-options');
+            const sheetSelect = document.getElementById('sheet-select');
+            const columnSelect = document.getElementById('column-select');
+            const skipHeaderCheckbox = document.getElementById('skip-header-checkbox');
+            const truckListInput = document.getElementById('truck-list-input');
+            const sheetsContainer = document.getElementById('sheets-container');
+
+            const statusBanner = document.getElementById('status-banner');
+            const statusText = document.getElementById('status-text');
+            const statusIcon = document.getElementById('status-icon');
+
+            // Statistiques
+            const statCount = document.getElementById('stat-count');
+            const statPages = document.getElementById('stat-pages');
+            const statEmpty = document.getElementById('stat-empty');
+
+            // Contrôles d'automatisation, d'apparence & mise en page
+            const baseUrlInput = document.getElementById('base-url');
+            const cellLayout = document.getElementById('cell-layout');
+            const labelPrefix = document.getElementById('label-prefix');
+            const qrSizeInput = document.getElementById('qr-size');
+            const valQrSize = document.getElementById('val-qr-size');
+            const qrEccSelect = document.getElementById('qr-ecc');
+            const showText = document.getElementById('show-text');
+            const showHint = document.getElementById('show-hint');
+            const showBorders = document.getElementById('show-borders');
+
+            const layoutPreset = document.getElementById('layout-preset');
+            const marginTb = document.getElementById('margin-tb');
+            const marginLr = document.getElementById('margin-lr');
+            const gapCol = document.getElementById('gap-col');
+            const gapRow = document.getElementById('gap-row');
+            const zoomSelect = document.getElementById('zoom-select');
+
+            // Fonction d'affichage des notifications
+            function showNotification(message, type = 'info') {
+                statusBanner.classList.remove('hidden', 'bg-blue-50', 'text-blue-800', 'bg-emerald-50', 'text-emerald-800', 'bg-red-50', 'text-red-800', 'border', 'border-blue-200', 'border-emerald-200', 'border-red-200');
+                
+                if (type === 'success') {
+                    statusBanner.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+                    statusIcon.textContent = '✓';
+                } else if (type === 'error') {
+                    statusBanner.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+                    statusIcon.textContent = '⚠';
+                } else {
+                    statusBanner.classList.add('bg-blue-50', 'text-blue-800', 'border', 'border-blue-200');
+                    statusIcon.textContent = 'ℹ';
+                }
+                statusText.textContent = message;
+            }
+
+            // Génération d'un lot de démonstration de 117 camions
+            function loadSample117Trucks() {
+                const sample = [];
+                for (let i = 1; i <= 117; i++) {
+                    sample.push(`TRK-${2000 + i}`);
+                }
+                truckListInput.value = sample.join('
+');
+                excelOptions.classList.add('hidden');
+                showNotification('Lot de test de 117 camions chargé (réparti sur 5 pages de 3×8).', 'success');
+                renderAllSheets();
+            }
+
+            // Lecture d'un fichier Excel (.xlsx, .xls, .csv)
+            function handleExcelFile(file) {
+                if (!file) return;
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        workbookData = XLSX.read(data, { type: 'array' });
+
+                        // Peupler la liste des onglets
+                        sheetSelect.innerHTML = '';
+                        workbookData.SheetNames.forEach((name) => {
+                            const opt = document.createElement('option');
+                            opt.value = name;
+                            opt.textContent = name;
+                            sheetSelect.appendChild(opt);
+                        });
+
+                        excelOptions.classList.remove('hidden');
+                        processSelectedSheet();
+                        showNotification(`Fichier "${file.name}" importé avec succès.`, 'success');
+                    } catch (err) {
+                        console.error(err);
+                        showNotification('Erreur lors de la lecture du fichier Excel. Vérifiez le format.', 'error');
+                    }
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+
+            // Traitement de l'onglet Excel sélectionné
+            function processSelectedSheet() {
+                if (!workbookData) return;
+                const sheetName = sheetSelect.value;
+                const worksheet = workbookData.Sheets[sheetName];
+                
+                // Convertir en tableau 2D (lignes / colonnes)
+                currentSheetRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                if (!currentSheetRows || currentSheetRows.length === 0) {
+                    showNotification('Cet onglet Excel semble vide.', 'error');
+                    return;
+                }
+
+                // Déterminer le nombre max de colonnes
+                let maxCols = 0;
+                currentSheetRows.forEach(row => {
+                    if (row.length > maxCols) maxCols = row.length;
+                });
+
+                // Peupler le sélecteur de colonnes avec détection intelligente
+                columnSelect.innerHTML = '';
+                let detectedTruckCol = 0;
+                const firstRow = currentSheetRows[0] || [];
+
+                for (let c = 0; c < maxCols; c++) {
+                    const headerVal = String(firstRow[c] || '').trim();
+                    const colLetter = XLSX.utils.encode_col(c);
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = headerVal ? `Col ${colLetter} : ${headerVal}` : `Colonne ${colLetter}`;
+                    columnSelect.appendChild(opt);
+
+                    if (/camion|truck|unit|num|code|id|vehicule|véhicule/i.test(headerVal)) {
+                        detectedTruckCol = c;
+                    }
+                }
+
+                columnSelect.value = detectedTruckCol;
+                extractTruckNumbersFromColumn();
+            }
+
+            // Extraction des numéros de la colonne choisie vers la zone de texte
+            function extractTruckNumbersFromColumn() {
+                const colIndex = parseInt(columnSelect.value, 10) || 0;
+                const startRow = skipHeaderCheckbox.checked ? 1 : 0;
+                const extracted = [];
+
+                for (let r = startRow; r < currentSheetRows.length; r++) {
+                    const cellVal = currentSheetRows[r][colIndex];
+                    if (cellVal !== undefined && cellVal !== null) {
+                        const cleaned = String(cellVal).trim();
+                        if (cleaned !== '') {
+                            extracted.push(cleaned);
+                        }
+                    }
+                }
+
+                truckListInput.value = extracted.join('
+');
+                renderAllSheets();
+            }
+
+            // Construction de l'URL complète avec paramètre ?camion=...
+            function buildTargetUrl(truckCode) {
+                const rawBase = baseUrlInput.value.trim() || 'https://martinlefebvre73-bit.github.io/postes/service.html';
+                const separator = rawBase.includes('?') ? '&' : '?';
+                return `${rawBase}${separator}camion=${encodeURIComponent(truckCode)}`;
+            }
+
+            // Création d'un élément SVG net pour le code QR
+            function createQrSvgElement(text, pixelSize, eccLevel) {
+                const qr = qrcode(0, eccLevel);
+                qr.addData(text);
+                qr.make();
+
+                // Créer la balise SVG vectorielle sans bordure superflue (margin = 1 module)
+                const rawSvg = qr.createSvgTag({ cellSize: 4, margin: 1 });
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rawSvg;
+                const svgEl = tempDiv.querySelector('svg');
+                svgEl.setAttribute('width', `${pixelSize}px`);
+                svgEl.setAttribute('height', `${pixelSize}px`);
+                svgEl.style.width = `${pixelSize}px`;
+                svgEl.style.height = `${pixelSize}px`;
+                return svgEl;
+            }
+
+            // Mise à jour des variables CSS de mise en page 8.5" x 11"
+            function updateLayoutVariables() {
+                const root = document.documentElement.style;
+                root.setProperty('--margin-top', `${marginTb.value}in`);
+                root.setProperty('--margin-bottom', `${marginTb.value}in`);
+                root.setProperty('--margin-left', `${marginLr.value}in`);
+                root.setProperty('--margin-right', `${marginLr.value}in`);
+                root.setProperty('--col-gap', `${gapCol.value}in`);
+                root.setProperty('--row-gap', `${gapRow.value}in`);
+                root.setProperty('--cell-border', showBorders.checked ? '1px dashed #cbd5e1' : '1px solid transparent');
+            }
+
+            // Génération principale de toutes les feuilles (3 colonnes x 8 lignes = 24 par feuille)
+            function renderAllSheets() {
+                updateLayoutVariables();
+
+                // Récupérer et nettoyer la liste des numéros de camions
+                const rawLines = truckListInput.value.split(/\r?\n/);
+                const truckNumbers = rawLines
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+
+                const totalTrucks = truckNumbers.length;
+                const totalPages = totalTrucks > 0 ? Math.ceil(totalTrucks / ITEMS_PER_PAGE) : 1;
+                const emptySlots = totalTrucks > 0 ? (totalPages * ITEMS_PER_PAGE) - totalTrucks : ITEMS_PER_PAGE;
+
+                // Mise à jour des compteurs
+                statCount.textContent = totalTrucks;
+                statPages.textContent = totalTrucks > 0 ? totalPages : 0;
+                statEmpty.textContent = emptySlots;
+
+                // Vider l'aperçu existant
+                sheetsContainer.innerHTML = '';
+
+                const prefixText = labelPrefix.value.trim();
+                const isVertical = cellLayout.value === 'vertical';
+                const qrPixelSize = parseInt(qrSizeInput.value, 10);
+                const eccLevel = qrEccSelect.value;
+                const displayVal = showText.checked;
+                const displayHint = showHint.checked;
+
+                // Créer chaque feuille 8.5" x 11"
+                for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
+                    const sheetDiv = document.createElement('div');
+                    sheetDiv.className = 'print-sheet';
+
+                    // Indicateur de page (masqué à l'impression)
+                    const pageBadge = document.createElement('div');
+                    pageBadge.className = 'page-indicator';
+                    pageBadge.textContent = `Page ${pageIdx + 1} / ${totalPages}`;
+                    sheetDiv.appendChild(pageBadge);
+
+                    // Grille 3 colonnes x 8 lignes
+                    const gridDiv = document.createElement('div');
+                    gridDiv.className = 'barcode-grid';
+
+                    const startIdx = pageIdx * ITEMS_PER_PAGE;
+
+                    // Remplir exactement les 24 emplacements de la feuille
+                    for (let slot = 0; slot < ITEMS_PER_PAGE; slot++) {
+                        const itemIdx = startIdx + slot;
+                        const cellDiv = document.createElement('div');
+                        cellDiv.className = isVertical ? 'barcode-cell layout-vertical' : 'barcode-cell';
+
+                        if (itemIdx < totalTrucks) {
+                            const truckCode = truckNumbers[itemIdx];
+                            const fullUrl = buildTargetUrl(truckCode);
+
+                            // 1. Conteneur SVG du Code QR
+                            const qrWrapper = document.createElement('div');
+                            qrWrapper.className = 'qr-wrapper';
+                            try {
+                                const svgEl = createQrSvgElement(fullUrl, qrPixelSize, eccLevel);
+                                qrWrapper.appendChild(svgEl);
+                            } catch (qrErr) {
+                                qrWrapper.innerHTML = `<span class="text-[10px] text-red-600 font-bold">Erreur QR</span>`;
+                            }
+                            cellDiv.appendChild(qrWrapper);
+
+                            // 2. Informations textuelles lisibles (Préfixe + N° Camion + Indication)
+                            if (prefixText !== '' || displayVal || displayHint) {
+                                const infoDiv = document.createElement('div');
+                                infoDiv.className = 'label-info';
+
+                                if (prefixText !== '') {
+                                    const headerDiv = document.createElement('div');
+                                    headerDiv.className = 'truck-header-label';
+                                    headerDiv.textContent = prefixText;
+                                    infoDiv.appendChild(headerDiv);
+                                }
+
+                                if (displayVal) {
+                                    const numDiv = document.createElement('div');
+                                    numDiv.className = 'truck-number-text';
+                                    numDiv.textContent = truckCode;
+                                    infoDiv.appendChild(numDiv);
+                                }
+
+                                if (displayHint && !isVertical) {
+                                    const hintDiv = document.createElement('div');
+                                    hintDiv.className = 'scan-hint-text';
+                                    hintDiv.textContent = 'Scanner pour rapport';
+                                    infoDiv.appendChild(hintDiv);
+                                }
+
+                                cellDiv.appendChild(infoDiv);
+                            }
+                        }
+
+                        gridDiv.appendChild(cellDiv);
+                    }
+
+                    sheetDiv.appendChild(gridDiv);
+                    sheetsContainer.appendChild(sheetDiv);
+                }
+            }
+
+            // =================================================================
+            // ÉCOUTEURS D'ÉVÉNEMENTS
+            // =================================================================
+
+            // Glisser-déposer et sélection de fichier Excel
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleExcelFile(e.target.files[0]);
+                }
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleExcelFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // Changements dans les options Excel
+            sheetSelect.addEventListener('change', processSelectedSheet);
+            columnSelect.addEventListener('change', extractTruckNumbersFromColumn);
+            skipHeaderCheckbox.addEventListener('change', extractTruckNumbersFromColumn);
+
+            // Boutons utilitaires
+            document.getElementById('btn-load-sample').addEventListener('click', loadSample117Trucks);
+            document.getElementById('btn-clear-list').addEventListener('click', () => {
+                truckListInput.value = '';
+                excelOptions.classList.add('hidden');
+                statusBanner.classList.add('hidden');
+                renderAllSheets();
+            });
+
+            // Saisie manuelle en temps réel
+            truckListInput.addEventListener('input', renderAllSheets);
+
+            // Paramètres QR et apparence
+            baseUrlInput.addEventListener('input', renderAllSheets);
+            cellLayout.addEventListener('change', () => {
+                // Ajuster automatiquement la taille optimale selon la disposition choisie
+                if (cellLayout.value === 'vertical' && parseInt(qrSizeInput.value, 10) > 62) {
+                    qrSizeInput.value = 58;
+                    valQrSize.textContent = '58';
+                } else if (cellLayout.value === 'horizontal' && parseInt(qrSizeInput.value, 10) < 64) {
+                    qrSizeInput.value = 68;
+                    valQrSize.textContent = '68';
+                }
+                renderAllSheets();
+            });
+            labelPrefix.addEventListener('input', renderAllSheets);
+            qrSizeInput.addEventListener('input', () => {
+                valQrSize.textContent = qrSizeInput.value;
+                renderAllSheets();
+            });
+            qrEccSelect.addEventListener('change', renderAllSheets);
+            showText.addEventListener('change', renderAllSheets);
+            showHint.addEventListener('change', renderAllSheets);
+            showBorders.addEventListener('change', renderAllSheets);
+
+            // Préréglages de gabarits 8.5" x 11"
+            layoutPreset.addEventListener('change', () => {
+                const preset = layoutPreset.value;
+                if (preset === 'standard') {
+                    marginTb.value = '0.40';
+                    marginLr.value = '0.25';
+                    gapCol.value = '0.10';
+                    gapRow.value = '0.05';
+                } else if (preset === 'avery5160') {
+                    marginTb.value = '0.50';
+                    marginLr.value = '0.22';
+                    gapCol.value = '0.12';
+                    gapRow.value = '0.00';
+                } else if (preset === 'tight') {
+                    marginTb.value = '0.20';
+                    marginLr.value = '0.20';
+                    gapCol.value = '0.05';
+                    gapRow.value = '0.05';
+                }
+                renderAllSheets();
+            });
+
+            [marginTb, marginLr, gapCol, gapRow].forEach(input => {
+                input.addEventListener('input', renderAllSheets);
+            });
+
+            // Zoom de l'aperçu à l'écran
+            zoomSelect.addEventListener('change', () => {
+                sheetsContainer.style.transform = `scale(${zoomSelect.value})`;
+            });
+
+            // Impression
+            document.getElementById('btn-print').addEventListener('click', () => {
+                window.print();
+            });
+
+            // Chargement initial avec un lot de 117 camions prêt à tester
+            loadSample117Trucks();
+        });
+    </script>
+</body>
+</html>
