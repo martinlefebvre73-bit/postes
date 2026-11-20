@@ -1,0 +1,573 @@
+/* ==========================================================================
+   FEUILLE DE STYLE AUTONOME 100 % HORS LIGNE (style-hors-ligne.css)
+   Pour : Générateur de Codes QR Camions - Format 8.5" x 11" (Grille 3x8)
+   Aucune dépendance réseau requise (remplace Tailwind CSS et Google Fonts)
+   ========================================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --page-width: 8.5in;
+    --page-height: 11in;
+    --margin-top: 0.40in;
+    --margin-bottom: 0.40in;
+    --margin-left: 0.25in;
+    --margin-right: 0.25in;
+    --col-gap: 0.10in;
+    --row-gap: 0.05in;
+    --cell-border: 1px dashed #cbd5e1;
+
+    --bg-app: #f1f5f9;
+    --bg-panel: #ffffff;
+    --bg-subtle: #f8fafc;
+    --border-color: #cbd5e1;
+    --border-light: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-light: #64748b;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #eff6ff;
+}
+
+html, body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   STRUCTURE PRINCIPALE DE L'APPLICATION (ÉCRAN)
+   ========================================================================== */
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+    body {
+        flex-direction: row;
+        height: 100vh;
+        overflow: hidden;
+    }
+}
+
+/* Panneau latéral de contrôle */
+aside.no-print {
+    width: 100%;
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+@media (min-width: 1024px) {
+    aside.no-print {
+        width: 430px;
+        height: 100vh;
+        overflow-y: auto;
+        border-bottom: none;
+        border-right: 1px solid var(--border-light);
+    }
+}
+
+aside.no-print > div {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* En-tête panneau */
+aside h1 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-top: 6px;
+}
+
+aside h2 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #1e293b;
+}
+
+aside p {
+    font-size: 12.5px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+aside svg.w-6 {
+    width: 22px;
+    height: 22px;
+    color: var(--primary);
+}
+
+aside svg.w-9 {
+    width: 34px;
+    height: 34px;
+    color: #94a3b8;
+    margin: 0 auto 6px auto;
+    display: block;
+}
+
+aside svg.w-5 {
+    width: 18px;
+    height: 18px;
+}
+
+/* Sections et séparateurs */
+section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light);
+}
+
+section:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* Zone glisser-déposer Excel */
+#drop-zone {
+    border: 2px dashed var(--border-color);
+    background-color: var(--bg-subtle);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+#drop-zone:hover {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+#excel-file-input {
+    display: none;
+}
+
+/* Options Excel */
+#excel-options {
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Formulaires, champs texte, sélecteurs */
+label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-main);
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 7px 10px;
+    outline: none;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+textarea#truck-list-input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* Grilles utilitaires du panneau */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.flex-row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.checkbox-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.checkbox-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+/* Statistiques du lot */
+.stats-box {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background-color: var(--primary-light);
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+}
+
+.stats-box > div:nth-child(2) {
+    border-left: 1px solid #dbeafe;
+    border-right: 1px solid #dbeafe;
+}
+
+.stats-label {
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.stats-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Boutons */
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+#btn-load-sample {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+#btn-load-sample:hover {
+    text-decoration: underline;
+}
+
+#btn-clear-list {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+#btn-clear-list:hover {
+    color: #dc2626;
+}
+
+#btn-print {
+    width: 100%;
+    background-color: var(--primary);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.15s;
+}
+
+#btn-print:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Bannière de notification */
+#status-banner {
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background-color: var(--primary-light);
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================================================
+   ZONE D'APERÇU DES FEUILLES (ÉCRAN)
+   ========================================================================== */
+#preview-wrapper {
+    flex: 1;
+    background-color: #e2e8f0;
+    padding: 24px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.preview-toolbar {
+    width: 100%;
+    max-width: 8.5in;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+    background-color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.preview-toolbar select {
+    width: auto;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+#sheets-container {
+    transform-origin: top center;
+}
+
+/* ==========================================================================
+   FEUILLE PHYSIQUE 8.5" x 11" & GRILLE 3 COLONNES x 8 LIGNES
+   ========================================================================== */
+.print-sheet {
+    width: var(--page-width);
+    height: var(--page-height);
+    padding-top: var(--margin-top);
+    padding-bottom: var(--margin-bottom);
+    padding-left: var(--margin-left);
+    padding-right: var(--margin-right);
+    background-color: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    margin: 0 auto 28px auto;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-indicator {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* Grille exacte : 3 colonnes x 8 lignes = 24 cases */
+.barcode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    column-gap: var(--col-gap);
+    row-gap: var(--row-gap);
+    width: 100%;
+    height: 100%;
+}
+
+/* Cellule individuelle */
+.barcode-cell {
+    border: var(--cell-border);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 4px 8px;
+    overflow: hidden;
+    position: relative;
+    background-color: #ffffff;
+}
+
+.barcode-cell.layout-vertical {
+    flex-direction: column;
+    gap: 2px;
+    padding: 3px 4px;
+}
+
+.qr-wrapper {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr-wrapper svg {
+    display: block;
+}
+
+.label-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.barcode-cell.layout-vertical .label-info {
+    align-items: center;
+    text-align: center;
+}
+
+.truck-header-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #475569;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.truck-number-text {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.barcode-cell.layout-vertical .truck-number-text {
+    font-size: 12px;
+    line-height: 1.05;
+}
+
+.scan-hint-text {
+    font-size: 8px;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 2px;
+    line-height: 1.1;
+}
+
+.barcode-cell.layout-vertical .scan-hint-text {
+    display: none;
+}
+
+/* ==========================================================================
+   RÈGLES D'IMPRESSION STRICTES (US LETTER 8.5" x 11")
+   ========================================================================== */
+@page {
+    size: letter portrait;
+    margin: 0 !important;
+}
+
+@media print {
+    html, body {
+        width: 8.5in !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .no-print,
+    .page-indicator,
+    .preview-toolbar {
+        display: none !important;
+    }
+
+    #preview-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 8.5in !important;
+        background: #ffffff !important;
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    #sheets-container {
+        transform: none !important;
+        width: 8.5in !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .print-sheet {
+        width: 8.5in !important;
+        height: 11in !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .print-sheet:last-child {
+        page-break-after: auto;
+        break-after: auto;
+    }
+}
