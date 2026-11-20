@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -183,21 +183,53 @@
         @page { size: letter portrait; margin: 0 !important; }
         @media print {
             html, body {
-                width: 8.5in; height: auto !important; overflow: visible !important; background: #ffffff !important;
-                margin: 0 !important; padding: 0 !important; display: block !important;
-                -webkit-print-color-adjust: exact; print-color-adjust: exact;
+                width: 8.5in !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
-            .no-print, .page-indicator, .preview-bar { display: none !important; }
+            .no-print, .page-indicator, .preview-bar {
+                display: none !important;
+                visibility: hidden !important;
+            }
             #preview-wrapper {
-                padding: 0 !important; margin: 0 !important; width: 8.5in !important;
-                background: #ffffff !important; display: block !important; overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 8.5in !important;
+                background: #ffffff !important;
+                display: block !important;
+                overflow: visible !important;
+                position: static !important;
             }
-            #sheets-container { transform: none !important; width: 8.5in !important; margin: 0 !important; padding: 0 !important; }
+            #sheets-container {
+                transform: none !important;
+                width: 8.5in !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
             .print-sheet {
-                width: 8.5in !important; height: 11in !important; margin: 0 !important; box-shadow: none !important;
-                border: none !important; page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid;
+                width: 8.5in !important;
+                height: 11in !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
-            .print-sheet:last-child { page-break-after: auto; break-after: auto; }
+            .print-sheet:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
         }
     </style>
 </head>
@@ -222,7 +254,6 @@
                     <button type="button" id="btn-load-sample" class="btn-link-blue">Charger test (117 camions)</button>
                 </div>
 
-                <!-- Sélecteur de fichier direct + glisser-déposer -->
                 <div class="file-picker-row">
                     <label class="field-label" for="excel-file-input" style="margin:0;">Choisir un fichier Excel ou CSV :</label>
                     <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
@@ -364,7 +395,6 @@
     </main>
 
     <script>
-        // Lecteur natif d'archives ZIP (pour fichiers .xlsx sans dépendance réseau)
         function extractZipEntries(uint8) {
             const view = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
             const dec = new TextDecoder('utf-8');
@@ -401,7 +431,6 @@
                     if (method === 0) {
                         entries[name] = dec.decode(compData);
                     } else if (method === 8 && typeof DecompressionStream !== 'undefined') {
-                        // Utilisé en asynchrone si besoin
                         entries[name] = { _deflate: compData };
                     }
                 }
@@ -439,7 +468,6 @@
             const entries = await resolveDeflateEntries(extractZipEntries(uint8));
             const parser = new DOMParser();
 
-            // Shared strings
             const sharedStrings = [];
             if (entries['xl/sharedStrings.xml']) {
                 const ssDoc = parser.parseFromString(entries['xl/sharedStrings.xml'], 'application/xml');
@@ -452,7 +480,6 @@
                 }
             }
 
-            // Workbook sheet names
             const sheetDefs = [];
             if (entries['xl/workbook.xml']) {
                 const wbDoc = parser.parseFromString(entries['xl/workbook.xml'], 'application/xml');
@@ -586,17 +613,14 @@
                 for (let i = 1; i <= 117; i++) {
                     sample.push(`TRK-${2000 + i}`);
                 }
-                truckListInput.value = sample.join('
-');
+                truckListInput.value = sample.join('\n');
                 excelOptions.classList.add('hidden');
                 showNotification('Lot de test de 117 camions chargé (réparti sur 5 pages de 3×8).', 'success');
                 renderAllSheets();
             }
 
             function parseCsvWorkbook(text) {
-                const lines = text.split(/
-?
-/).filter(l => l.trim() !== '');
+                const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
                 const rows = lines.map(line => {
                     const sep = line.includes(';') ? ';' : ',';
                     return line.split(sep).map(cell => cell.replace(/^"|"$/g, '').trim());
@@ -730,8 +754,7 @@
                     }
                 }
 
-                truckListInput.value = extracted.join('
-');
+                truckListInput.value = extracted.join('\n');
                 renderAllSheets();
             }
 
@@ -819,9 +842,7 @@
             function renderAllSheets() {
                 updateLayoutVariables();
 
-                const rawLines = truckListInput.value.split(/
-?
-/);
+                const rawLines = truckListInput.value.split(/\r?\n/);
                 const truckNumbers = rawLines.map(line => line.trim()).filter(line => line.length > 0);
 
                 const totalTrucks = truckNumbers.length;
@@ -909,14 +930,12 @@
                 }
             }
 
-            // Sélecteur de fichier natif
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files && e.target.files[0]) {
                     handleExcelFile(e.target.files[0]);
                 }
             });
 
-            // Glisser-déposer
             dropZone.addEventListener('click', () => fileInput.click());
             ['dragenter', 'dragover'].forEach(ev => {
                 dropZone.addEventListener(ev, (e) => {
@@ -991,7 +1010,16 @@
 
             [marginTb, marginLr, gapCol, gapRow].forEach(input => input.addEventListener('input', renderAllSheets));
             zoomSelect.addEventListener('change', () => { sheetsContainer.style.transform = `scale(${zoomSelect.value})`; });
-            document.getElementById('btn-print').addEventListener('click', () => window.print());
+
+            document.getElementById('btn-print').addEventListener('click', () => {
+                // Réinitialise temporairement le zoom pendant l'impression pour éviter une coupe d'échelle
+                const prevTransform = sheetsContainer.style.transform;
+                sheetsContainer.style.transform = 'none';
+                window.print();
+                setTimeout(() => {
+                    sheetsContainer.style.transform = prevTransform;
+                }, 250);
+            });
 
             loadSample117Trucks();
         });
