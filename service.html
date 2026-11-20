@@ -513,13 +513,42 @@
     });
   </script>
 
-  <!-- Script pour initialiser les champs dates vides au démarrage -->
+  <!-- Script pour initialiser les champs dates et lire le paramètre QR (?camion=...) -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Les champs dates démarrent vides à l'ouverture du fichier
+      // 1. Les champs dates démarrent vides à l'ouverture du fichier
       document.querySelectorAll('.champ-date-aujourdhui').forEach(input => {
         input.value = '';
       });
+
+      // 2. Lecture automatique du paramètre "?camion=..." transmis par le scan QR
+      const params = new URLSearchParams(window.location.search);
+      const camionScanne = params.get("camion");
+
+      if (camionScanne) {
+        const champVehicule = document.getElementById("numVehicule");
+        if (champVehicule) {
+          champVehicule.value = camionScanne.trim();
+          champVehicule.dispatchEvent(new Event("input", { bubbles: true }));
+          champVehicule.dispatchEvent(new Event("change", { bubbles: true }));
+
+          // Place automatiquement le curseur sur le champ suivant (Indication du compteur)
+          const champCompteur = document.getElementById("odometerReading");
+          if (champCompteur) {
+            champCompteur.focus();
+          }
+
+          // Affiche une bannière de confirmation
+          const toast = document.getElementById("toast");
+          const toastMsg = document.getElementById("toast-msg");
+          if (toast && toastMsg) {
+            toastMsg.innerText = `Véhicule #${camionScanne.trim()} chargé automatiquement via code QR.`;
+            toast.className = "toast";
+            toast.classList.remove("hidden");
+            setTimeout(() => { toast.classList.add("hidden"); }, 4000);
+          }
+        }
+      }
     });
 
     // Voice Dictation (Web Speech API)
