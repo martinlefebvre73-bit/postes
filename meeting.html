@@ -285,13 +285,13 @@
             appId: "1:39362155503:web:26b59f9eca20443c4c9c1a"
         };
 
+        // URL Microsoft 365 Copilot
+        const COPILOT_365_URL = "https://m365.cloud.microsoft/chat";
+
         // Initialisation de Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // Clé API Gemini (Optionnelle pour l'enrichissement direct par API Google)
-        const GEMINI_API_KEY = "";
 
         // État principal de l'application
         let currentMeeting = {
@@ -307,22 +307,25 @@
 
         // Dictée vocale (Web Speech API)
         let recognition = null;
-        let activeDictationTarget = null; // { type: 'sst'|'variable', index: number, field: 'title'|'point', pointIndex?: number }
+        let activeDictationTarget = null;
 
-        // Prompt Système de référence pour l'IA Copilote
-        const COPILOT_SYSTEM_PROMPT = `Tu es un expert en Santé et Sécurité au Travail (SST) et en Opérations chez Postes Canada.
-Public cible : Facteurs effectuant la livraison à pied, relais, boîtes aux lettres communautaires (BPC/CMB), boîtes réceptrices de bâtiment (BML) et colis.
-Inclus des consignes concrètes de terrain : prévention des glissades (verglas, crampons), escaliers, morsures de chien, ergonomie du sac postal (charge équilibrée max 35 lbs), numérisation à 100% au point de remise, cartes d'avis 15/15, courrier recommandé et clés de BPC.
+        // Détermination de la saison en cours à partir de la date du meeting (ou de la date du jour)
+        function getCurrentSeason(dateStr) {
+            const targetDate = dateStr ? new Date(dateStr + "T12:00:00") : new Date();
+            const month = targetDate.getMonth() + 1; // 1 à 12
+            const day = targetDate.getDate();
 
-Pour le sujet fourni, génère de 3 à 5 points explicatifs synthétiques et directifs.
-Format JSON strict obligatoire :
-{
-  "explications": [
-    "Point explicatif 1...",
-    "Point explicatif 2...",
-    "Point explicatif 3..."
-  ]
-}`;
+            if ((month === 12 && day >= 21) || month === 1 || month === 2 || (month === 3 && day < 20)) {
+                return "Hiver";
+            }
+            if ((month === 3 && day >= 20) || month === 4 || month === 5 || (month === 6 && day < 21)) {
+                return "Printemps";
+            }
+            if ((month === 6 && day >= 21) || month === 7 || month === 8 || (month === 9 && day < 22)) {
+                return "Été";
+            }
+            return "Automne";
+        }
 
         // Redimensionnement automatique de la hauteur des textarea
         window.autoResizeTextarea = (el) => {
@@ -508,6 +511,12 @@ Format JSON strict obligatoire :
                                          activeDictationTarget.index === topicIdx && 
                                          activeDictationTarget.field === 'title';
 
+                const copilotBtnTitle = type === 'sst'
+                    ? "Rechercher dans Copilot 365 un sujet SST selon la saison en cours"
+                    : "Rechercher dans Copilot 365 une consigne variable selon la saison en cours";
+
+                const m365BtnTitle = "Chercher dans Copilot 365 des précisions sur le sujet indiqué";
+
                 card.innerHTML = `
                     <div class="topic-header-input">
                         <span style="font-weight: 700; color: var(--cp-navy); min-width: 80px; margin-top: 6px;">#${topicIdx + 1} ${type.toUpperCase()}</span>
@@ -529,10 +538,10 @@ Format JSON strict obligatoire :
                     </button>
 
                     <div class="topic-actions no-print">
-                        <button type="button" onclick="enrichTopicWithCopilot('${type}', ${topicIdx})" class="btn btn-copilot btn-sm">
+                        <button type="button" onclick="enrichTopicWithCopilot('${type}', ${topicIdx})" class="btn btn-copilot btn-sm" title="${copilotBtnTitle}">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot IA
                         </button>
-                        <button type="button" onclick="copyM365Prompt('${type}', ${topicIdx})" class="btn btn-outline btn-sm" title="Copier le prompt et ouvrir Microsoft Copilot M365">
+                        <button type="button" onclick="copyM365Prompt('${type}', ${topicIdx})" class="btn btn-outline btn-sm" title="${m365BtnTitle}">
                             <i class="fa-solid fa-copy"></i> Prompt M365
                         </button>
                         <button type="button" onclick="removeTopic('${type}', ${topicIdx})" class="btn btn-danger btn-sm">
@@ -611,151 +620,151 @@ Format JSON strict obligatoire :
             renderAll();
         }
 
-        // Appel direct API IA (Optionnel)
-        async function callCopilotIA(promptText) {
-            if (!GEMINI_API_KEY) {
-                throw new Error("Clé API absente. Utilisez le bouton 'Prompt M365' pour générer via Microsoft Copilot.");
-            }
+        // Construction du prompt pour le bouton "Copilot IA" :
+        // Recherche dans Copilot 365 d'un sujet selon la saison en cours (SST pour section 1, Consignes variables pour section 2)
+        function buildSeasonalTopicPrompt(type) {
+            const season = getCurrentSeason(currentMeeting.date);
+            const depot = document.getElementById('depotSector')?.value || currentMeeting.depot;
+            const dateMeeting = document.getElementById('meetingDate')?.value || currentMeeting.date;
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            if (type === 'sst') {
+                return `Recherche dans Microsoft 365 Copilot un sujet prioritaire en Santé et Sécurité au Travail (SST) adapté à la saison en cours (${season}) pour un meeting de plancher chez Postes Canada.
 
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }],
-                    systemInstruction: { parts: [{ text: COPILOT_SYSTEM_PROMPT }] },
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                "explications": {
-                                    "type": "ARRAY",
-                                    "items": { "type": "STRING" }
-                                }
-                            },
-                            "propertyOrdering": ["explications"]
-                        }
-                    }
-                })
-            });
+Contexte :
+- Date du meeting : ${dateMeeting}
+- Saison en cours : ${season}
+- Secteur / Dépôt : ${depot} (facteurs à pied, relais, boîtes postales communautaires BPC/CMB, boîtes réceptrices de bâtiment BML et colis)
 
-            if (!response.ok) throw new Error("Erreur de réponse de l'API Copilot");
-            const result = await response.json();
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            return JSON.parse(text);
-        }
-
-        window.enrichTopicWithCopilot = async (type, index) => {
-            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
-            const item = list[index];
-
-            if (!item || !item.titre.trim()) {
-                showToast("Veuillez d'abord saisir ou dicter un titre de sujet.", "error");
-                return;
-            }
-
-            if (!GEMINI_API_KEY) {
-                copyM365Prompt(type, index);
-                return;
-            }
-
-            showToast("Copilot analyse et génère les points explicatifs...", "success");
-
-            try {
-                const prompt = `Section : ${type.toUpperCase()}\nSujet : "${item.titre}"\nGénère les consignes SST ou opérationnelles pour les facteurs.`;
-                const res = await callCopilotIA(prompt);
-
-                if (res && res.explications && Array.isArray(res.explications)) {
-                    item.explications = res.explications;
-                    renderAll();
-                    showToast("Sujet enrichi par Copilot !", "success");
-                }
-            } catch (err) {
-                console.error("Copilot Error:", err);
-                showToast(err.message || "Erreur lors de l'enrichissement.", "error");
-            }
-        };
-
-        window.enrichEntireDocumentWithCopilot = async () => {
-            if (!GEMINI_API_KEY) {
-                showToast("Veuillez utiliser le bouton 'Prompt M365' pour chaque sujet ou configurer une clé API.", "error");
-                return;
-            }
-
-            showToast("Enrichissement global du meeting par Copilot...", "success");
-            let total = 0;
-
-            for (let i = 0; i < currentMeeting.sujetsSST.length; i++) {
-                if (currentMeeting.sujetsSST[i].titre.trim()) {
-                    try {
-                        const res = await callCopilotIA(`SST: ${currentMeeting.sujetsSST[i].titre}`);
-                        if (res?.explications) {
-                            currentMeeting.sujetsSST[i].explications = res.explications;
-                            total++;
-                        }
-                    } catch(e) {}
-                }
-            }
-
-            for (let i = 0; i < currentMeeting.sujetsVariables.length; i++) {
-                if (currentMeeting.sujetsVariables[i].titre.trim()) {
-                    try {
-                        const res = await callCopilotIA(`Opérations: ${currentMeeting.sujetsVariables[i].titre}`);
-                        if (res?.explications) {
-                            currentMeeting.sujetsVariables[i].explications = res.explications;
-                            total++;
-                        }
-                    } catch(e) {}
-                }
-            }
-
-            renderAll();
-            showToast(`${total} sujet(s) enrichi(s) avec succès !`, "success");
-        };
-
-        // Option avec Bouton Prompt Microsoft Copilot (M365)
-        window.copyM365Prompt = (type, index) => {
-            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
-            const item = list[index];
-            const title = (item && item.titre.trim()) ? item.titre : "Consignes de livraison";
-
-            const promptText = `Rôle : Expert SST et Superviseur des Opérations chez Postes Canada.
-Secteur : Facteurs à pied, relais, boîtes aux lettres communautaires (BPC/CMB) et boîtes réceptrices de bâtiment (BML).
-Thème : ${type === 'sst' ? 'Santé et Sécurité au Travail (SST)' : 'Consignes Opérationnelles Variables'}
-Sujet : "${title}"
-
-Instruction : Génère exactement 3 à 4 points explicatifs courts, directifs et concrets pour le meeting de plancher.
-Consignes spécifiques à inclure si pertinent :
-- Prévention des glissades, verglas, port des crampons, 3 points de contact.
-- Maintien du sac postal équilibré (charge maximale 35 lbs).
-- Balayage/numérisation à 100 % au point de remise.
-- Sécurité face aux chiens et accès aux boîtes communautaires.
+Demande :
+1. Propose un titre de sujet SST clair et pertinent pour la saison ${season} (ex. : verglas, froid, chaleur, visibilité réduite, chiens, escaliers, ergonomie du sac max 35 lbs).
+2. Fournis 3 à 4 points explicatifs courts, concrets et directifs à présenter au plancher.
 
 Format attendu :
+Sujet : [Titre du sujet SST saisonnier]
 • Point 1...
 • Point 2...
 • Point 3...`;
+            }
 
+            return `Recherche dans Microsoft 365 Copilot un sujet prioritaire de consigne variable et d'opérations adapté à la saison en cours (${season}) pour un meeting de plancher chez Postes Canada.
+
+Contexte :
+- Date du meeting : ${dateMeeting}
+- Saison en cours : ${season}
+- Secteur / Dépôt : ${depot} (facteurs à pied, relais, boîtes postales communautaires BPC/CMB, boîtes réceptrices de bâtiment BML et colis)
+
+Demande :
+1. Propose un titre de consigne variable / opérationnelle pertinent pour la saison ${season} (ex. : volume saisonnier de colis, accès aux BPC/BML, numérisation à 100 % au point de remise, avis 15/15, gestion des clés et relais).
+2. Fournis 3 à 4 points opérationnels courts, concrets et directifs à appliquer sur le terrain.
+
+Format attendu :
+Sujet : [Titre de la consigne variable saisonnière]
+• Point 1...
+• Point 2...
+• Point 3...`;
+        }
+
+        // Construction du prompt pour le bouton "Prompt M365" :
+        // Recherche dans Copilot 365 des précisions sur le sujet indiqué (SST pour section 1, Consignes variables pour section 2)
+        function buildDetailsOnTopicPrompt(type, title) {
+            const season = getCurrentSeason(currentMeeting.date);
+            const depot = document.getElementById('depotSector')?.value || currentMeeting.depot;
+            const sectionLabel = type === 'sst'
+                ? "Santé et Sécurité au Travail (SST)"
+                : "Consignes Variables & Opérations";
+
+            return `Recherche dans Microsoft 365 Copilot des précisions et consignes concrètes sur le sujet indiqué ci-dessous pour un meeting de plancher chez Postes Canada.
+
+Section : ${sectionLabel}
+Saison en cours : ${season}
+Secteur / Dépôt : ${depot} (facteurs à pied, relais, BPC/CMB, BML et colis)
+Sujet indiqué : "${title}"
+
+Demande :
+Donne des précisions claires, pratiques et directrices sur ce sujet précis en tenant compte de la saison (${season}) et des réalités terrain des facteurs.
+Inclure si pertinent : prévention des glissades/verglas, ergonomie (sac postal max 35 lbs), numérisation à 100 % au point de remise, avis 15/15, sécurité aux BPC/BML et chiens.
+
+Format attendu :
+• Précision 1...
+• Précision 2...
+• Précision 3...
+• Précision 4...`;
+        }
+
+        // Action bouton "Copilot IA" (Section 1 SST & Section 2 Consignes Variables)
+        window.enrichTopicWithCopilot = (type, index) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            if (!list[index]) return;
+
+            const season = getCurrentSeason(currentMeeting.date);
+            const promptText = buildSeasonalTopicPrompt(type);
+            const sectionText = type === 'sst' ? "SST" : "Consignes variables";
+
+            copyPromptAndOpenCopilot365(
+                promptText,
+                `Prompt Copilot 365 (${sectionText} - ${season}) copié ! Ouverture de Copilot 365...`
+            );
+        };
+
+        // Action bouton global "Enrichir Tout (Copilot)"
+        window.enrichEntireDocumentWithCopilot = () => {
+            const season = getCurrentSeason(currentMeeting.date);
+            const depot = document.getElementById('depotSector')?.value || currentMeeting.depot;
+
+            const sstTitres = currentMeeting.sujetsSST.map(s => s.titre.trim()).filter(Boolean);
+            const varTitres = currentMeeting.sujetsVariables.map(s => s.titre.trim()).filter(Boolean);
+
+            const fullPrompt = `Recherche dans Microsoft 365 Copilot des suggestions et précisions pour un meeting de plancher complet chez Postes Canada (Saison : ${season} | Secteur : ${depot}).
+
+1. Section SST (sujets en cours : ${sstTitres.length ? sstTitres.join(" ; ") : "à proposer selon la saison " + season}) :
+Fournis un sujet saisonnier et 3 à 4 points concrets de sécurité.
+
+2. Section Consignes Variables & Opérations (sujets en cours : ${varTitres.length ? varTitres.join(" ; ") : "à proposer selon la saison " + season}) :
+Fournis une consigne opérationnelle saisonnière et 3 à 4 points concrets de terrain.`;
+
+            copyPromptAndOpenCopilot365(
+                fullPrompt,
+                `Prompt global Copilot 365 (${season}) copié ! Ouverture de Copilot 365...`
+            );
+        };
+
+        // Action bouton "Prompt M365" (Section 1 SST & Section 2 Consignes Variables)
+        window.copyM365Prompt = (type, index) => {
+            const list = type === 'sst' ? currentMeeting.sujetsSST : currentMeeting.sujetsVariables;
+            const item = list[index];
+            const title = (item && item.titre.trim()) ? item.titre.trim() : "";
+
+            if (!title) {
+                showToast("Indiquez d'abord un sujet pour obtenir des précisions dans Copilot 365.", "error");
+                return;
+            }
+
+            const promptText = buildDetailsOnTopicPrompt(type, title);
+            copyPromptAndOpenCopilot365(
+                promptText,
+                `Prompt de précisions M365 copié pour "${title}" ! Ouverture de Copilot 365...`
+            );
+        };
+
+        function copyPromptAndOpenCopilot365(promptText, toastMessage) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(promptText).then(() => {
-                    handlePromptCopied();
+                    handleCopilot365Opened(toastMessage);
                 }).catch(() => {
                     fallbackCopyText(promptText);
-                    handlePromptCopied();
+                    handleCopilot365Opened(toastMessage);
                 });
             } else {
                 fallbackCopyText(promptText);
-                handlePromptCopied();
+                handleCopilot365Opened(toastMessage);
             }
-        };
+        }
 
-        function handlePromptCopied() {
-            showToast("Prompt M365 copié ! Ouverture de Copilot...", "success");
+        function handleCopilot365Opened(message) {
+            showToast(message, "success");
             setTimeout(() => {
-                window.open('https://copilot.microsoft.com/', '_blank');
-            }, 600);
+                window.open(COPILOT_365_URL, '_blank', 'noopener,noreferrer');
+            }, 500);
         }
 
         function fallbackCopyText(text) {
