@@ -219,26 +219,124 @@
             100% { transform: scale(1.1); }
         }
 
+        /* =========================================================
+           OPTIMISATION IMPRESSION : FORMAT LETTRE 8.5 x 11 EN COULEUR
+           ========================================================= */
+        @page {
+            size: letter portrait; /* 8.5in x 11in */
+            margin: 0.4in;
+        }
+
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
             body {
-                background: white;
-                padding: 0;
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
+
             .container {
-                box-shadow: none;
-                padding: 0;
-                max-width: 100%;
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                border-radius: 0 !important;
             }
-            .mic-btn, .add-item-btn, .delete-btn, .actions-bar {
+
+            h1 {
+                font-size: 1.2rem !important;
+                margin: 0 0 10px 0 !important;
+                padding-bottom: 8px !important;
+            }
+
+            .top-info-grid {
+                gap: 10px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .header-info {
+                padding: 6px 10px !important;
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+
+            .header-info label,
+            .header-info input[type="date"],
+            .header-info select {
+                font-size: 0.9rem !important;
+                border: none !important;
+                background: transparent !important;
+                padding: 2px !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+            }
+
+            #status-msg,
+            .mic-btn,
+            .add-item-btn,
+            .delete-btn,
+            .actions-bar {
                 display: none !important;
             }
-            .section-card {
-                border: 2px solid #000 !important;
+
+            .grid-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 12px !important;
             }
+
+            .section-card {
+                box-shadow: none !important;
+                border-radius: 6px !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            /* Conservation stricte des couleurs de chaque carte */
+            .card-camion { background-color: var(--color-camion) !important; }
+            .card-bcl { background-color: var(--color-bcl) !important; }
+            .card-dvr { background-color: var(--color-dvr) !important; }
+            .card-plaintes { background-color: var(--color-plaintes) !important; }
+            .card-varia { background-color: var(--color-varia) !important; }
+            .card-1508 { background-color: var(--color-1508) !important; }
+
             .section-header {
-                background-color: #333 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                padding: 6px 12px !important;
+                font-size: 0.95rem !important;
+                color: #ffffff !important;
+                background-color: transparent !important;
+            }
+
+            .section-body {
+                padding: 8px !important;
+                margin: 0 3px 3px 3px !important;
+                min-height: 155px !important;
+                background: #ffffff !important;
+            }
+
+            .item-row {
+                padding: 4px 8px !important;
+                gap: 8px !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+
+            .item-row input[type="checkbox"] {
+                width: 14px !important;
+                height: 14px !important;
+            }
+
+            .item-row input[type="text"] {
+                font-size: 0.85rem !important;
+            }
+
+            /* Masquer le texte indicatif sur les lignes vides à l'impression */
+            .item-row input[type="text"]::placeholder {
+                color: transparent !important;
             }
         }
     </style>
@@ -480,8 +578,6 @@
         });
 
         try {
-            // Structure dans Firestore : collection 'quotidien' -> document du superviseur -> sous-collection ou stockage par date
-            // Pour subdiviser selon le nom du superviseur avec ID de document basé sur la date :
             const docRef = doc(db, 'quotidien', supervisor, 'feuilles', dateStr);
             await setDoc(docRef, reportData);
             document.getElementById('status-msg').style.color = '#16a34a';
