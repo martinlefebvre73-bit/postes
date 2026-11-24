@@ -148,7 +148,9 @@
         
         <div class="form-group">
             <label for="route">Route :</label>
-            <input type="text" id="route" required placeholder="Ex: Route 4, 205, R12, C01...">
+            <select id="route" required>
+                <option value="">-- Sélectionner une route --</option>
+            </select>
         </div>
 
         <div class="form-group">
@@ -236,8 +238,9 @@
         const cancelBtn = document.getElementById("cancelBtn");
         const checkboxRisque = document.getElementById("aRisque");
         const blocDetailRisque = document.getElementById("blocDetailRisque");
+        const routeSelect = document.getElementById("route");
 
-        // Liste officielle des 214 routes (extraite de route (1).xlsx)
+        // Liste officielle des 214 routes
         const ROUTES_OFFICIELLES = [
             "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
             "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
@@ -267,6 +270,58 @@
 
         let allEmployees = []; 
         let currentDisplayedEmployees = []; 
+
+        // Normalise un code de route pour la comparaison (ex: "Route 04" -> "4", "c01" -> "C1", "CR01" -> "CR1")
+        function normaliserRoute(routeStr) {
+            let texte = String(routeStr || "").toUpperCase().trim();
+            texte = texte.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
+            const match = texte.match(/^([A-Z]*)0*(\d+)$/);
+            if (match) {
+                return match[1] + String(parseInt(match[2], 10));
+            }
+            return texte;
+        }
+
+        // Remplir la liste déroulante des routes en indiquant si elles sont déjà occupées
+        function peuplerListeRoutes(excludeDocId = "") {
+            const valeurActuelle = routeSelect.value;
+            routeSelect.innerHTML = '<option value="">-- Sélectionner une route --</option>';
+
+            // Construire une table d'occupation par route normalisée (employés actifs uniquement)
+            const occupationMap = new Map();
+            allEmployees.forEach(emp => {
+                if (emp.quitteDepot) return;
+                if (excludeDocId && emp.docId === excludeDocId) return;
+                const rNorm = normaliserRoute(emp.route);
+                if (!rNorm) return;
+
+                const nomComplet = [emp.nom, emp.prenom].filter(Boolean).join(", ") || emp.idEmploye || "Employé";
+                if (!occupationMap.has(rNorm)) {
+                    occupationMap.set(rNorm, []);
+                }
+                occupationMap.get(rNorm).push(nomComplet);
+            });
+
+            ROUTES_OFFICIELLES.forEach(r => {
+                const option = document.createElement("option");
+                option.value = r;
+                const rNorm = normaliserRoute(r);
+                const occupants = occupationMap.get(rNorm);
+
+                if (occupants && occupants.length > 0) {
+                    option.textContent = `${r} (Occupée - ${occupants.join(" / ")})`;
+                    option.style.color = "#888";
+                } else {
+                    option.textContent = r;
+                }
+                routeSelect.appendChild(option);
+            });
+
+            if (valeurActuelle) {
+                routeSelect.value = valeurActuelle;
+            }
+        }
+        peuplerListeRoutes();
 
         const utilisateursAutorises = [
             "sandra.dostie@canadapost.ca",
@@ -306,6 +361,8 @@
                     });
                 });
 
+                const currentEditId = document.getElementById("docId").value;
+                peuplerListeRoutes(currentEditId);
                 displayEmployees(allEmployees);
             } catch (e) {
                 console.error("Erreur de chargement :", e);
@@ -388,17 +445,6 @@
             }
         }
         genererSemaines();
-
-        // Normalise un code de route pour la comparaison (ex: "Route 04" -> "4", "c01" -> "C1", "CR01" -> "CR1")
-        function normaliserRoute(routeStr) {
-            let texte = String(routeStr || "").toUpperCase().trim();
-            texte = texte.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
-            const match = texte.match(/^([A-Z]*)0*(\d+)$/);
-            if (match) {
-                return match[1] + String(parseInt(match[2], 10));
-            }
-            return texte;
-        }
 
         window.printList = function() {
             const printArea = document.getElementById("printSection");
@@ -539,6 +585,21 @@
             const aRisque = document.getElementById("aRisque").checked;
             const detailRisque = document.getElementById("detailRisque").value;
 
+            // Vérification si la route est déjà attribuée à un autre employé actif
+            if (!quitteDepot && route) {
+                const routeNorm = normaliserRoute(route);
+                const autreOccupant = allEmployees.find(emp => 
+                    !emp.quitteDepot && 
+                    emp.docId !== docId && 
+                    normaliserRoute(emp.route) === routeNorm
+                );
+                if (autreOccupant) {
+                    const nomOccupant = `${autreOccupant.prenom || ''} ${autreOccupant.nom || ''}`.trim();
+                    const confirmerDoublonRoute = confirm(`Attention : la route ${route} est déjà attribuée à ${nomOccupant}.\n\nVoulez-vous tout de même enregistrer cette attribution ?`);
+                    if (!confirmerDoublonRoute) return;
+                }
+            }
+
             try {
                 if (docId) {
                     const empRef = doc(db, "employes", docId);
@@ -559,11 +620,32 @@
         });
 
         window.prepareEdit = function(docId, idEmploye, prenom, nom, route, anciennete, telephone, email, quitteDepot, aRisque, detailRisque) {
+            // Exclure l'employé en cours de modification du statut "Occupée" sur sa propre route
+            peuplerListeRoutes(docId);
+
             document.getElementById("docId").value = docId;
             document.getElementById("idEmploye").value = idEmploye;
             document.getElementById("prenom").value = prenom;
             document.getElementById("nom").value = nom;
-            document.getElementById("route").value = route;
+            
+            // Sélectionner la route dans la liste déroulante
+            const routeClean = String(route || "").trim();
+            if (routeClean) {
+                const routeNorm = normaliserRoute(routeClean);
+                const matchOfficiel = ROUTES_OFFICIELLES.find(r => normaliserRoute(r) === routeNorm);
+                if (matchOfficiel) {
+                    routeSelect.value = matchOfficiel;
+                } else {
+                    const tempOpt = document.createElement("option");
+                    tempOpt.value = routeClean;
+                    tempOpt.textContent = `${routeClean} (Hors liste)`;
+                    routeSelect.appendChild(tempOpt);
+                    routeSelect.value = routeClean;
+                }
+            } else {
+                routeSelect.value = "";
+            }
+
             document.getElementById("anciennete").value = anciennete;
             document.getElementById("telephone").value = telephone;
             document.getElementById("email").value = email;
@@ -583,6 +665,7 @@
         window.resetForm = function() {
             form.reset();
             document.getElementById("docId").value = "";
+            peuplerListeRoutes();
             document.getElementById("detailRisque").value = "";
             blocDetailRisque.style.display = 'none';
             
