@@ -366,17 +366,32 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <p class="text-xs text-slate-500">Recherchez par nom d'employé ou ID pour charger le formulaire et le modifier.</p>
-            <div class="flex space-x-2">
+            <p class="text-xs text-slate-500">Recherchez par nom d'employé, ID, numéro de route et/ou date (laissez vide pour tout afficher).</p>
+            
+            <div class="space-y-2.5">
                 <input type="text" id="search-query-input" placeholder="Nom d'employé ou ID..." 
-                    class="flex-grow bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-3 focus:ring-brand-500 focus:border-brand-500">
-                <button type="button" id="execute-search-btn" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-3 rounded-xl text-sm font-medium transition shadow-sm">
-                    Rechercher
-                </button>
+                    class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-brand-500 focus:border-brand-500">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <input type="text" id="search-route-input" placeholder="N° de route (ex: 005 ou 5)" 
+                        class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-brand-500 focus:border-brand-500">
+                    <input type="date" id="search-date-input" title="Filtrer par date"
+                        class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-brand-500 focus:border-brand-500">
+                </div>
+
+                <div class="flex space-x-2 pt-1">
+                    <button type="button" id="clear-search-btn" class="px-3 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-xs font-medium transition">
+                        Effacer filtres
+                    </button>
+                    <button type="button" id="execute-search-btn" class="flex-grow bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
+                        Rechercher
+                    </button>
+                </div>
             </div>
+
             <div id="search-results-container" class="max-h-60 overflow-y-auto space-y-2 pt-2">
                 <!-- Résultats de recherche injectés ici -->
-                <p class="text-xs text-slate-400 text-center py-4">Entrez un terme pour lancer la recherche dans Firebase.</p>
+                <p class="text-xs text-slate-400 text-center py-4">Entrez un ou plusieurs critères pour lancer la recherche dans Firebase.</p>
             </div>
         </div>
     </div>
@@ -580,12 +595,10 @@
             statusBadge.textContent = "Recherche ramassages / BLP...";
             statusBadge.classList.remove('hidden');
 
-            // Dans suivipre, les routes sont stockées sans zéros initiaux ("1", "42", "205")
             const normalizedRouteId = String(parseInt(routeVal, 10));
 
             try {
                 let docSnap = await getDoc(doc(db, RESTRUCTURATION_COLLECTION, normalizedRouteId));
-                // Fallback au cas où la route serait enregistrée avec zéros ("001")
                 if (!docSnap.exists() && normalizedRouteId !== routeVal) {
                     docSnap = await getDoc(doc(db, RESTRUCTURATION_COLLECTION, routeVal));
                 }
@@ -644,7 +657,6 @@
                         statusBadge.textContent = "Aucun ramassage ni BLP sur cette route";
                     }
                 } else {
-                    // Route absente de la collection restructuration : réinitialiser à vide
                     ramContainer.innerHTML = '';
                     ramContainer.appendChild(createRamassageRowElement());
                     pickupCheckbox.checked = false;
@@ -757,7 +769,12 @@
             }
         });
 
+        // --- RECHERCHE / RÉCUPÉRATION (Nom/ID, Route et/ou Date) ---
         const searchModal = document.getElementById('search-modal');
+        const searchQueryInput = document.getElementById('search-query-input');
+        const searchRouteInput = document.getElementById('search-route-input');
+        const searchDateInput = document.getElementById('search-date-input');
+
         document.getElementById('open-search-modal').addEventListener('click', () => {
             searchModal.classList.remove('hidden');
         });
@@ -765,48 +782,93 @@
             searchModal.classList.add('hidden');
         });
 
-        document.getElementById('execute-search-btn').addEventListener('click', async () => {
-            const queryVal = document.getElementById('search-query-input').value.trim().toLowerCase();
+        document.getElementById('clear-search-btn').addEventListener('click', () => {
+            searchQueryInput.value = '';
+            searchRouteInput.value = '';
+            searchDateInput.value = '';
+            document.getElementById('search-results-container').innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Entrez un ou plusieurs critères pour lancer la recherche dans Firebase.</p>';
+        });
+
+        async function executerRecherche() {
+            const queryVal = searchQueryInput.value.trim().toLowerCase();
+            const routeVal = searchRouteInput.value.trim().toLowerCase();
+            const dateVal = searchDateInput.value.trim();
+
             const resultsContainer = document.getElementById('search-results-container');
             resultsContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Recherche en cours...</p>';
 
             try {
                 const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
                 resultsContainer.innerHTML = '';
-                let count = 0;
+                const matchedDocs = [];
 
                 querySnapshot.forEach((documentSnap) => {
                     const data = documentSnap.data();
                     const nom = (data.nom || '').toLowerCase();
                     const idEmp = (data.id || '').toLowerCase();
+                    const docRoute = String(data.route || '').toLowerCase();
+                    const docDate = String(data.date || '');
 
-                    if (!queryVal || nom.includes(queryVal) || idEmp.includes(queryVal)) {
-                        count++;
-                        const item = document.createElement('div');
-                        item.className = "bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-200 cursor-pointer flex justify-between items-center transition";
-                        item.innerHTML = `
-                            <div>
-                                <p class="text-xs font-bold text-slate-900">${data.nom || 'Sans nom'} (ID: ${data.id || 'N/A'})</p>
-                                <p class="text-[11px] text-slate-500">Date: ${data.date} &bull; Route: ${data.route} &bull; Sup: ${data.superviseur || 'N/A'}</p>
-                            </div>
-                            <span class="text-xs bg-brand-500 text-white px-2.5 py-1 rounded-lg font-medium">Charger</span>
-                        `;
-                        item.addEventListener('click', () => {
-                            loadFormDataToUI(documentSnap.id, data);
-                            searchModal.classList.add('hidden');
-                            showToast("Formulaire chargé", `Données de ${data.nom} récupérées.`);
-                        });
-                        resultsContainer.appendChild(item);
+                    // Vérification Nom ou ID
+                    const matchNameOrId = !queryVal || nom.includes(queryVal) || idEmp.includes(queryVal);
+
+                    // Vérification Route (accepte "5", "05" ou "005" pour la route "005")
+                    let matchRoute = true;
+                    if (routeVal) {
+                        const cleanSearchRoute = routeVal.replace(/^0+/, '');
+                        const cleanDocRoute = docRoute.replace(/^0+/, '');
+                        matchRoute = docRoute.includes(routeVal) || (cleanSearchRoute !== '' && cleanDocRoute === cleanSearchRoute);
+                    }
+
+                    // Vérification Date exacte
+                    const matchDate = !dateVal || docDate === dateVal;
+
+                    if (matchNameOrId && matchRoute && matchDate) {
+                        matchedDocs.push({ id: documentSnap.id, data });
                     }
                 });
 
-                if (count === 0) {
-                    resultsContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Aucun formulaire trouvé.</p>';
+                // Tri des résultats par date la plus récente en premier
+                matchedDocs.sort((a, b) => (b.data.date || '').localeCompare(a.data.date || ''));
+
+                if (matchedDocs.length === 0) {
+                    resultsContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Aucun formulaire trouvé avec ces critères.</p>';
+                    return;
                 }
+
+                matchedDocs.forEach(({ id, data }) => {
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-200 cursor-pointer flex justify-between items-center transition";
+                    item.innerHTML = `
+                        <div>
+                            <p class="text-xs font-bold text-slate-900">${escapeHtml(data.nom || 'Sans nom')} (ID: ${escapeHtml(data.id || 'N/A')})</p>
+                            <p class="text-[11px] text-slate-500">Date: <b>${escapeHtml(data.date || 'N/A')}</b> &bull; Route: <b>${escapeHtml(data.route || 'N/A')}</b> &bull; Sup: ${escapeHtml(data.superviseur || 'N/A')}</p>
+                        </div>
+                        <span class="text-xs bg-brand-500 text-white px-2.5 py-1 rounded-lg font-medium">Charger</span>
+                    `;
+                    item.addEventListener('click', () => {
+                        loadFormDataToUI(id, data);
+                        searchModal.classList.add('hidden');
+                        showToast("Formulaire chargé", `Données de ${data.nom} (Route ${data.route}) récupérées.`);
+                    });
+                    resultsContainer.appendChild(item);
+                });
+
             } catch (error) {
                 console.error("Erreur de recherche :", error);
                 resultsContainer.innerHTML = '<p class="text-xs text-rose-500 text-center py-4">Erreur lors de la connexion à Firebase.</p>';
             }
+        }
+
+        document.getElementById('execute-search-btn').addEventListener('click', executerRecherche);
+
+        [searchQueryInput, searchRouteInput, searchDateInput].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    executerRecherche();
+                }
+            });
         });
 
         function loadFormDataToUI(docId, data) {
