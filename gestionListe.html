@@ -88,6 +88,13 @@
                 print-color-adjust: exact;
             }
 
+            .vacant-row {
+                background-color: #f9f9f9 !important;
+                color: #555;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             h2.print-title {
                 text-align: center;
                 margin-bottom: 15px;
@@ -141,7 +148,7 @@
         
         <div class="form-group">
             <label for="route">Route :</label>
-            <input type="text" id="route" required placeholder="Ex: Route 4, 205...">
+            <input type="text" id="route" required placeholder="Ex: Route 4, 205, R12, C01...">
         </div>
 
         <div class="form-group">
@@ -164,7 +171,7 @@
             <label for="quitteDepot" style="margin-bottom:0; cursor:pointer;">A quitté le dépôt</label>
         </div>
 
-        <!-- NOVEAU BLOC : SIGNALEMENT RISQUE -->
+        <!-- NOUVEAU BLOC : SIGNALEMENT RISQUE -->
         <div class="form-group checkbox-group" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 15px;">
             <input type="checkbox" id="aRisque">
             <label for="aRisque" style="margin-bottom:0; cursor:pointer; color: #ff9800;">⚠️ Marquer cet employé comme étant à risque</label>
@@ -229,6 +236,34 @@
         const cancelBtn = document.getElementById("cancelBtn");
         const checkboxRisque = document.getElementById("aRisque");
         const blocDetailRisque = document.getElementById("blocDetailRisque");
+
+        // Liste officielle des 214 routes (extraite de route (1).xlsx)
+        const ROUTES_OFFICIELLES = [
+            "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+            "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+            "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+            "31", "32", "33", "34", "35", "36", "37", "38", "40", "42",
+            "44", "46", "48", "50", "52", "54", "56", "58", "60", "62",
+            "64", "66", "68", "70", "72", "74", "76", "78", "80", "82",
+            "84", "88", "90", "94", "96", "201", "202", "203", "204", "205",
+            "206", "207", "208", "209", "210", "211", "212", "213", "214", "215",
+            "216", "217", "218", "219", "220", "221", "222", "223", "224", "225",
+            "226", "227", "228", "230", "232", "234", "236", "238", "240", "242",
+            "244", "246", "248", "250", "252", "254", "256", "258", "260", "262",
+            "264", "266", "268", "270", "272", "274", "278", "280", "282", "286",
+            "290", "302", "306", "310",
+            "ACH1", "ACH2", "ACH3", "ACH4", "ACH5", "ACH6", "ACH7", "ACH8", "ACH9", "ACH10", "ACH11",
+            "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10",
+            "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20",
+            "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30",
+            "R31", "R32", "R33", "R34", "R35", "R36", "R37", "R38", "R39", "R40", "R41",
+            "C01", "C02", "C03", "C04", "C07", "C08", "C09", "C10",
+            "CR01", "CR02", "CR03",
+            "FA01", "FA02",
+            "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10",
+            "T11", "T12", "T13", "T14", "T15", "T16", "T17", "T18", "T19", "T20",
+            "T21", "T22", "T23", "T24", "T25"
+        ];
 
         let allEmployees = []; 
         let currentDisplayedEmployees = []; 
@@ -354,25 +389,58 @@
         }
         genererSemaines();
 
+        // Normalise un code de route pour la comparaison (ex: "Route 04" -> "4", "c01" -> "C1", "CR01" -> "CR1")
+        function normaliserRoute(routeStr) {
+            let texte = String(routeStr || "").toUpperCase().trim();
+            texte = texte.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
+            const match = texte.match(/^([A-Z]*)0*(\d+)$/);
+            if (match) {
+                return match[1] + String(parseInt(match[2], 10));
+            }
+            return texte;
+        }
+
         window.printList = function() {
             const printArea = document.getElementById("printSection");
             const period = document.getElementById("printPeriod").value;
             const periodText = period ? ` - Semaine du ${period}` : "";
             
-            // --- FILTRER LES EMPLOYÉS (Exclut ceux qui ont quitté ET ceux sans route) ---
+            // --- 1. FILTRER LES EMPLOYÉS ACTIFS (Exclut ceux qui ont quitté ET ceux sans route) ---
             const employesPresents = currentDisplayedEmployees.filter(emp => {
                 const aUneRoute = emp.route && String(emp.route).trim() !== "";
                 return !emp.quitteDepot && aUneRoute;
             });
 
-            // --- TRI PAR ROUTE (1. Chiffres, 2. R, 3. ACH, 4. C, 5. T) ---
-            const listeTriee = employesPresents.sort((a, b) => {
+            // --- 2. RECENSER LES ROUTES OCCUPÉES PAR DES EMPLOYÉS ACTIFS ---
+            const routesOccupees = new Set();
+            employesPresents.forEach(emp => {
+                routesOccupees.add(normaliserRoute(emp.route));
+            });
+
+            // --- 3. CONSTRUIRE LA LISTE COMPLÈTE (Employés actifs + Routes vacantes du fichier) ---
+            const listeComplete = [...employesPresents];
+
+            ROUTES_OFFICIELLES.forEach(routeNum => {
+                const routeNorm = normaliserRoute(routeNum);
+                if (!routesOccupees.has(routeNorm)) {
+                    listeComplete.push({
+                        route: routeNum,
+                        nom: "VACANT",
+                        prenom: "",
+                        idEmploye: "-",
+                        telephone: "-",
+                        isVacant: true
+                    });
+                }
+            });
+
+            // --- 4. TRI PAR ROUTE (1. Chiffres, 2. R, 3. ACH, 4. C, 5. CR, 6. FA, 7. T, 8. Autres) ---
+            const listeTriee = listeComplete.sort((a, b) => {
                 const analyserRoute = (routeStr) => {
                     let original = String(routeStr || "").toUpperCase().trim();
-                    // On enlève "ROUTE" ou "RTE" pour ne garder que l'essentiel
-                    let texte = original.replace(/ROUTE/g, "").replace(/RTE/g, "").trim();
+                    let texte = original.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
                     
-                    let categorie = 6; // Catégorie par défaut pour les autres cas
+                    let categorie = 8; // Catégorie par défaut pour les autres cas
                     let numero = 0;
                     
                     const matchNum = texte.match(/\d+/);
@@ -382,14 +450,18 @@
                     
                     if (!aDesLettres && texte.length > 0) {
                         categorie = 1; // Uniquement des chiffres
-                    } else if (texte.startsWith("R")) {
-                        categorie = 2; // Commençant par R
+                    } else if (/^R\d/.test(texte)) {
+                        categorie = 2; // Commençant par R + chiffre (R1..R41)
                     } else if (texte.startsWith("ACH")) {
                         categorie = 3; // Commençant par ACH
+                    } else if (texte.startsWith("CR")) {
+                        categorie = 5; // Commençant par CR (avant C pour éviter le conflit)
                     } else if (texte.startsWith("C")) {
                         categorie = 4; // Commençant par C
+                    } else if (texte.startsWith("FA")) {
+                        categorie = 6; // Commençant par FA
                     } else if (texte.startsWith("T")) {
-                        categorie = 5; // Commençant par T
+                        categorie = 7; // Commençant par T
                     }
                     
                     return { categorie, numero, original };
@@ -399,12 +471,12 @@
                 const routeB = analyserRoute(b.route);
 
                 if (routeA.categorie !== routeB.categorie) {
-                    return routeA.categorie - routeB.categorie; // Trie par catégorie (1 à 5)
+                    return routeA.categorie - routeB.categorie;
                 }
                 if (routeA.numero !== routeB.numero) {
-                    return routeA.numero - routeB.numero; // Trie par chiffre croissant dans la même catégorie
+                    return routeA.numero - routeB.numero;
                 }
-                return routeA.original.localeCompare(routeB.original); // Trie alphabétique si ex aequo
+                return routeA.original.localeCompare(routeB.original);
             });
             
             let html = `<h2 class="print-title">Liste des Employés${periodText}</h2>`;
@@ -420,19 +492,29 @@
                         <tbody>`;
             
             if (listeTriee.length === 0) {
-                html += `<tr><td colspan="4" style="text-align:center;">Aucun employé avec une route attribuée à afficher</td></tr>`;
+                html += `<tr><td colspan="4" style="text-align:center;">Aucune route ou employé à afficher</td></tr>`;
             } else {
                 listeTriee.forEach(emp => {
-                    let telephoneAffichage = emp.telephone && String(emp.telephone).trim() !== "" ? String(emp.telephone).trim() : "-";
                     let routeAffichage = emp.route && String(emp.route).trim() !== "" ? String(emp.route).trim() : "-";
-                    let idAffichage = emp.idEmploye && String(emp.idEmploye).trim() !== "" ? String(emp.idEmploye).trim() : "-";
                     
-                    html += `<tr>
-                                <td><strong>${routeAffichage}</strong></td>
-                                <td><strong>${emp.nom || ''}</strong>, ${emp.prenom || ''}</td>
-                                <td>${idAffichage}</td>
-                                <td>${telephoneAffichage}</td>
-                             </tr>`;
+                    if (emp.isVacant) {
+                        html += `<tr class="vacant-row">
+                                    <td><strong>${routeAffichage}</strong></td>
+                                    <td><strong>VACANT</strong></td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                 </tr>`;
+                    } else {
+                        let telephoneAffichage = emp.telephone && String(emp.telephone).trim() !== "" ? String(emp.telephone).trim() : "-";
+                        let idAffichage = emp.idEmploye && String(emp.idEmploye).trim() !== "" ? String(emp.idEmploye).trim() : "-";
+                        
+                        html += `<tr>
+                                    <td><strong>${routeAffichage}</strong></td>
+                                    <td><strong>${emp.nom || ''}</strong>, ${emp.prenom || ''}</td>
+                                    <td>${idAffichage}</td>
+                                    <td>${telephoneAffichage}</td>
+                                 </tr>`;
+                    }
                 });
             }
             
