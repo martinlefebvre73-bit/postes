@@ -240,7 +240,7 @@
         const blocDetailRisque = document.getElementById("blocDetailRisque");
         const routeSelect = document.getElementById("route");
 
-        // Liste officielle des 214 routes
+        // Liste officielle des routes (incluant RELEVE)
         const ROUTES_OFFICIELLES = [
             "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
             "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
@@ -259,14 +259,16 @@
             "C01", "C02", "C03", "C04", "C07", "C08", "C09", "C10",
             "CR01", "CR02", "CR03",
             "FA01", "FA02",
-      ];
+            "RELEVE"
+        ];
 
         let allEmployees = []; 
         let currentDisplayedEmployees = []; 
 
-        // Normalise un code de route pour la comparaison (ex: "Route 04" -> "4", "c01" -> "C1", "CR01" -> "CR1")
+        // Normalise un code de route pour la comparaison (ex: "Route 04" -> "4", "c01" -> "C1", "CR01" -> "CR1", "relève" -> "RELEVE")
         function normaliserRoute(routeStr) {
             let texte = String(routeStr || "").toUpperCase().trim();
+            texte = texte.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             texte = texte.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
             const match = texte.match(/^([A-Z]*)0*(\d+)$/);
             if (match) {
@@ -275,7 +277,12 @@
             return texte;
         }
 
-        // Remplir la liste déroulante des routes en indiquant si elles sont déjà occupées
+        // Vérifie si la route est la route 'RELEVE' (sans limite d'occupants)
+        function estRouteReleve(routeStr) {
+            return normaliserRoute(routeStr) === "RELEVE";
+        }
+
+        // Remplir la liste déroulante des routes en indiquant si elles sont déjà occupées (sauf pour RELEVE)
         function peuplerListeRoutes(excludeDocId = "") {
             const valeurActuelle = routeSelect.value;
             routeSelect.innerHTML = '<option value="">-- Sélectionner une route --</option>';
@@ -286,7 +293,7 @@
                 if (emp.quitteDepot) return;
                 if (excludeDocId && emp.docId === excludeDocId) return;
                 const rNorm = normaliserRoute(emp.route);
-                if (!rNorm) return;
+                if (!rNorm || rNorm === "RELEVE") return;
 
                 const nomComplet = [emp.nom, emp.prenom].filter(Boolean).join(", ") || emp.idEmploye || "Employé";
                 if (!occupationMap.has(rNorm)) {
@@ -301,7 +308,7 @@
                 const rNorm = normaliserRoute(r);
                 const occupants = occupationMap.get(rNorm);
 
-                if (occupants && occupants.length > 0) {
+                if (rNorm !== "RELEVE" && occupants && occupants.length > 0) {
                     option.textContent = `${r} (Occupée - ${occupants.join(" / ")})`;
                     option.style.color = "#888";
                 } else {
@@ -456,11 +463,12 @@
                 routesOccupees.add(normaliserRoute(emp.route));
             });
 
-            // --- 3. CONSTRUIRE LA LISTE COMPLÈTE (Employés actifs + Routes vacantes du fichier) ---
+            // --- 3. CONSTRUIRE LA LISTE COMPLÈTE (Employés actifs + Routes vacantes, sans marquer RELEVE vacante) ---
             const listeComplete = [...employesPresents];
 
             ROUTES_OFFICIELLES.forEach(routeNum => {
                 const routeNorm = normaliserRoute(routeNum);
+                if (routeNorm === "RELEVE") return;
                 if (!routesOccupees.has(routeNorm)) {
                     listeComplete.push({
                         route: routeNum,
@@ -473,13 +481,14 @@
                 }
             });
 
-            // --- 4. TRI PAR ROUTE (1. Chiffres, 2. R, 3. ACH, 4. C, 5. CR, 6. FA, 7. T, 8. Autres) ---
+            // --- 4. TRI PAR ROUTE (1. Chiffres, 2. R, 3. ACH, 4. C, 5. CR, 6. FA, 7. T, 8. Autres/RELEVE) ---
             const listeTriee = listeComplete.sort((a, b) => {
                 const analyserRoute = (routeStr) => {
                     let original = String(routeStr || "").toUpperCase().trim();
-                    let texte = original.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
+                    let texte = original.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    texte = texte.replace(/ROUTE/g, "").replace(/RTE/g, "").replace(/\s+/g, "").trim();
                     
-                    let categorie = 8; // Catégorie par défaut pour les autres cas
+                    let categorie = 8; // Catégorie par défaut (inclut RELEVE et autres cas)
                     let numero = 0;
                     
                     const matchNum = texte.match(/\d+/);
@@ -578,8 +587,8 @@
             const aRisque = document.getElementById("aRisque").checked;
             const detailRisque = document.getElementById("detailRisque").value;
 
-            // Vérification si la route est déjà attribuée à un autre employé actif
-            if (!quitteDepot && route) {
+            // Vérification si la route est déjà attribuée à un autre employé actif (ignorée pour 'RELEVE')
+            if (!quitteDepot && route && !estRouteReleve(route)) {
                 const routeNorm = normaliserRoute(route);
                 const autreOccupant = allEmployees.find(emp => 
                     !emp.quitteDepot && 
