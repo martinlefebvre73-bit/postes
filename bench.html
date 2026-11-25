@@ -1236,33 +1236,40 @@
         }
 
         // =========================================================================
-        // AMÉLIORATION OCR SPÉCIAL MANUSCRIT DANS ENCADRÉ :
-        // - Suppression des bordures de cases (lignes horizontales/verticales)
-        // - Épaississement des traits manuscrits (dilatation)
-        // - Focus 3 premiers pouces du haut : Nom -> ID -> Route -> Date
-        // - Carré en haut à droite : 1er = BZ, 2e = OT (15.08)
-        // - Règle 3 chiffres : insertion d'un point après le 1er chiffre (125 -> 1.25)
-        // - Recherche floue (Levenshtein) pour corriger les fautes d'OCR manuscrit
+        // OCR CALIBRÉ SUR LES 5 CHAMPS SURLIGNÉS DU FORMULAIRE POSTES CANADA (33-090-049) :
+        // 1. Carré haut-droite gauche : BZ       (x: 74.5% -> 85.1%, y: 2.2% -> 5.8%)
+        // 2. Carré haut-droite droit  : OT 15.08 (x: 85.8% -> 96.2%, y: 2.2% -> 5.8%)
+        // 3. Ligne infos - ID employé            (x: 34.8% -> 56.2%, y: 15.8% -> 19.1%)
+        // 4. Ligne infos - Route #               (x: 56.6% -> 76.2%, y: 15.8% -> 19.1%)
+        // 5. Ligne infos - Date                  (x: 76.6% -> 96.2%, y: 15.5% -> 19.1%)
         // =========================================================================
 
-        function preprocessHandwritingInBox(canvas) {
+        function preprocessHighlightedHandwriting(canvas) {
             const w = canvas.width;
             const h = canvas.height;
             const ctx = canvas.getContext('2d');
             const imgData = ctx.getImageData(0, 0, w, h);
             const data = imgData.data;
 
-            // 1. Binarisation (1 = encre noire, 0 = fond blanc)
             const bin = new Uint8Array(w * h);
+
             for (let i = 0; i < w * h; i++) {
                 const idx = i * 4;
-                const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-                bin[i] = gray < 165 ? 1 : 0;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+
+                const maxChannel = Math.max(r, g, b);
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                // Neutralise le fond surligné jaune/rose et conserve uniquement l'encre sombre
+                const isInk = (gray < 145 && maxChannel < 175);
+                bin[i] = isInk ? 1 : 0;
             }
 
-            // 2. Suppression des lignes d'encadré (traits continus > 45% de la largeur ou > 55% de la hauteur)
+            // Suppression des résidus de bordures horizontales/verticales longues
             const clean = new Uint8Array(bin);
-            const minHorizRun = Math.floor(w * 0.45);
+            const minHorizRun = Math.floor(w * 0.65);
             for (let y = 0; y < h; y++) {
                 let run = 0;
                 for (let x = 0; x <= w; x++) {
@@ -1282,7 +1289,7 @@
                 }
             }
 
-            const minVertRun = Math.floor(h * 0.55);
+            const minVertRun = Math.floor(h * 0.70);
             for (let x = 0; x < w; x++) {
                 let run = 0;
                 for (let y = 0; y <= h; y++) {
@@ -1302,7 +1309,7 @@
                 }
             }
 
-            // 3. Dilatation légère (3x3) pour relier et épaissir les traits manuscrits fins
+            // Épaississement léger (dilatation 2x2) pour relier les traits de stylo fins
             const dilated = new Uint8Array(clean);
             for (let y = 1; y < h - 1; y++) {
                 for (let x = 1; x < w - 1; x++) {
@@ -1313,18 +1320,27 @@
                 }
             }
 
-            // 4. Réécriture sur le canvas (noir pur sur blanc pur)
+            const pad = 16;
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = w + pad * 2;
+            outCanvas.height = h + pad * 2;
+            const outCtx = outCanvas.getContext('2d');
+            outCtx.fillStyle = '#ffffff';
+            outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+
+            const outImg = outCtx.getImageData(pad, pad, w, h);
+            const outData = outImg.data;
             for (let i = 0; i < w * h; i++) {
                 const val = dilated[i] === 1 ? 0 : 255;
                 const idx = i * 4;
-                data[idx] = data[idx + 1] = data[idx + 2] = val;
-                data[idx + 3] = 255;
+                outData[idx] = outData[idx + 1] = outData[idx + 2] = val;
+                outData[idx + 3] = 255;
             }
-            ctx.putImageData(imgData, 0, 0);
-            return canvas;
+            outCtx.putImageData(outImg, pad, pad);
+            return outCanvas;
         }
 
-        function cropSubRegion(sourceCanvas, xRatio, yRatio, wRatio, hRatio, zoom = 1.6) {
+        function cropFieldBox(sourceCanvas, xRatio, yRatio, wRatio, hRatio, zoom = 2.0) {
             const cropCanvas = document.createElement('canvas');
             const cropCtx = cropCanvas.getContext('2d');
 
@@ -1339,12 +1355,12 @@
             cropCtx.imageSmoothingEnabled = true;
             cropCtx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, cropCanvas.width, cropCanvas.height);
 
-            return preprocessHandwritingInBox(cropCanvas);
+            return preprocessHighlightedHandwriting(cropCanvas);
         }
 
         async function renderPdfPageToCanvas(pdfDoc, pageNum) {
             const page = await pdfDoc.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 3.0 }); // Haute définition pour le manuscrit
+            const viewport = page.getViewport({ scale: 3.0 });
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = viewport.width;
@@ -1369,74 +1385,117 @@
             return "";
         }
 
-        // Convertit une valeur lue par OCR en heure décimale :
-        // Règle des 3 chiffres : insertion d'un point après le 1er chiffre (ex: 125 -> 1.25)
-        function parseHeureOcr(valStr) {
-            if (!valStr) return 0;
-            let s = String(valStr).trim().replace(',', '.');
+        function parseHeureCaseSurlignee(rawText) {
+            if (!rawText) return 0;
 
-            if (s.includes(':')) {
-                const [h, m] = s.split(':').map(Number);
-                return parseFloat(((h || 0) + ((m || 0) / 60)).toFixed(2));
-            }
-
-            if (/^\d{3}$/.test(s)) {
-                s = s[0] + '.' + s.slice(1);
-            }
-
-            const num = parseFloat(s);
-            return isNaN(num) ? 0 : parseFloat(num.toFixed(2));
-        }
-
-        function extraireHeuresCarreHautDroite(texteCarre) {
-            if (!texteCarre) return { heureBz: 0, heure1508: 0 };
-
-            const nettoye = texteCarre
+            const nettoye = rawText
                 .replace(/[oOqQdD]/g, '0')
                 .replace(/[iIl|!]/g, '1')
                 .replace(/[zZ]/g, '2')
                 .replace(/[sS]/g, '5')
                 .replace(/[gG]/g, '6')
-                .replace(/[bB]/g, '8');
+                .replace(/[bB]/g, '8')
+                .replace(/,/g, '.')
+                .replace(/\s+/g, '');
 
-            const matches = nettoye.match(/\d+(?:[\.,:]\d{1,2})?/g) || [];
+            const matchDec = nettoye.match(/(\d+\.\d{1,2})/);
+            if (matchDec) {
+                const val = parseFloat(matchDec[1]);
+                return (!isNaN(val) && val >= 0 && val <= 15) ? parseFloat(val.toFixed(2)) : 0;
+            }
 
-            const valeurs = matches
-                .map(m => parseHeureOcr(m))
-                .filter(v => !isNaN(v) && v >= 0 && v <= 12);
+            const matchColon = nettoye.match(/(\d{1,2}):(\d{2})/);
+            if (matchColon) {
+                const h = parseInt(matchColon[1], 10) || 0;
+                const m = parseInt(matchColon[2], 10) || 0;
+                return parseFloat((h + m / 60).toFixed(2));
+            }
 
-            const heureBz = valeurs.length >= 1 ? valeurs[0] : 0;
-            const heure1508 = valeurs.length >= 2 ? valeurs[1] : 0;
+            // Règle des 3 chiffres : insertion d'un point après le 1er chiffre (ex: 084 -> 0.84, 125 -> 1.25)
+            const digitsOnly = nettoye.replace(/\D/g, '');
+            if (digitsOnly.length === 3) {
+                const val = parseFloat(digitsOnly[0] + '.' + digitsOnly.slice(1));
+                return (!isNaN(val) && val >= 0 && val <= 15) ? parseFloat(val.toFixed(2)) : 0;
+            }
+            if (digitsOnly.length === 1 || digitsOnly.length === 2) {
+                const val = parseFloat(digitsOnly);
+                return (!isNaN(val) && val >= 0 && val <= 12) ? val : 0;
+            }
 
-            return { heureBz, heure1508 };
+            return 0;
         }
 
-        function normaliserDateOcr(texte, dateFallback) {
-            if (!texte) return dateFallback;
+        function parseIdCaseSurlignee(rawText) {
+            if (!rawText) return "";
+            const nettoye = rawText
+                .replace(/[oOqQdD]/g, '0')
+                .replace(/[iIl|!]/g, '1')
+                .replace(/[zZ]/g, '2')
+                .replace(/[sS]/g, '5')
+                .replace(/[gG]/g, '6')
+                .replace(/[bB]/g, '8')
+                .replace(/\s+/g, '');
 
-            const nettoye = texte
-                .replace(/[oO]/g, '0')
-                .replace(/[iIl]/g, '1');
+            const digits = nettoye.replace(/\D/g, '');
+            if (digits.length >= 4 && digits.length <= 9) {
+                return digits;
+            }
+            return nettoye.replace(/[^0-9A-Za-z]/g, '');
+        }
 
-            let m = nettoye.match(/\b(20\d{2})[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](0?[1-9]|[12]\d|3[01])\b/);
+        function parseRouteCaseSurlignee(rawText) {
+            if (!rawText) return "";
+            const nettoye = rawText
+                .trim()
+                .replace(/[oOqQdD]/g, '0')
+                .replace(/[iIl|!]/g, '1')
+                .replace(/[sS]/g, '5')
+                .replace(/[bB]/g, '8')
+                .replace(/\s+/g, '');
+
+            const matchCode = nettoye.match(/(ach\d+|fa\d+|\d{1,3})/i);
+            return matchCode ? matchCode[1].toUpperCase() : "";
+        }
+
+        function parseDateCaseSurlignee(rawText, dateFallback) {
+            if (!rawText) return dateFallback;
+
+            const nettoye = rawText
+                .replace(/[oOqQdD]/g, '0')
+                .replace(/[iIl|!]/g, '1')
+                .replace(/[sS]/g, '5')
+                .replace(/[bB]/g, '8')
+                .trim();
+
+            let m = nettoye.match(/(\d{1,2})\s*[\/\-\.\s]\s*(\d{1,2})\s*[\/\-\.\s]\s*(20\d{2}|\d{2})/);
+            if (m) {
+                const jour = m[1].padStart(2, '0');
+                const mois = m[2].padStart(2, '0');
+                const annee = m[3].length === 2 ? `20${m[3]}` : m[3];
+                const mNum = parseInt(mois, 10);
+                const jNum = parseInt(jour, 10);
+                if (mNum >= 1 && mNum <= 12 && jNum >= 1 && jNum <= 31) {
+                    return `${annee}-${mois}-${jour}`;
+                }
+            }
+
+            m = nettoye.match(/(20\d{2})\s*[\/\-\.\s]\s*(\d{1,2})\s*[\/\-\.\s]\s*(\d{1,2})/);
             if (m) {
                 return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
             }
 
-            m = nettoye.match(/\b(0?[1-9]|[12]\d|3[01])[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](20\d{2})\b/);
-            if (m) {
-                return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-            }
-
-            m = nettoye.match(/\b(0?[1-9]|[12]\d|3[01])[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](\d{2})\b/);
-            if (m) {
-                return `20${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+            const digits = nettoye.replace(/\D/g, '');
+            if (digits.length === 8) {
+                if (digits.startsWith('20')) {
+                    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+                } else {
+                    return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+                }
             }
 
             return dateFallback;
         }
 
-        // Calcul de distance de Levenshtein pour tolérer les approximations d'écriture manuscrite
         function levenshteinDistance(a, b) {
             const m = a.length, n = b.length;
             if (m === 0) return n;
@@ -1453,156 +1512,23 @@
             return dp[m][n];
         }
 
-        function normaliserChaineAlpha(str) {
-            return String(str || '')
-                .toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/0/g, 'o')
-                .replace(/1/g, 'l')
-                .replace(/5/g, 's')
-                .replace(/[^a-z\s]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
+        function trouverEmployeParId(idExtrait) {
+            if (!idExtrait || listeEmployesMemoire.length === 0) return null;
 
-        function rechercherEmployeManuscrit(texteGauche, idExtrait) {
-            if (listeEmployesMemoire.length === 0) return null;
+            const exact = listeEmployesMemoire.find(emp =>
+                String(emp.idEmploye ?? emp.id ?? '').trim().toLowerCase() === idExtrait.toLowerCase()
+            );
+            if (exact) return exact;
 
-            // 1. Correspondance exacte sur l'ID
-            if (idExtrait) {
-                const exactId = listeEmployesMemoire.find(emp =>
-                    String(emp.idEmploye ?? emp.id ?? '').toLowerCase() === idExtrait.toLowerCase()
-                );
-                if (exactId) return exactId;
+            if (idExtrait.length >= 5) {
+                const proche = listeEmployesMemoire.find(emp => {
+                    const empId = String(emp.idEmploye ?? emp.id ?? '').trim();
+                    return empId.length === idExtrait.length && levenshteinDistance(idExtrait, empId) === 1;
+                });
+                if (proche) return proche;
             }
 
-            // 2. Correspondance par nom/prénom exacts ou approchés dans le texte manuscrit
-            const texteNorm = normaliserChaineAlpha(texteGauche);
-            const motsOcr = texteNorm.split(' ').filter(w => w.length >= 3);
-
-            let meilleurEmploye = null;
-            let meilleurScore = 0;
-
-            for (const emp of listeEmployesMemoire) {
-                const nomNorm = normaliserChaineAlpha(emp.nom);
-                const prenomNorm = normaliserChaineAlpha(emp.prenom);
-                let score = 0;
-
-                if (nomNorm.length >= 3) {
-                    if (texteNorm.includes(nomNorm)) {
-                        score += 3;
-                    } else {
-                        for (const mot of motsOcr) {
-                            const maxErr = nomNorm.length >= 6 ? 2 : 1;
-                            if (levenshteinDistance(mot, nomNorm) <= maxErr) {
-                                score += 2;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (prenomNorm.length >= 3) {
-                    if (texteNorm.includes(prenomNorm)) {
-                        score += 2;
-                    } else {
-                        for (const mot of motsOcr) {
-                            const maxErr = prenomNorm.length >= 6 ? 2 : 1;
-                            if (levenshteinDistance(mot, prenomNorm) <= maxErr) {
-                                score += 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // Bonus si l'ID manuscrit est proche à 1 chiffre près
-                const empId = String(emp.idEmploye ?? emp.id ?? '');
-                if (idExtrait && empId && idExtrait.length === empId.length && levenshteinDistance(idExtrait, empId) === 1) {
-                    score += 3;
-                }
-
-                if (score > meilleurScore) {
-                    meilleurScore = score;
-                    meilleurEmploye = emp;
-                }
-            }
-
-            return meilleurScore >= 2 ? meilleurEmploye : null;
-        }
-
-        // Extraction du bandeau supérieur manuscrit dans un encadré (3 premiers pouces du haut)
-        // Ordre de gauche à droite : Nom employé -> ID -> Route -> Date
-        function extraireBandeauHautManuscrit(texteGauche, texteCentre, dateFallback) {
-            let idEmploye = "";
-            let nomEmploye = "";
-
-            // --- 1. ZONE GAUCHE : Nom employé puis ID ---
-            const gaucheChiffres = texteGauche
-                .replace(/[oO]/g, '0')
-                .replace(/[iIl]/g, '1')
-                .replace(/[sS]/g, '5')
-                .replace(/[bB]/g, '8');
-
-            const matchIdLabel = gaucheChiffres.match(/(?:id|matricule|emp|badge|no\.?)\s*[:\-]?\s*(\d{4,8})/i);
-            if (matchIdLabel) {
-                idEmploye = matchIdLabel[1];
-            } else {
-                const matchIdDigits = gaucheChiffres.match(/\b(\d{5,8})\b/);
-                if (matchIdDigits) idEmploye = matchIdDigits[1];
-            }
-
-            const empTrouve = rechercherEmployeManuscrit(texteGauche, idEmploye);
-
-            if (empTrouve) {
-                nomEmploye = `${empTrouve.nom || ''} ${empTrouve.prenom || ''}`.trim();
-                const idBase = String(empTrouve.idEmploye ?? empTrouve.id ?? '').trim();
-                if (idBase) idEmploye = idBase;
-            } else {
-                const lignesGauche = texteGauche
-                    .split('\n')
-                    .map(l => l.replace(/[^A-Za-zÀ-ÿ\s\-']/g, '').trim())
-                    .filter(l => l.length >= 4);
-
-                for (const ligne of lignesGauche) {
-                    if (!/^(nom|employ[ée]|id|route|date|postes|signature)/i.test(ligne)) {
-                        nomEmploye = ligne;
-                        break;
-                    }
-                }
-            }
-
-            // --- 2. ZONE CENTRE : Route puis Date ---
-            let route = "";
-            const centreNettoye = texteCentre
-                .replace(/[oO]/g, '0')
-                .replace(/[iIl]/g, '1');
-
-            const matchRouteLabel = texteCentre.match(/(?:route|rte|rt|itin[ée]raire|#)\s*[:\-]?\s*(ach\d+|fa\d+|\d{1,3})/i);
-            if (matchRouteLabel) {
-                route = matchRouteLabel[1].toUpperCase();
-            } else {
-                // On retire d'abord les dates pour ne pas confondre le jour/mois avec la route
-                const sansDates = centreNettoye.replace(/\b\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4}\b/g, ' ');
-                const tokensCentre = sansDates.match(/\b(ach\d+|fa\d+|\d{1,3})\b/gi) || [];
-                for (const tok of tokensCentre) {
-                    const num = parseInt(tok.replace(/\D/g, ''), 10);
-                    if (tok.toLowerCase().startsWith('ach') || tok.toLowerCase().startsWith('fa') || (num >= 1 && num <= 350)) {
-                        route = tok.toUpperCase();
-                        break;
-                    }
-                }
-            }
-
-            const dateExtrait = normaliserDateOcr(texteCentre, dateFallback);
-
-            return {
-                empTrouve,
-                nom: nomEmploye,
-                id: idEmploye,
-                route,
-                date: dateExtrait
-            };
+            return null;
         }
 
         window.traiterLotFeuillesLocal = async function() {
@@ -1650,66 +1576,68 @@
                 }
 
                 const totalPages = pagesAAnalyser.length;
-                progText.textContent = `Initialisation des moteurs OCR manuscrit (3 premiers pouces)...`;
+                progText.textContent = `Initialisation du moteur OCR sur les 5 champs surlignés...`;
 
-                // Worker configuré pour texte manuscrit épars dans des cases (SPARSE_TEXT)
-                const workerManuscrit = await Tesseract.createWorker('fra+eng');
-                await workerManuscrit.setParameters({
-                    tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT
+                const workerChamps = await Tesseract.createWorker('eng');
+                await workerChamps.setParameters({
+                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+                    tessedit_char_whitelist: '0123456789.,:/-ACFHachf '
                 });
-
-                // Worker dédié uniquement aux chiffres du carré haut-droite
-                const workerCarre = await Tesseract.createWorker('eng');
-                await workerCarre.setParameters({
-                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
-                    tessedit_char_whitelist: '0123456789.,: \n'
-                });
-
-                // Hauteur des 3 premiers pouces sur une page standard de 11 pouces (~28% du haut)
-                const TOP_3_INCHES_RATIO = 0.28;
 
                 for (let i = 0; i < totalPages; i++) {
                     const item = pagesAAnalyser[i];
                     const indexHumain = i + 1;
                     const pct = Math.round((indexHumain / totalPages) * 100);
 
-                    progText.textContent = `OCR Manuscrit (encadré haut) : feuille ${indexHumain} sur ${totalPages}...`;
+                    progText.textContent = `OCR Champs surlignés (BZ, 15.08, ID, Route, Date) : feuille ${indexHumain} / ${totalPages}...`;
                     progPercent.textContent = `${pct}%`;
                     progBar.style.width = `${pct}%`;
 
                     try {
-                        // 1. Gauche (0% -> 42%) : Nom employé + ID (manuscrits dans encadré)
-                        const canvasGauche = cropSubRegion(item.canvas, 0.0, 0.0, 0.42, TOP_3_INCHES_RATIO, 1.5);
-                        // 2. Centre (34% -> 68%) : Route + Date (manuscrits dans encadré)
-                        const canvasCentre = cropSubRegion(item.canvas, 0.34, 0.0, 0.34, TOP_3_INCHES_RATIO, 1.6);
-                        // 3. Droite (62% -> 100%) : Carré haut-droite (1er = BZ, 2e = OT 15.08)
-                        const canvasDroite = cropSubRegion(item.canvas, 0.62, 0.0, 0.38, TOP_3_INCHES_RATIO, 1.7);
+                        // 1. Case BZ (carré haut-droite, case gauche)
+                        const canvasBz = cropFieldBox(item.canvas, 0.745, 0.022, 0.106, 0.036, 2.2);
+                        // 2. Case OT / 15.08 (carré haut-droite, case droite)
+                        const canvasOt = cropFieldBox(item.canvas, 0.858, 0.022, 0.104, 0.036, 2.2);
+                        // 3. Case ID employé (surlignée ligne supérieure, 2e colonne)
+                        const canvasId = cropFieldBox(item.canvas, 0.348, 0.158, 0.214, 0.033, 2.0);
+                        // 4. Case Route # (surlignée ligne supérieure, 3e colonne)
+                        const canvasRoute = cropFieldBox(item.canvas, 0.566, 0.158, 0.196, 0.033, 2.0);
+                        // 5. Case Date (surlignée ligne supérieure, 4e colonne)
+                        const canvasDate = cropFieldBox(item.canvas, 0.766, 0.155, 0.196, 0.036, 2.0);
 
-                        const [retGauche, retCentre, retDroite] = await Promise.all([
-                            workerManuscrit.recognize(canvasGauche),
-                            workerManuscrit.recognize(canvasCentre),
-                            workerCarre.recognize(canvasDroite)
+                        const [retBz, retOt, retId, retRoute, retDate] = await Promise.all([
+                            workerChamps.recognize(canvasBz),
+                            workerChamps.recognize(canvasOt),
+                            workerChamps.recognize(canvasId),
+                            workerChamps.recognize(canvasRoute),
+                            workerChamps.recognize(canvasDate)
                         ]);
 
-                        const texteGauche = retGauche.data.text || "";
-                        const texteCentre = retCentre.data.text || "";
-                        const texteDroite = retDroite.data.text || "";
+                        const rawBz = (retBz.data.text || "").trim();
+                        const rawOt = (retOt.data.text || "").trim();
+                        const rawId = (retId.data.text || "").trim();
+                        const rawRoute = (retRoute.data.text || "").trim();
+                        const rawDate = (retDate.data.text || "").trim();
 
-                        const { heureBz, heure1508 } = extraireHeuresCarreHautDroite(texteDroite);
-                        const infosHaut = extraireBandeauHautManuscrit(texteGauche, texteCentre, dateSelectionnee);
+                        const heureBz = parseHeureCaseSurlignee(rawBz);
+                        const heure1508 = parseHeureCaseSurlignee(rawOt);
+                        let idFinal = parseIdCaseSurlignee(rawId);
+                        const routeFinale = parseRouteCaseSurlignee(rawRoute);
+                        const dateFinale = parseDateCaseSurlignee(rawDate, dateSelectionnee);
 
-                        let nomFinal = infosHaut.nom;
-                        let idFinal = infosHaut.id;
+                        let nomFinal = "";
                         let ancienneteFinale = "-";
                         let employeExterne = false;
 
-                        if (infosHaut.empTrouve) {
-                            ancienneteFinale = infosHaut.empTrouve.anciennete || 'Non spécifiée';
-                        } else if (idFinal || nomFinal) {
+                        const empTrouve = trouverEmployeParId(idFinal);
+                        if (empTrouve) {
+                            nomFinal = `${empTrouve.nom || ''} ${empTrouve.prenom || ''}`.trim();
+                            idFinal = String(empTrouve.idEmploye ?? empTrouve.id ?? idFinal).trim();
+                            ancienneteFinale = empTrouve.anciennete || 'Non spécifiée';
+                        } else if (idFinal) {
                             employeExterne = true;
                         }
 
-                        const routeFinale = infosHaut.route;
                         const moduleFinal = trouverModuleParRoute(routeFinale);
                         const heure1704 = 0;
                         const totalHeures = heure1704 + heure1508 + heureBz;
@@ -1717,7 +1645,7 @@
                         ocrPreviewItems.push({
                             sourceLabel: item.label,
                             selected: totalHeures > 0,
-                            date: infosHaut.date,
+                            date: dateFinale,
                             module: moduleFinal,
                             route: routeFinale,
                             nom: nomFinal,
@@ -1729,9 +1657,11 @@
                             heure1508: heure1508,
                             heureBz: heureBz,
                             rawText:
-                                `[1. Gauche Encadré - Nom & ID] :\n${texteGauche.trim()}\n\n` +
-                                `[2. Centre Encadré - Route & Date] :\n${texteCentre.trim()}\n\n` +
-                                `[3. Droite - Carré BZ (1er) & OT 15.08 (2e)] :\n${texteDroite.trim()}`
+                                `• Case BZ (haut-droite gauche) : "${rawBz || '(vide)'}" -> ${heureBz.toFixed(2)} h\n` +
+                                `• Case OT 15.08 (haut-droite droite) : "${rawOt || '(vide)'}" -> ${heure1508.toFixed(2)} h\n` +
+                                `• Case ID employé : "${rawId || '(vide)'}" -> ${idFinal || '(non lu)'}\n` +
+                                `• Case Route # : "${rawRoute || '(vide)'}" -> ${routeFinale || '(non lu)'}\n` +
+                                `• Case Date : "${rawDate || '(vide)'}" -> ${dateFinale}`
                         });
 
                     } catch (pageErr) {
@@ -1739,8 +1669,7 @@
                     }
                 }
 
-                await workerCarre.terminate();
-                await workerManuscrit.terminate();
+                await workerChamps.terminate();
 
                 const nbDetectes = ocrPreviewItems.filter(x => x.selected).length;
                 progText.textContent = `✅ Analyse terminée : ${nbDetectes} feuille(s) avec heures détectée(s) sur ${totalPages}. Vérifiez le tableau ci-dessous avant de valider.`;
@@ -1796,11 +1725,11 @@
                     <td><input type="text" value="${item.id}" placeholder="ID" onchange="updateOcrPreviewId(${idx}, this.value)" style="width: 85px;"></td>
                     <td><input type="text" value="${item.nom}" placeholder="Nom de l'employé" onchange="updateOcrPreviewField(${idx}, 'nom', this.value)"></td>
                     <td><input type="number" step="0.01" min="0" value="${item.heure1704}" onchange="updateOcrPreviewField(${idx}, 'heure1704', parseFloat(this.value)||0)" style="width: 70px; text-align: right;"></td>
-                    <td><input type="number" step="0.01" min="0" value="${item.heure1508}" onchange="updateOcrPreviewField(${idx}, 'heure1508', parseFloat(this.value)||0)" style="width: 70px; text-align: right; background: #fffbeb; font-weight: 600;" title="2e case carré haut-droite (OT 15.08)"></td>
-                    <td><input type="number" step="0.01" min="0" value="${item.heureBz}" onchange="updateOcrPreviewField(${idx}, 'heureBz', parseFloat(this.value)||0)" style="width: 70px; text-align: right; background: #eff6ff; font-weight: 600;" title="1re case carré haut-droite (BZ)"></td>
+                    <td><input type="number" step="0.01" min="0" value="${item.heure1508}" onchange="updateOcrPreviewField(${idx}, 'heure1508', parseFloat(this.value)||0)" style="width: 70px; text-align: right; background: #fffbeb; font-weight: 600;" title="Case OT (15.08) haut-droite"></td>
+                    <td><input type="number" step="0.01" min="0" value="${item.heureBz}" onchange="updateOcrPreviewField(${idx}, 'heureBz', parseFloat(this.value)||0)" style="width: 70px; text-align: right; background: #eff6ff; font-weight: 600;" title="Case BZ haut-droite"></td>
                     <td style="text-align: right; font-weight: bold; color: ${total > 0 ? '#059669' : '#94a3b8'};">${total.toFixed(2)} h</td>
                     <td style="text-align: center;">
-                        <button type="button" class="btn" style="padding: 3px 7px; height: auto; font-size: 0.75rem; background: #e2e8f0; color: #334155;" onclick="voirTexteBrutOcr(${idx})" title="Voir le texte lu par l'OCR">👁️ Texte</button>
+                        <button type="button" class="btn" style="padding: 3px 7px; height: auto; font-size: 0.75rem; background: #e2e8f0; color: #334155;" onclick="voirTexteBrutOcr(${idx})" title="Voir la lecture brute des 5 cases surlignées">👁️ Cases</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1830,9 +1759,7 @@
         window.updateOcrPreviewId = function(idx, newId) {
             const cleanId = newId.trim();
             ocrPreviewItems[idx].id = cleanId;
-            const empTrouve = listeEmployesMemoire.find(emp =>
-                String(emp.idEmploye ?? emp.id ?? '').toLowerCase() === cleanId.toLowerCase()
-            );
+            const empTrouve = trouverEmployeParId(cleanId);
             if (empTrouve) {
                 ocrPreviewItems[idx].nom = `${empTrouve.nom || ''} ${empTrouve.prenom || ''}`.trim();
                 ocrPreviewItems[idx].anciennete = empTrouve.anciennete || 'Non spécifiée';
@@ -1842,7 +1769,7 @@
         };
 
         window.voirTexteBrutOcr = function(idx) {
-            alert("Zones manuscrites analysées (3 premiers pouces du haut) - " + ocrPreviewItems[idx].sourceLabel + " :\n\n" + (ocrPreviewItems[idx].rawText || "(Vide)"));
+            alert("Lecture des 5 champs surlignés (" + ocrPreviewItems[idx].sourceLabel + ") :\n\n" + (ocrPreviewItems[idx].rawText || "(Vide)"));
         };
 
         function updateOcrPreviewCounter() {
@@ -1996,13 +1923,13 @@
     <div class="form-section">
         <div id="firebaseStatus" class="status-msg" style="margin-bottom: 12px;">Connexion à Firebase en cours...</div>
         
-        <!-- Zone d'injection de fichier multi-pages avec OCR manuscrit sur les 3 premiers pouces -->
+        <!-- Zone d'injection de fichier multi-pages avec OCR calibré sur les 5 champs surlignés -->
         <div style="margin-bottom: 18px; padding: 15px; background: #e0f2fe; border-radius: 8px; border: 1px solid #0284c7;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Manuscrit & Encadré (3 premiers pouces du haut)</strong>
+                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Ciblé (5 cases surlignées)</strong>
                     <p style="font-size: 0.8rem; color: #334155; margin-top: 2px;">
-                        Efface les lignes d'encadré, lit de gauche à droite : <strong>Nom</strong>, <strong>ID</strong>, <strong>Route</strong>, <strong>Date</strong>, puis le carré haut-droite (1er = <strong>BZ</strong>, 2e = <strong>OT 15.08</strong> ; 3 chiffres convertis ex: <code>125</code> &rarr; <code>1.25</code>).
+                        Lit uniquement les zones surlignées : <strong>BZ</strong> et <strong>OT (15.08)</strong> en haut à droite (3 chiffres convertis ex: <code>084</code> &rarr; <code>0.84</code>), puis <strong>ID</strong> (liaison auto Employé), <strong>Route</strong> et <strong>Date</strong>.
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -2028,7 +1955,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <h4 style="color: #1e3a8a; font-size: 0.95rem;">🔍 Prévisualisation et vérification avant enregistrement</h4>
-                        <span style="font-size: 0.78rem; color: #64748b;">1re valeur carré haut-droite = <strong>BZ</strong> | 2e valeur = <strong>15.08 (OT)</strong>. Les lignes jaunes nécessitent un complément.</span>
+                        <span style="font-size: 0.78rem; color: #64748b;">Carré haut-droite : <strong>BZ</strong> (gauche) &amp; <strong>OT 15.08</strong> (droite) | Ligne : <strong>ID</strong>, <strong>Route</strong>, <strong>Date</strong>.</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="btn btn-danger" onclick="annulerOcrPreview()" style="height: 34px; font-size: 0.85rem;">Annuler</button>
@@ -2050,7 +1977,7 @@
                                 <th style="width: 75px;">15.08 (OT)</th>
                                 <th style="width: 75px;">BZ</th>
                                 <th style="width: 75px;">Total</th>
-                                <th style="width: 70px;">Brut</th>
+                                <th style="width: 70px;">Cases</th>
                             </tr>
                         </thead>
                         <tbody id="ocrPreviewTableBody"></tbody>
