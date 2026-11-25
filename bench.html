@@ -1236,28 +1236,95 @@
         }
 
         // =========================================================================
-        // AMÉLIORATION OCR :
-        // - Focus sur les 3 premiers pouces du haut (~28% hauteur d'une page 11")
-        // - Ordre de gauche à droite : Nom Employé -> ID -> Route -> Date
+        // AMÉLIORATION OCR SPÉCIAL MANUSCRIT DANS ENCADRÉ :
+        // - Suppression des bordures de cases (lignes horizontales/verticales)
+        // - Épaississement des traits manuscrits (dilatation)
+        // - Focus 3 premiers pouces du haut : Nom -> ID -> Route -> Date
         // - Carré en haut à droite : 1er = BZ, 2e = OT (15.08)
-        // - Règle 3 chiffres : insertion d'un point après le 1er chiffre (ex: 125 -> 1.25)
+        // - Règle 3 chiffres : insertion d'un point après le 1er chiffre (125 -> 1.25)
+        // - Recherche floue (Levenshtein) pour corriger les fautes d'OCR manuscrit
         // =========================================================================
 
-        function preprocessCanvasForOcr(canvas) {
+        function preprocessHandwritingInBox(canvas) {
+            const w = canvas.width;
+            const h = canvas.height;
             const ctx = canvas.getContext('2d');
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const imgData = ctx.getImageData(0, 0, w, h);
             const data = imgData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                const contrasted = gray > 180 ? 255 : (gray < 110 ? 0 : gray);
-                data[i] = data[i + 1] = data[i + 2] = contrasted;
+
+            // 1. Binarisation (1 = encre noire, 0 = fond blanc)
+            const bin = new Uint8Array(w * h);
+            for (let i = 0; i < w * h; i++) {
+                const idx = i * 4;
+                const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+                bin[i] = gray < 165 ? 1 : 0;
+            }
+
+            // 2. Suppression des lignes d'encadré (traits continus > 45% de la largeur ou > 55% de la hauteur)
+            const clean = new Uint8Array(bin);
+            const minHorizRun = Math.floor(w * 0.45);
+            for (let y = 0; y < h; y++) {
+                let run = 0;
+                for (let x = 0; x <= w; x++) {
+                    if (x < w && bin[y * w + x] === 1) {
+                        run++;
+                    } else {
+                        if (run >= minHorizRun) {
+                            for (let rx = x - run; rx < x; rx++) {
+                                for (let dy = -2; dy <= 2; dy++) {
+                                    const ny = y + dy;
+                                    if (ny >= 0 && ny < h) clean[ny * w + rx] = 0;
+                                }
+                            }
+                        }
+                        run = 0;
+                    }
+                }
+            }
+
+            const minVertRun = Math.floor(h * 0.55);
+            for (let x = 0; x < w; x++) {
+                let run = 0;
+                for (let y = 0; y <= h; y++) {
+                    if (y < h && bin[y * w + x] === 1) {
+                        run++;
+                    } else {
+                        if (run >= minVertRun) {
+                            for (let ry = y - run; ry < y; ry++) {
+                                for (let dx = -2; dx <= 2; dx++) {
+                                    const nx = x + dx;
+                                    if (nx >= 0 && nx < w) clean[ry * w + nx] = 0;
+                                }
+                            }
+                        }
+                        run = 0;
+                    }
+                }
+            }
+
+            // 3. Dilatation légère (3x3) pour relier et épaissir les traits manuscrits fins
+            const dilated = new Uint8Array(clean);
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    if (clean[y * w + x] === 1) {
+                        dilated[y * w + (x + 1)] = 1;
+                        dilated[(y + 1) * w + x] = 1;
+                    }
+                }
+            }
+
+            // 4. Réécriture sur le canvas (noir pur sur blanc pur)
+            for (let i = 0; i < w * h; i++) {
+                const val = dilated[i] === 1 ? 0 : 255;
+                const idx = i * 4;
+                data[idx] = data[idx + 1] = data[idx + 2] = val;
+                data[idx + 3] = 255;
             }
             ctx.putImageData(imgData, 0, 0);
             return canvas;
         }
 
-        // Découpe une sous-zone proportionnelle d'un canvas et applique un zoom + contraste
-        function cropSubRegion(sourceCanvas, xRatio, yRatio, wRatio, hRatio, zoom = 1.4) {
+        function cropSubRegion(sourceCanvas, xRatio, yRatio, wRatio, hRatio, zoom = 1.6) {
             const cropCanvas = document.createElement('canvas');
             const cropCtx = cropCanvas.getContext('2d');
 
@@ -1272,12 +1339,12 @@
             cropCtx.imageSmoothingEnabled = true;
             cropCtx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, cropCanvas.width, cropCanvas.height);
 
-            return preprocessCanvasForOcr(cropCanvas);
+            return preprocessHandwritingInBox(cropCanvas);
         }
 
         async function renderPdfPageToCanvas(pdfDoc, pageNum) {
             const page = await pdfDoc.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 2.8 });
+            const viewport = page.getViewport({ scale: 3.0 }); // Haute définition pour le manuscrit
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = viewport.width;
@@ -1303,19 +1370,16 @@
         }
 
         // Convertit une valeur lue par OCR en heure décimale :
-        // Règle spécifique : si 3 chiffres consécutifs sans séparateur (ex: "125" ou "050"),
-        // on insère un point après le 1er chiffre -> "1.25" ou "0.50".
+        // Règle des 3 chiffres : insertion d'un point après le 1er chiffre (ex: 125 -> 1.25)
         function parseHeureOcr(valStr) {
             if (!valStr) return 0;
             let s = String(valStr).trim().replace(',', '.');
 
-            // Format HH:MM
             if (s.includes(':')) {
                 const [h, m] = s.split(':').map(Number);
                 return parseFloat(((h || 0) + ((m || 0) / 60)).toFixed(2));
             }
 
-            // Règle des 3 chiffres (ex: 125 -> 1.25, 075 -> 0.75)
             if (/^\d{3}$/.test(s)) {
                 s = s[0] + '.' + s.slice(1);
             }
@@ -1324,18 +1388,17 @@
             return isNaN(num) ? 0 : parseFloat(num.toFixed(2));
         }
 
-        // Extraction du carré en haut à droite (dans les 3 premiers pouces) :
-        // 1er nombre = BZ | 2ème nombre = OT (15.08)
         function extraireHeuresCarreHautDroite(texteCarre) {
             if (!texteCarre) return { heureBz: 0, heure1508: 0 };
 
             const nettoye = texteCarre
-                .replace(/[oO]/g, '0')
-                .replace(/[iIl|]/g, '1')
+                .replace(/[oOqQdD]/g, '0')
+                .replace(/[iIl|!]/g, '1')
+                .replace(/[zZ]/g, '2')
                 .replace(/[sS]/g, '5')
+                .replace(/[gG]/g, '6')
                 .replace(/[bB]/g, '8');
 
-            // Capture les nombres décimaux (1.25, 0,50), HH:MM (1:15), 3 chiffres (125 -> 1.25) ou 1-2 chiffres (1, 2)
             const matches = nettoye.match(/\d+(?:[\.,:]\d{1,2})?/g) || [];
 
             const valeurs = matches
@@ -1348,24 +1411,24 @@
             return { heureBz, heure1508 };
         }
 
-        // Normalise une date trouvée dans le haut de la feuille vers YYYY-MM-DD
         function normaliserDateOcr(texte, dateFallback) {
             if (!texte) return dateFallback;
 
-            // Format YYYY-MM-DD ou YYYY/MM/DD
-            let m = texte.match(/\b(20\d{2})[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](0?[1-9]|[12]\d|3[01])\b/);
+            const nettoye = texte
+                .replace(/[oO]/g, '0')
+                .replace(/[iIl]/g, '1');
+
+            let m = nettoye.match(/\b(20\d{2})[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](0?[1-9]|[12]\d|3[01])\b/);
             if (m) {
                 return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
             }
 
-            // Format DD/MM/YYYY ou DD-MM-YYYY
-            m = texte.match(/\b(0?[1-9]|[12]\d|3[01])[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](20\d{2})\b/);
+            m = nettoye.match(/\b(0?[1-9]|[12]\d|3[01])[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](20\d{2})\b/);
             if (m) {
                 return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
             }
 
-            // Format DD/MM/YY ou DD-MM-YY
-            m = texte.match(/\b(0?[1-9]|[12]\d|3[01])[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](\d{2})\b/);
+            m = nettoye.match(/\b(0?[1-9]|[12]\d|3[01])[\-\/\.](0?[1-9]|1[0-2])[\-\/\.](\d{2})\b/);
             if (m) {
                 return `20${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
             }
@@ -1373,58 +1436,136 @@
             return dateFallback;
         }
 
-        function rechercherEmployeParTexteOcr(texteOcr) {
-            if (!texteOcr || listeEmployesMemoire.length === 0) return null;
-            const texteNorm = texteOcr.toLowerCase();
-            for (const emp of listeEmployesMemoire) {
-                const nom = (emp.nom || '').trim().toLowerCase();
-                const prenom = (emp.prenom || '').trim().toLowerCase();
-                if (nom.length >= 3 && prenom.length >= 2) {
-                    if (texteNorm.includes(nom) && texteNorm.includes(prenom)) {
-                        return emp;
-                    }
+        // Calcul de distance de Levenshtein pour tolérer les approximations d'écriture manuscrite
+        function levenshteinDistance(a, b) {
+            const m = a.length, n = b.length;
+            if (m === 0) return n;
+            if (n === 0) return m;
+            const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+            for (let i = 0; i <= m; i++) dp[i][0] = i;
+            for (let j = 0; j <= n; j++) dp[0][j] = j;
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
                 }
             }
-            return null;
+            return dp[m][n];
         }
 
-        // Analyse structurée du bandeau supérieur (3 premiers pouces) de gauche à droite :
-        // 1. Gauche : Nom employé + ID
-        // 2. Centre : Route + Date
-        function extraireBandeauHautGaucheCentre(texteGauche, texteCentre, dateFallback) {
+        function normaliserChaineAlpha(str) {
+            return String(str || '')
+                .toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/0/g, 'o')
+                .replace(/1/g, 'l')
+                .replace(/5/g, 's')
+                .replace(/[^a-z\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function rechercherEmployeManuscrit(texteGauche, idExtrait) {
+            if (listeEmployesMemoire.length === 0) return null;
+
+            // 1. Correspondance exacte sur l'ID
+            if (idExtrait) {
+                const exactId = listeEmployesMemoire.find(emp =>
+                    String(emp.idEmploye ?? emp.id ?? '').toLowerCase() === idExtrait.toLowerCase()
+                );
+                if (exactId) return exactId;
+            }
+
+            // 2. Correspondance par nom/prénom exacts ou approchés dans le texte manuscrit
+            const texteNorm = normaliserChaineAlpha(texteGauche);
+            const motsOcr = texteNorm.split(' ').filter(w => w.length >= 3);
+
+            let meilleurEmploye = null;
+            let meilleurScore = 0;
+
+            for (const emp of listeEmployesMemoire) {
+                const nomNorm = normaliserChaineAlpha(emp.nom);
+                const prenomNorm = normaliserChaineAlpha(emp.prenom);
+                let score = 0;
+
+                if (nomNorm.length >= 3) {
+                    if (texteNorm.includes(nomNorm)) {
+                        score += 3;
+                    } else {
+                        for (const mot of motsOcr) {
+                            const maxErr = nomNorm.length >= 6 ? 2 : 1;
+                            if (levenshteinDistance(mot, nomNorm) <= maxErr) {
+                                score += 2;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (prenomNorm.length >= 3) {
+                    if (texteNorm.includes(prenomNorm)) {
+                        score += 2;
+                    } else {
+                        for (const mot of motsOcr) {
+                            const maxErr = prenomNorm.length >= 6 ? 2 : 1;
+                            if (levenshteinDistance(mot, prenomNorm) <= maxErr) {
+                                score += 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Bonus si l'ID manuscrit est proche à 1 chiffre près
+                const empId = String(emp.idEmploye ?? emp.id ?? '');
+                if (idExtrait && empId && idExtrait.length === empId.length && levenshteinDistance(idExtrait, empId) === 1) {
+                    score += 3;
+                }
+
+                if (score > meilleurScore) {
+                    meilleurScore = score;
+                    meilleurEmploye = emp;
+                }
+            }
+
+            return meilleurScore >= 2 ? meilleurEmploye : null;
+        }
+
+        // Extraction du bandeau supérieur manuscrit dans un encadré (3 premiers pouces du haut)
+        // Ordre de gauche à droite : Nom employé -> ID -> Route -> Date
+        function extraireBandeauHautManuscrit(texteGauche, texteCentre, dateFallback) {
             let idEmploye = "";
             let nomEmploye = "";
-            let empTrouve = null;
 
             // --- 1. ZONE GAUCHE : Nom employé puis ID ---
-            // Recherche d'abord dans la liste Firestore via le texte de gauche
-            empTrouve = rechercherEmployeParTexteOcr(texteGauche);
+            const gaucheChiffres = texteGauche
+                .replace(/[oO]/g, '0')
+                .replace(/[iIl]/g, '1')
+                .replace(/[sS]/g, '5')
+                .replace(/[bB]/g, '8');
 
-            // Recherche de l'ID (avec étiquette ou suite de 5 à 8 chiffres)
-            const matchIdLabel = texteGauche.match(/(?:id|matricule|emp|badge|no\.?)\s*[:\-]?\s*([0-9a-zA-Z]{4,8})/i);
+            const matchIdLabel = gaucheChiffres.match(/(?:id|matricule|emp|badge|no\.?)\s*[:\-]?\s*(\d{4,8})/i);
             if (matchIdLabel) {
                 idEmploye = matchIdLabel[1];
             } else {
-                const matchIdDigits = texteGauche.match(/\b(\d{5,8})\b/);
+                const matchIdDigits = gaucheChiffres.match(/\b(\d{5,8})\b/);
                 if (matchIdDigits) idEmploye = matchIdDigits[1];
             }
 
-            if (!empTrouve && idEmploye) {
-                empTrouve = listeEmployesMemoire.find(emp =>
-                    String(emp.idEmploye ?? emp.id ?? '').toLowerCase() === idEmploye.toLowerCase()
-                );
-            }
+            const empTrouve = rechercherEmployeManuscrit(texteGauche, idEmploye);
 
             if (empTrouve) {
                 nomEmploye = `${empTrouve.nom || ''} ${empTrouve.prenom || ''}`.trim();
-                if (!idEmploye) {
-                    idEmploye = String(empTrouve.idEmploye ?? empTrouve.id ?? '').trim();
-                }
+                const idBase = String(empTrouve.idEmploye ?? empTrouve.id ?? '').trim();
+                if (idBase) idEmploye = idBase;
             } else {
-                // Si non trouvé dans Firestore, essayer d'extraire une ligne de nom propre (lettres uniquement) à gauche
-                const lignesGauche = texteGauche.split('\n').map(l => l.trim()).filter(l => l.length >= 4);
+                const lignesGauche = texteGauche
+                    .split('\n')
+                    .map(l => l.replace(/[^A-Za-zÀ-ÿ\s\-']/g, '').trim())
+                    .filter(l => l.length >= 4);
+
                 for (const ligne of lignesGauche) {
-                    if (/^[A-Za-zÀ-ÿ\s\-']{4,35}$/.test(ligne) && !/^(nom|employ[ée]|id|route|date|postes)/i.test(ligne)) {
+                    if (!/^(nom|employ[ée]|id|route|date|postes|signature)/i.test(ligne)) {
                         nomEmploye = ligne;
                         break;
                     }
@@ -1433,12 +1574,17 @@
 
             // --- 2. ZONE CENTRE : Route puis Date ---
             let route = "";
+            const centreNettoye = texteCentre
+                .replace(/[oO]/g, '0')
+                .replace(/[iIl]/g, '1');
+
             const matchRouteLabel = texteCentre.match(/(?:route|rte|rt|itin[ée]raire|#)\s*[:\-]?\s*(ach\d+|fa\d+|\d{1,3})/i);
             if (matchRouteLabel) {
                 route = matchRouteLabel[1].toUpperCase();
             } else {
-                // Cherche un code Ach/FA ou un numéro de route valide (1 à 3 chiffres qui n'est pas une année 202x)
-                const tokensCentre = texteCentre.match(/\b(ach\d+|fa\d+|\d{1,3})\b/gi) || [];
+                // On retire d'abord les dates pour ne pas confondre le jour/mois avec la route
+                const sansDates = centreNettoye.replace(/\b\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4}\b/g, ' ');
+                const tokensCentre = sansDates.match(/\b(ach\d+|fa\d+|\d{1,3})\b/gi) || [];
                 for (const tok of tokensCentre) {
                     const num = parseInt(tok.replace(/\D/g, ''), 10);
                     if (tok.toLowerCase().startsWith('ach') || tok.toLowerCase().startsWith('fa') || (num >= 1 && num <= 350)) {
@@ -1504,9 +1650,15 @@
                 }
 
                 const totalPages = pagesAAnalyser.length;
-                progText.textContent = `Initialisation des moteurs OCR sur les 3 premiers pouces...`;
+                progText.textContent = `Initialisation des moteurs OCR manuscrit (3 premiers pouces)...`;
 
-                const workerTexte = await Tesseract.createWorker('fra+eng');
+                // Worker configuré pour texte manuscrit épars dans des cases (SPARSE_TEXT)
+                const workerManuscrit = await Tesseract.createWorker('fra+eng');
+                await workerManuscrit.setParameters({
+                    tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT
+                });
+
+                // Worker dédié uniquement aux chiffres du carré haut-droite
                 const workerCarre = await Tesseract.createWorker('eng');
                 await workerCarre.setParameters({
                     tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
@@ -1521,22 +1673,21 @@
                     const indexHumain = i + 1;
                     const pct = Math.round((indexHumain / totalPages) * 100);
 
-                    progText.textContent = `Analyse OCR (3 pouces supérieurs) : feuille ${indexHumain} sur ${totalPages}...`;
+                    progText.textContent = `OCR Manuscrit (encadré haut) : feuille ${indexHumain} sur ${totalPages}...`;
                     progPercent.textContent = `${pct}%`;
                     progBar.style.width = `${pct}%`;
 
                     try {
-                        // Découpage des 3 zones du bandeau supérieur (3 pouces du haut) de gauche à droite :
-                        // 1. Gauche (0% -> 42%) : Nom employé + ID
-                        const canvasGauche = cropSubRegion(item.canvas, 0.0, 0.0, 0.42, TOP_3_INCHES_RATIO, 1.3);
-                        // 2. Centre (35% -> 68%) : Route + Date (léger chevauchement pour ne rien couper)
-                        const canvasCentre = cropSubRegion(item.canvas, 0.35, 0.0, 0.33, TOP_3_INCHES_RATIO, 1.4);
+                        // 1. Gauche (0% -> 42%) : Nom employé + ID (manuscrits dans encadré)
+                        const canvasGauche = cropSubRegion(item.canvas, 0.0, 0.0, 0.42, TOP_3_INCHES_RATIO, 1.5);
+                        // 2. Centre (34% -> 68%) : Route + Date (manuscrits dans encadré)
+                        const canvasCentre = cropSubRegion(item.canvas, 0.34, 0.0, 0.34, TOP_3_INCHES_RATIO, 1.6);
                         // 3. Droite (62% -> 100%) : Carré haut-droite (1er = BZ, 2e = OT 15.08)
-                        const canvasDroite = cropSubRegion(item.canvas, 0.62, 0.0, 0.38, TOP_3_INCHES_RATIO, 1.6);
+                        const canvasDroite = cropSubRegion(item.canvas, 0.62, 0.0, 0.38, TOP_3_INCHES_RATIO, 1.7);
 
                         const [retGauche, retCentre, retDroite] = await Promise.all([
-                            workerTexte.recognize(canvasGauche),
-                            workerTexte.recognize(canvasCentre),
+                            workerManuscrit.recognize(canvasGauche),
+                            workerManuscrit.recognize(canvasCentre),
                             workerCarre.recognize(canvasDroite)
                         ]);
 
@@ -1545,7 +1696,7 @@
                         const texteDroite = retDroite.data.text || "";
 
                         const { heureBz, heure1508 } = extraireHeuresCarreHautDroite(texteDroite);
-                        const infosHaut = extraireBandeauHautGaucheCentre(texteGauche, texteCentre, dateSelectionnee);
+                        const infosHaut = extraireBandeauHautManuscrit(texteGauche, texteCentre, dateSelectionnee);
 
                         let nomFinal = infosHaut.nom;
                         let idFinal = infosHaut.id;
@@ -1578,8 +1729,8 @@
                             heure1508: heure1508,
                             heureBz: heureBz,
                             rawText:
-                                `[1. Gauche - Nom & ID] :\n${texteGauche.trim()}\n\n` +
-                                `[2. Centre - Route & Date] :\n${texteCentre.trim()}\n\n` +
+                                `[1. Gauche Encadré - Nom & ID] :\n${texteGauche.trim()}\n\n` +
+                                `[2. Centre Encadré - Route & Date] :\n${texteCentre.trim()}\n\n` +
                                 `[3. Droite - Carré BZ (1er) & OT 15.08 (2e)] :\n${texteDroite.trim()}`
                         });
 
@@ -1589,7 +1740,7 @@
                 }
 
                 await workerCarre.terminate();
-                await workerTexte.terminate();
+                await workerManuscrit.terminate();
 
                 const nbDetectes = ocrPreviewItems.filter(x => x.selected).length;
                 progText.textContent = `✅ Analyse terminée : ${nbDetectes} feuille(s) avec heures détectée(s) sur ${totalPages}. Vérifiez le tableau ci-dessous avant de valider.`;
@@ -1691,7 +1842,7 @@
         };
 
         window.voirTexteBrutOcr = function(idx) {
-            alert("Zones analysées (3 premiers pouces du haut) - " + ocrPreviewItems[idx].sourceLabel + " :\n\n" + (ocrPreviewItems[idx].rawText || "(Vide)"));
+            alert("Zones manuscrites analysées (3 premiers pouces du haut) - " + ocrPreviewItems[idx].sourceLabel + " :\n\n" + (ocrPreviewItems[idx].rawText || "(Vide)"));
         };
 
         function updateOcrPreviewCounter() {
@@ -1845,13 +1996,13 @@
     <div class="form-section">
         <div id="firebaseStatus" class="status-msg" style="margin-bottom: 12px;">Connexion à Firebase en cours...</div>
         
-        <!-- Zone d'injection de fichier multi-pages avec OCR ciblé sur les 3 premiers pouces -->
+        <!-- Zone d'injection de fichier multi-pages avec OCR manuscrit sur les 3 premiers pouces -->
         <div style="margin-bottom: 18px; padding: 15px; background: #e0f2fe; border-radius: 8px; border: 1px solid #0284c7;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Ciblé (3 premiers pouces du haut)</strong>
+                    <strong style="color: #1e3a8a; font-size: 0.95rem;">📚 Importation par lot avec OCR Manuscrit & Encadré (3 premiers pouces du haut)</strong>
                     <p style="font-size: 0.8rem; color: #334155; margin-top: 2px;">
-                        Lit de gauche à droite : <strong>Nom</strong>, <strong>ID</strong>, <strong>Route</strong>, <strong>Date</strong>, puis le carré haut-droite (1er = <strong>BZ</strong>, 2e = <strong>OT 15.08</strong> ; 3 chiffres convertis ex: <code>125</code> &rarr; <code>1.25</code>).
+                        Efface les lignes d'encadré, lit de gauche à droite : <strong>Nom</strong>, <strong>ID</strong>, <strong>Route</strong>, <strong>Date</strong>, puis le carré haut-droite (1er = <strong>BZ</strong>, 2e = <strong>OT 15.08</strong> ; 3 chiffres convertis ex: <code>125</code> &rarr; <code>1.25</code>).
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
