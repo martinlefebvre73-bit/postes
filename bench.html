@@ -307,7 +307,7 @@
     <!-- Firebase SDKs & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -326,11 +326,19 @@
         let listeEmployesMemoire = [];
         let editingIndex = null;
         let editingFirebaseId = null; 
-        let entries = JSON.parse(localStorage.getItem('cams_entries')) || [];
+        let entries = [];
         let isManualEntry = false;
 
         const urlParams = new URLSearchParams(window.location.search);
         const isBookerMode = urlParams.get('mode') === 'booker';
+
+        function getDateHier() {
+            const hier = new Date();
+            hier.setDate(hier.getDate() - 1);
+            const offset = hier.getTimezoneOffset();
+            const hierLocal = new Date(hier.getTime() - (offset * 60 * 1000));
+            return hierLocal.toISOString().split('T')[0];
+        }
 
         function setFirebaseStatusUI(status, text) {
             const dot = document.getElementById('indicatorDot');
@@ -369,12 +377,11 @@
             return { benchmark, equiv8h, benchmarkPaye };
         }
 
-        function saveAndRender() {
+        function recalculateAndRender() {
             entries = entries.map(e => {
                 const calc = calculateBenchmark(e.route, e.heure1508, e.heureBz, e.heure1704);
                 return { ...e, benchmark: calc.benchmark, equiv8h: calc.equiv8h, benchmarkPaye: calc.benchmarkPaye };
             });
-            localStorage.setItem('cams_entries', JSON.stringify(entries));
             renderTable();
             updateStatsSummary();
         }
@@ -399,14 +406,28 @@
                 setFirebaseStatusUI('connected', 'Connecté à Firebase');
                 await initialiserDonnees();
             } else {
-                document.getElementById('firebaseStatus').textContent = `Mode invité / Non authentifié. Tentative de chargement...`;
+                document.getElementById('firebaseStatus').textContent = `Mode invité / Non authentifié. Chargement des données...`;
                 setFirebaseStatusUI('connected', 'Connecté (Mode Invité)');
                 await initialiserDonnees();
             }
         });
 
+        async function chargerEntriesDepuisFirebase(dateCible) {
+            const q = query(collection(db, "bench"), where("date", "==", dateCible));
+            const querySnapshot = await getDocs(q);
+            const fetched = [];
+            querySnapshot.forEach((docSnap) => {
+                fetched.push({ firebaseId: docSnap.id, ...docSnap.data() });
+            });
+            entries = fetched;
+            recalculateAndRender();
+            document.getElementById('firebaseStatus').textContent = `${entries.length} saisie(s) chargée(s) depuis la collection 'bench' pour le ${dateCible}.`;
+            document.getElementById('firebaseStatus').style.color = "#059669";
+        }
+
         async function initialiserDonnees() {
-            document.getElementById('dateInput').valueAsDate = new Date();
+            const dateParDefaut = getDateHier();
+            document.getElementById('dateInput').value = dateParDefaut;
 
             if (isBookerMode) {
                 const syntheseBtn = document.getElementById('syntheseBtn');
@@ -432,18 +453,20 @@
 
             try {
                 await Promise.race([
-                    chargerEmployes(),
+                    Promise.all([
+                        chargerEmployes(),
+                        chargerEntriesDepuisFirebase(dateParDefaut)
+                    ]),
                     new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Firebase")), 15000))
                 ]);
             } catch (err) {
-                console.warn("Délai de connexion Firebase dépassé ou hors ligne. Utilisation du mode local.", err);
-                document.getElementById('firebaseStatus').textContent = "⚠️ Hors ligne / Délai dépassé. Mode local activé.";
-                document.getElementById('firebaseStatus').style.color = "#d97706";
-                setFirebaseStatusUI('offline', 'Hors ligne (Mode Local)');
+                console.error("Erreur ou délai de connexion Firebase dépassé :", err);
+                document.getElementById('firebaseStatus').textContent = "⚠️ Erreur de connexion à Firebase. Vérifiez votre réseau.";
+                document.getElementById('firebaseStatus').style.color = "#dc2626";
+                setFirebaseStatusUI('offline', 'Erreur de connexion');
                 renderNomField();
+                recalculateAndRender();
             }
-
-            saveAndRender();
         }
 
         window.chargerEmployes = async () => {
@@ -703,6 +726,9 @@
 
         window.addEntry = async function(event) {
             event.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+
             const date = document.getElementById('dateInput').value;
             const module = document.getElementById('moduleSelect').value;
             const route = document.getElementById('routeInput').value;
@@ -728,49 +754,41 @@
                 createdAt: new Date().toISOString() 
             };
 
-            if (editingFirebaseId) {
-                newEntry.firebaseId = editingFirebaseId;
-            }
-
-            if (editingIndex !== null) {
-                entries[editingIndex] = newEntry;
-                editingIndex = null;
-            }
-
-            if (editingFirebaseId) {
-                try {
+            try {
+                if (editingIndex !== null && editingFirebaseId) {
                     const docRef = doc(db, "bench", editingFirebaseId);
                     await setDoc(docRef, newEntry, { merge: true });
-                    document.getElementById('firebaseStatus').textContent = "Saisie modifiée et mise à jour dans Firebase.";
+                    newEntry.firebaseId = editingFirebaseId;
+                    entries[editingIndex] = newEntry;
+                    document.getElementById('firebaseStatus').textContent = "Saisie modifiée et mise à jour dans la collection 'bench'.";
                     document.getElementById('firebaseStatus').style.color = "#059669";
-                } catch (err) {
-                    console.error("Erreur mise à jour Firebase:", err);
-                }
-                editingFirebaseId = null;
-            } else if (editingIndex === null) {
-                try {
+                    editingIndex = null;
+                    editingFirebaseId = null;
+                } else {
                     const docRef = await addDoc(collection(db, "bench"), newEntry);
                     newEntry.firebaseId = docRef.id;
                     entries.push(newEntry);
-                    document.getElementById('firebaseStatus').textContent = "Saisie enregistrée et synchronisée dans Firebase.";
+                    document.getElementById('firebaseStatus').textContent = "Saisie enregistrée dans la collection 'bench'.";
                     document.getElementById('firebaseStatus').style.color = "#059669";
-                } catch (err) {
-                    console.error("Erreur sauvegarde Firebase:", err);
-                    entries.push(newEntry);
-                    document.getElementById('firebaseStatus').textContent = "Sauvegarde locale réussie (Hors ligne).";
-                    document.getElementById('firebaseStatus').style.color = "#d97706";
                 }
+
+                submitBtn.textContent = "Ajouter";
+                submitBtn.style.background = "var(--primary)";
+
+                recalculateAndRender();
+                document.getElementById('entryForm').reset();
+                document.getElementById('externalCheckboxesGroup').style.display = 'none';
+                document.getElementById('dateInput').value = getDateHier();
+                updateRoutesListForModule();
+                if(isManualEntry) toggleManualEntry();
+            } catch (err) {
+                console.error("Erreur lors de l'enregistrement dans Firestore ('bench'):", err);
+                document.getElementById('firebaseStatus').textContent = "❌ Erreur lors de l'enregistrement dans la collection 'bench'.";
+                document.getElementById('firebaseStatus').style.color = "#dc2626";
+                alert("Erreur lors de l'enregistrement dans Firebase : " + err.message);
+            } finally {
+                submitBtn.disabled = false;
             }
-
-            document.getElementById('submitBtn').textContent = "Ajouter";
-            document.getElementById('submitBtn').style.background = "var(--primary)";
-
-            saveAndRender();
-            document.getElementById('entryForm').reset();
-            document.getElementById('externalCheckboxesGroup').style.display = 'none';
-            document.getElementById('dateInput').valueAsDate = new Date();
-            updateRoutesListForModule();
-            if(isManualEntry) toggleManualEntry();
         }
 
         window.editEntry = function(index) {
@@ -819,10 +837,24 @@
         window.deleteEntry = async function(index) {
             const item = entries[index];
 
+            if (item && item.firebaseId) {
+                try {
+                    await deleteDoc(doc(db, "bench", item.firebaseId));
+                    document.getElementById('firebaseStatus').textContent = "Fiche supprimée de la collection 'bench'.";
+                    document.getElementById('firebaseStatus').style.color = "#059669";
+                } catch (err) {
+                    console.error("Erreur lors de la suppression dans Firebase :", err);
+                    document.getElementById('firebaseStatus').textContent = "❌ Erreur de suppression dans la collection 'bench'.";
+                    document.getElementById('firebaseStatus').style.color = "#dc2626";
+                    alert("Impossible de supprimer la fiche dans Firebase : " + err.message);
+                    return;
+                }
+            }
+
             if (editingIndex === index) {
                 document.getElementById('entryForm').reset();
                 document.getElementById('externalCheckboxesGroup').style.display = 'none';
-                document.getElementById('dateInput').valueAsDate = new Date();
+                document.getElementById('dateInput').value = getDateHier();
                 document.getElementById('submitBtn').textContent = "Ajouter";
                 document.getElementById('submitBtn').style.background = "var(--primary)";
                 editingIndex = null;
@@ -831,20 +863,8 @@
                 if(isManualEntry) toggleManualEntry();
             }
 
-            if (item && item.firebaseId) {
-                try {
-                    await deleteDoc(doc(db, "bench", item.firebaseId));
-                    document.getElementById('firebaseStatus').textContent = "Fiche supprimée de Firebase et de l'affichage.";
-                    document.getElementById('firebaseStatus').style.color = "#059669";
-                } catch (err) {
-                    console.error("Erreur lors de la suppression dans Firebase :", err);
-                    document.getElementById('firebaseStatus').textContent = "Erreur de suppression dans Firebase (supprimé localement).";
-                    document.getElementById('firebaseStatus').style.color = "#dc2626";
-                }
-            }
-
             entries.splice(index, 1);
-            saveAndRender();
+            recalculateAndRender();
         }
 
         function renderTable() {
@@ -904,7 +924,7 @@
 
         window.openRecupererModal = function() {
             document.getElementById('recupererModal').style.display = 'block';
-            document.getElementById('fRecupDate').valueAsDate = new Date();
+            document.getElementById('fRecupDate').value = getDateHier();
         }
 
         window.closeRecupererModal = function() {
@@ -918,24 +938,11 @@
                 return;
             }
 
-            document.getElementById('firebaseStatus').textContent = `Chargement des données pour la date ${fDate} depuis Firebase...`;
+            document.getElementById('firebaseStatus').textContent = `Chargement des données pour la date ${fDate} depuis la collection 'bench'...`;
             
             try {
-                const querySnapshot = await getDocs(collection(db, "bench"));
-                let fetchedEntries = [];
-                querySnapshot.forEach((docSnap) => {
-                    let data = docSnap.data();
-                    if (data.date === fDate) {
-                        fetchedEntries.push({ firebaseId: docSnap.id, ...data });
-                    }
-                });
-
                 closeRecupererModal();
-                entries = fetchedEntries;
-                saveAndRender();
-
-                document.getElementById('firebaseStatus').textContent = `${entries.length} saisie(s) chargée(s) pour la date du ${fDate}.`;
-                document.getElementById('firebaseStatus').style.color = "#059669";
+                await chargerEntriesDepuisFirebase(fDate);
             } catch (err) {
                 console.error("Erreur de récupération Firebase:", err);
                 document.getElementById('firebaseStatus').textContent = "Erreur de chargement depuis Firebase.";
@@ -991,14 +998,41 @@
             document.getElementById('reportModal').style.display = 'none';
         }
 
-        window.runReport = function() {
+        window.runReport = async function() {
             const fModule = document.getElementById('filterModule').value.toLowerCase();
             const fRoute = document.getElementById('filterRoute').value.toLowerCase().trim();
             const fNom = document.getElementById('filterNom').value.toLowerCase().trim();
             const fId = document.getElementById('filterId').value.toLowerCase().trim();
             const fDate = document.getElementById('filterDate').value;
 
-            const filtered = entries.filter(item => {
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; color: #64748b;">Chargement depuis la collection 'bench'...</td></tr>`;
+
+            let sourceData = entries;
+
+            // Si un filtre est appliqué, on interroge toute la collection 'bench' pour un rapport complet
+            if (fModule || fRoute || fNom || fId || fDate) {
+                try {
+                    const querySnapshot = await getDocs(collection(db, "bench"));
+                    const allBench = [];
+                    querySnapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        const calc = calculateBenchmark(data.route, data.heure1508 || 0, data.heureBz || 0, data.heure1704 || 0);
+                        allBench.push({
+                            firebaseId: docSnap.id,
+                            ...data,
+                            benchmark: calc.benchmark,
+                            equiv8h: calc.equiv8h,
+                            benchmarkPaye: calc.benchmarkPaye
+                        });
+                    });
+                    sourceData = allBench;
+                } catch (err) {
+                    console.error("Erreur de chargement du rapport depuis Firebase:", err);
+                }
+            }
+
+            const filtered = sourceData.filter(item => {
                 const matchModule = !fModule || (item.module && item.module.toLowerCase() === fModule);
                 const matchRoute = !fRoute || (item.route && item.route.toLowerCase().includes(fRoute));
                 const matchNom = !fNom || (item.nom && item.nom.toLowerCase().includes(fNom));
@@ -1007,7 +1041,6 @@
                 return matchModule && matchRoute && matchNom && matchId && matchDate;
             });
 
-            const tbody = document.getElementById('reportTableBody');
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
@@ -1021,7 +1054,7 @@
             let rep1704 = 0, rep1508 = 0, repBz = 0;
 
             filtered.forEach(item => {
-                reportTotal += item.totalHeures;
+                reportTotal += (item.totalHeures || 0);
                 rep1704 += (item.heure1704 || 0);
                 rep1508 += (item.heure1508 || 0);
                 repBz += (item.heureBz || 0);
@@ -1035,10 +1068,10 @@
                     <td>${item.nom}</td>
                     <td>${item.id}</td>
                     <td>${item.anciennete || 'N/A'}</td>
-                    <td style="text-align: right;">${item.heure1704.toFixed(2)} h</td>
-                    <td style="text-align: right;">${item.heure1508.toFixed(2)} h</td>
-                    <td style="text-align: right;">${item.heureBz.toFixed(2)} h</td>
-                    <td style="text-align: right; font-weight: 600;">${item.totalHeures.toFixed(2)} h</td>
+                    <td style="text-align: right;">${(item.heure1704 || 0).toFixed(2)} h</td>
+                    <td style="text-align: right;">${(item.heure1508 || 0).toFixed(2)} h</td>
+                    <td style="text-align: right;">${(item.heureBz || 0).toFixed(2)} h</td>
+                    <td style="text-align: right; font-weight: 600;">${(item.totalHeures || 0).toFixed(2)} h</td>
                     <td style="text-align: right; color: #0369a1;">${(item.benchmark || 8.0).toFixed(2)} h</td>
                     <td style="text-align: right; color: #059669; font-weight: 600;">${(item.equiv8h || 0).toFixed(2)} h</td>
                     <td style="text-align: right; color: #d97706; font-weight: 600;">${(item.benchmarkPaye || 0).toFixed(2)} h</td>
@@ -1073,25 +1106,23 @@
 
         window.runSurveillerFilter = async function() {
             const tbody = document.getElementById('surveillerTableBody');
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Analyse des données et historique...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Analyse des données de la collection 'bench'...</td></tr>`;
 
-            let allEntriesForCheck = [...entries];
+            let allEntriesForCheck = [];
             try {
                 const querySnapshot = await getDocs(collection(db, "bench"));
-                let firebaseAll = [];
                 querySnapshot.forEach((docSnap) => {
-                    firebaseAll.push({ firebaseId: docSnap.id, ...docSnap.data() });
+                    allEntriesForCheck.push({ firebaseId: docSnap.id, ...docSnap.data() });
                 });
-                if (firebaseAll.length > 0) {
-                    allEntriesForCheck = firebaseAll;
-                }
             } catch (err) {
-                console.warn("Impossible de récupérer l'historique complet Firebase, utilisation des données locales.", err);
+                console.error("Erreur lors de la récupération de la collection 'bench':", err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #dc2626;">Erreur de chargement depuis Firebase.</td></tr>`;
+                return;
             }
 
             const alerts = [];
 
-            allEntriesForCheck.forEach((item, index) => {
+            allEntriesForCheck.forEach((item) => {
                 let reasons = [];
                 
                 if ((item.heure1508 || 0) > 1.5) {
@@ -1127,8 +1158,8 @@
                 }
 
                 if (reasons.length > 0) {
-                    if (!alerts.some(a => a.item === item)) {
-                        alerts.push({ item, index, reasons: [...new Set(reasons)].join(', ') });
+                    if (!alerts.some(a => a.item.firebaseId === item.firebaseId)) {
+                        alerts.push({ item, reasons: [...new Set(reasons)].join(', ') });
                     }
                 }
             });
@@ -1143,6 +1174,12 @@
                 const item = alertObj.item;
                 const tr = document.createElement('tr');
                 const modClass = getModuleClass(item.module);
+                const localIndex = entries.findIndex(e => e.firebaseId === item.firebaseId);
+                
+                const actionHtml = localIndex !== -1 
+                    ? `<button class="btn btn-warning" onclick="closeSurveillerModal(); editEntry(${localIndex})">Modifier</button>`
+                    : `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="closeSurveillerModal(); chargerDateEtEditer('${item.date}', '${item.firebaseId}')">Charger & Modifier</button>`;
+
                 tr.innerHTML = `
                     <td>${item.date || 'N/A'}</td>
                     <td><span style="padding: 2px 6px; border-radius: 4px;" class="${modClass}">${item.module || ''}</span></td>
@@ -1150,12 +1187,18 @@
                     <td>${item.nom || ''}</td>
                     <td style="text-align: right; color: #d97706; font-weight: bold;">${(item.heure1508 || 0).toFixed(2)} h</td>
                     <td><span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: 500;">${alertObj.reasons}</span></td>
-                    <td style="text-align: center;">
-                        <button class="btn btn-warning" onclick="closeSurveillerModal(); editEntry(${alertObj.index})">Modifier</button>
-                    </td>
+                    <td style="text-align: center;">${actionHtml}</td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        window.chargerDateEtEditer = async function(dateCible, firebaseId) {
+            await chargerEntriesDepuisFirebase(dateCible);
+            const idx = entries.findIndex(e => e.firebaseId === firebaseId);
+            if (idx !== -1) {
+                editEntry(idx);
+            }
         }
 
         async function renderPdfPageToCanvas(pdfDoc, pageNum) {
@@ -1221,7 +1264,7 @@
             const progBar = document.getElementById('scanProgressBar');
             const progText = document.getElementById('scanProgressText');
             const progPercent = document.getElementById('scanProgressPercent');
-            const dateSelectionnee = document.getElementById('dateInput').value || new Date().toISOString().split('T')[0];
+            const dateSelectionnee = document.getElementById('dateInput').value || getDateHier();
 
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert("Veuillez sélectionner votre fichier PDF multi-pages ou vos images.");
@@ -1328,26 +1371,22 @@
                             createdAt: new Date().toISOString()
                         };
 
-                        try {
-                            const docRef = await addDoc(collection(db, "bench"), newEntry);
-                            newEntry.firebaseId = docRef.id;
-                        } catch (fbErr) {
-                            console.warn(`Sauvegarde locale uniquement pour la page ${indexHumain}`);
-                        }
+                        const docRef = await addDoc(collection(db, "bench"), newEntry);
+                        newEntry.firebaseId = docRef.id;
 
                         entries.push(newEntry);
-                        saveAndRender();
+                        recalculateAndRender();
                         compteurAjouts++;
 
                     } catch (pageErr) {
-                        console.error(`Erreur OCR sur la page ${indexHumain}:`, pageErr);
+                        console.error(`Erreur OCR ou Firestore sur la page ${indexHumain}:`, pageErr);
                     }
                 }
 
                 await worker.terminate();
 
-                progText.textContent = `✅ Terminé : ${compteurAjouts} feuille(s) ajoutée(s), ${compteurIgnorees} feuille(s) à zéro ignorée(s) sur ${totalPages}.`;
-                document.getElementById('firebaseStatus').textContent = `OCR Local terminé : ${compteurAjouts} saisie(s) importée(s) (${compteurIgnorees} feuille(s) à zéro ignorée(s)).`;
+                progText.textContent = `✅ Terminé : ${compteurAjouts} feuille(s) ajoutée(s) dans 'bench', ${compteurIgnorees} feuille(s) à zéro ignorée(s) sur ${totalPages}.`;
+                document.getElementById('firebaseStatus').textContent = `OCR terminé : ${compteurAjouts} saisie(s) enregistrée(s) dans la collection 'bench' (${compteurIgnorees} ignorée(s)).`;
                 document.getElementById('firebaseStatus').style.color = "#059669";
 
             } catch (err) {
@@ -1360,7 +1399,7 @@
 
         window.exportData = function() {
             if (entries.length === 0) {
-                alert("Aucuna donnée à exporter.");
+                alert("Aucune donnée à exporter.");
                 return;
             }
             let csv = "Date,Module,Route,Nom,ID,Anciennete,Employe Externe,Temporaire,Heure 17.04,Heure 15.08,Heure BZ,Total Heures,Benchmark (h),Équivalent 8h,Benchmark Payé\n";
