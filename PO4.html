@@ -555,7 +555,7 @@
         }
         @media print {
             body { background: white !important; padding: 0 !important; margin: 0 !important; }
-            header, .week-bar, .tabs-bar, .status-bar, .dispatch-toolbar, .quick-entry-box, .stats-grid, .veve-toolbar, .no-print {
+            header, .week-bar, .tabs-bar, .status-bar, .dispatch-toolbar, .quick-entry-box:not(.bons-print-section), .stats-grid, .veve-toolbar, .no-print, #bonForm, .bons-action-col {
                 display: none !important;
             }
             .container { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; width: 100% !important; }
@@ -572,21 +572,64 @@
                 padding-bottom: 6px;
                 margin-bottom: 8px;
             }
-            body.print-mode-veve .veve-wrapper {
+            body.print-mode-veve .veve-wrapper,
+            body.print-mode-veve .bons-print-section > div {
                 border: 1.5px solid #1e3a8a !important;
                 border-radius: 0 !important;
                 overflow: visible !important;
                 margin-bottom: 0 !important;
+                width: 100% !important;
             }
             body.print-mode-veve table.veve-table {
-                font-size: 0.74rem !important;
+                font-size: 0.65rem !important;
                 width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed !important;
+                white-space: normal !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
             }
             body.print-mode-veve .veve-table th,
             body.print-mode-veve .veve-table td {
-                padding: 3px 5px !important;
+                padding: 2px 3px !important;
                 border: 1px solid #94a3b8 !important;
+                white-space: normal !important;
+                line-height: 1.15 !important;
             }
+            /* Largeurs proportionnelles des 10 colonnes de la grille VÉVÉ pour tenir sur 8.5po */
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(1),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(1) { width: 9%; }
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(2),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(2) { width: 14%; }
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(3),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(3) { width: 15%; }
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(4),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(4) { width: 21%; }
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(5),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(5),
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(6),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(6),
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(7),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(7),
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(8),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(8),
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(9),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(9) {
+                width: 5.2%;
+                min-width: 0 !important;
+                text-align: center !important;
+            }
+            body.print-mode-veve .veve-wrapper table.veve-table th:nth-child(10),
+            body.print-mode-veve .veve-wrapper table.veve-table td:nth-child(10) { width: 15%; }
+
+            /* Réinitialise les largeurs sur les lignes fusionnées (catégories & totaux RPO) */
+            body.print-mode-veve .veve-wrapper table.veve-table tr.veve-cat-row td,
+            body.print-mode-veve .veve-wrapper table.veve-table tr.veve-rpo-base td:first-child,
+            body.print-mode-veve .veve-wrapper table.veve-table tr.veve-rpo-row td:first-child,
+            body.print-mode-veve .veve-wrapper table.veve-table tr.date-row th:first-child {
+                width: auto !important;
+            }
+
             body.print-mode-veve .day-select,
             body.print-mode-veve .versus-select {
                 appearance: none !important;
@@ -595,8 +638,33 @@
                 border: none !important;
                 background: transparent !important;
                 padding: 0 !important;
-                font-size: 0.74rem !important;
-                min-width: auto !important;
+                font-size: 0.65rem !important;
+                min-width: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            body.print-mode-veve .veve-rpo-row input {
+                width: 100% !important;
+                min-width: 0 !important;
+                font-size: 0.65rem !important;
+                padding: 1px !important;
+                border: none !important;
+                background: transparent !important;
+            }
+
+            body.print-mode-veve .bons-print-section {
+                display: block !important;
+                background: white !important;
+                border: 1.5px solid #1e3a8a !important;
+                border-radius: 0 !important;
+                padding: 6px 8px !important;
+                margin-top: 8px !important;
+                margin-bottom: 0 !important;
+            }
+            body.print-mode-veve .bons-print-section h3 {
+                font-size: 0.82rem !important;
+                margin-bottom: 4px !important;
+                color: #1e3a8a !important;
             }
 
             /* Mode impression Plan Commis Dispatch */
@@ -1098,7 +1166,7 @@
                 dynamicPageStyle.id = 'dynamicPrintPageStyle';
                 document.head.appendChild(dynamicPageStyle);
             }
-            dynamicPageStyle.textContent = `@page { size: 8.5in 14in portrait; margin: 0.35in; }`;
+            dynamicPageStyle.textContent = `@page { size: 8.5in 14in portrait; margin: 0.25in; }`;
 
             document.body.classList.add('print-mode-veve');
             const cleanup = () => {
@@ -1340,7 +1408,7 @@
             tbody.innerHTML = '';
             const bons = weekState.bons || [];
             if (bons.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">Aucun bon enregistré pour cette semaine.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Aucun bon enregistré pour cette semaine.</td><td class="bons-action-col"></td></tr>`;
                 return;
             }
             bons.forEach((b, i) => {
@@ -1351,7 +1419,7 @@
                     <td>${b.raison || '-'}</td>
                     <td>${b.details || '-'}</td>
                     <td><strong>${b.numero || '-'}</strong></td>
-                    <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="supprimerBon(${i})">Suppr.</button></td>
+                    <td class="bons-action-col" style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="supprimerBon(${i})">Suppr.</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1909,7 +1977,7 @@
         </div>
 
         <!-- Registre des Bons (Bas du fichier VÉVÉ) -->
-        <div class="quick-entry-box">
+        <div class="quick-entry-box bons-print-section">
             <h3>🧾 Registre des Bons (Semaine)</h3>
             <form id="bonForm" onsubmit="ajouterBon(event)" class="quick-grid" style="margin-bottom: 12px;">
                 <div class="form-group">
@@ -1945,7 +2013,7 @@
                             <th>Raison</th>
                             <th>Détails</th>
                             <th>Numéro</th>
-                            <th>Action</th>
+                            <th class="bons-action-col">Action</th>
                         </tr>
                     </thead>
                     <tbody id="bonsTableBody"></tbody>
