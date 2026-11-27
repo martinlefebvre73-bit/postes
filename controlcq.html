@@ -17,8 +17,15 @@
                 height: auto !important;
                 background: #ffffff !important;
                 color: #0f172a !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+            }
+            /* Forcer un fond blanc pur partout à l'impression */
+            *,
+            *::before,
+            *::after {
+                background-color: #ffffff !important;
+                background-image: none !important;
+                color: #0f172a !important;
+                box-shadow: none !important;
             }
             /* Masquer les éléments d'interface non pertinents à l'impression */
             .no-print,
@@ -38,9 +45,12 @@
                 display: none !important;
             }
             header {
-                background: #0f172a !important;
-                color: #ffffff !important;
-                padding: 8px 12px !important;
+                border-bottom: 2px solid #0f172a !important;
+                padding: 6px 8px !important;
+            }
+            header .bg-brand-500 {
+                border: 1.5px solid #0f172a !important;
+                font-weight: 800 !important;
             }
             main {
                 max-width: 100% !important;
@@ -48,11 +58,21 @@
                 padding: 8px 0 !important;
                 margin: 0 !important;
             }
-            .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm {
-                box-shadow: none !important;
-            }
             .rounded-2xl, .rounded-xl {
                 border-radius: 6px !important;
+            }
+            /* Bordures nettes sur les conteneurs autrefois colorés */
+            .bg-gradient-to-r {
+                border-bottom: 1.5px solid #cbd5e1 !important;
+                padding: 8px 12px !important;
+            }
+            #form-mode-badge {
+                border: 1px solid #64748b !important;
+            }
+            .bg-orange-500,
+            .bg-rose-300,
+            .bg-blue-600 {
+                border: 1.5px solid #334155 !important;
             }
             #cq-form {
                 padding: 12px !important;
@@ -82,7 +102,6 @@
 
             input, select, textarea {
                 border: 1px solid #94a3b8 !important;
-                background: #ffffff !important;
                 padding: 4px 8px !important;
                 font-size: 12px !important;
             }
@@ -536,7 +555,7 @@
         const COLLECTION_NAME = "acceuilcq";
         const RESTRUCTURATION_COLLECTION = "restructuration";
 
-        // Impression directe sans validation des champs requis (format 8.5 x 14)
+        // Impression directe sans validation des champs requis (format 8.5 x 14 sur fond blanc)
         function imprimerFeuille() {
             window.print();
         }
