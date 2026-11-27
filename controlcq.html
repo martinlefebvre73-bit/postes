@@ -9,10 +9,12 @@
     <style>
         @media print {
             @page {
-                size: letter portrait;
-                margin: 10mm;
+                size: 8.5in 14in portrait;
+                margin: 8mm 10mm;
             }
-            body {
+            html, body {
+                width: 100%;
+                height: auto !important;
                 background: #ffffff !important;
                 color: #0f172a !important;
                 -webkit-print-color-adjust: exact !important;
@@ -42,6 +44,7 @@
             }
             main {
                 max-width: 100% !important;
+                width: 100% !important;
                 padding: 8px 0 !important;
                 margin: 0 !important;
             }
@@ -59,6 +62,24 @@
                 margin-top: 10px !important;
                 padding-top: 10px !important;
             }
+            /* Forcer les grilles horizontales pour optimiser l'espace sur 8.5 x 14 */
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+            .sm\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+            .sm\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+            .md\:grid-cols-12 {
+                grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+            }
+            .md\:col-span-2 { grid-column: span 2 / span 2 !important; }
+            .md\:col-span-3 { grid-column: span 3 / span 3 !important; }
+            .md\:col-span-4 { grid-column: span 4 / span 4 !important; }
+            .md\:col-span-11 { grid-column: span 12 / span 12 !important; }
+
             input, select, textarea {
                 border: 1px solid #94a3b8 !important;
                 background: #ffffff !important;
@@ -90,7 +111,7 @@
                 </div>
             </div>
             <div class="flex items-center space-x-3">
-                <button type="button" id="header-print-btn" class="no-print bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center space-x-1.5 shadow-sm" title="Imprimer la feuille">
+                <button type="button" id="header-print-btn" class="no-print bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center space-x-1.5 shadow-sm" title="Imprimer la feuille (8,5 x 14)">
                     <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     <span>Imprimer</span>
                 </button>
@@ -515,7 +536,7 @@
         const COLLECTION_NAME = "acceuilcq";
         const RESTRUCTURATION_COLLECTION = "restructuration";
 
-        // Impression directe sans validation des champs requis
+        // Impression directe sans validation des champs requis (format 8.5 x 14)
         function imprimerFeuille() {
             window.print();
         }
