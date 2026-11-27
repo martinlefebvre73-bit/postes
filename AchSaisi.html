@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Achemineurs V2 - Entrée des données</title>
+
+<meta name="theme-color" content="#D52B1E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<style>
+:root{
+    --cp-red:#D52B1E;
+    --cp-red-dark:#b11f15;
+    --cp-blue:#0078D4;
+    --cp-green:#107C10;
+    --cp-orange:#FF8C00;
+
+    --bg:#f3f4f6;
+    --card:#ffffff;
+    --text:#222;
+    --secondary:#666;
+    --border:#e5e7eb;
+    --input-bg:#f9fafb;
+    --sticky-bg:#ffffff;
+}
+
+body.forceDark{
+    --bg:#121212;
+    --card:#1e1e1e;
+    --text:#f4f4f4;
+    --secondary:#a1a1a1;
+    --border:#333;
+    --input-bg:#2a2a2a;
+    --sticky-bg:#1e1e1e;
+}
+
+@media (prefers-color-scheme: dark){
+    :root:not(.forceLight){
+        --bg:#121212;
+        --card:#1e1e1e;
+        --text:#f4f4f4;
+        --secondary:#a1a1a1;
+        --border:#333;
+        --input-bg:#2a2a2a;
+        --sticky-bg:#1e1e1e;
+    }
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Arial,sans-serif;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    padding:12px;
+    padding-bottom:95px;
+}
+
+header{
+    background:linear-gradient(135deg, var(--cp-red), var(--cp-red-dark));
+    color:white;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+header h1{
+    font-size:1.5rem;
+}
+
+header p{
+    opacity:.9;
+    margin-top:4px;
+    font-size:.95rem;
+}
+
+.week-input{
+    background:rgba(255,255,255,0.2);
+    border:1px solid rgba(255,255,255,0.4);
+    color:white;
+    padding:8px 12px;
+    border-radius:10px;
+    font-size:.9rem;
+    width:auto;
+    height:auto;
+    margin:0;
+}
+
+.week-input::placeholder{
+    color:rgba(255,255,255,0.8);
+}
+
+/* Résumé rapide */
+.summary-bar{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:15px;
+}
+
+.summary-card{
+    background:var(--card);
+    border-radius:15px;
+    padding:12px;
+    box-shadow:0 3px 10px rgba(0,0,0,.06);
+    text-align:center;
+}
+
+.summary-card span{
+    display:block;
+    font-size:.8rem;
+    color:var(--secondary);
+}
+
+.summary-card strong{
+    display:block;
+    font-size:1.4rem;
+    margin-top:4px;
+}
+
+.blue{ color:var(--cp-blue); }
+.green{ color:var(--cp-green); }
+.red{ color:var(--cp-red); }
+
+/* Barre d'outils */
+.toolbar{
+    display:flex;
+    gap:8px;
+    margin-top:15px;
+    flex-wrap:wrap;
+}
+
+.toolbar input[type="text"]{
+    flex:1;
+    min-width:160px;
+    height:44px;
+    padding:0 12px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--card);
+    color:var(--text);
+    font-size:15px;
+}
+
+.btn{
+    height:44px;
+    padding:0 16px;
+    border:none;
+    border-radius:12px;
+    color:white;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    transition:opacity .2s;
+}
+
+.btn:active{ opacity:.8; }
+.btn-blue{ background:var(--cp-blue); }
+.btn-green{ background:var(--cp-green); }
+.btn-red{ background:var(--cp-red); }
+.btn-dark{ background:#4b5563; }
+
+/* Tableau matriciel */
+.table-card{
+    background:var(--card);
+    border-radius:18px;
+    margin-top:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.08);
+    overflow:hidden;
+}
+
+.table-wrapper{
+    overflow-x:auto;
+    max-height:65vh;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:560px;
+}
+
+thead th{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--cp-red);
+    color:white;
+    padding:12px 8px;
+    font-size:.9rem;
+    text-align:center;
+    border-bottom:2px solid var(--cp-red-dark);
+}
+
+thead th:first-child{
+    left:0;
+    z-index:30;
+    text-align:left;
+    padding-left:15px;
+    min-width:115px;
+}
+
+tbody td{
+    padding:8px 6px;
+    border-bottom:1px solid var(--border);
+    text-align:center;
+}
+
+tbody tr:hover{
+    background:rgba(0, 120, 212, 0.04);
+}
+
+/* Colonne Route fixe */
+tbody td:first-child{
+    position:sticky;
+    left:0;
+    z-index:10;
+    background:var(--sticky-bg);
+    text-align:left;
+    padding-left:15px;
+    font-weight:700;
+    font-size:.95rem;
+    border-right:1px solid var(--border);
+}
+
+/* Inputs numériques */
+.val-input{
+    width:64px;
+    height:38px;
+    text-align:center;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:var(--input-bg);
+    color:var(--text);
+    font-size:15px;
+    font-weight:600;
+    transition:border-color .2s, background .2s;
+}
+
+.val-input:focus{
+    outline:none;
+    border-color:var(--cp-blue);
+    box-shadow:0 0 0 2px rgba(0,120,212,.2);
+}
+
+/* Mise en évidence selon le volume */
+.val-input.high-val{
+    border-color:var(--cp-orange);
+    background:rgba(255, 140, 0, 0.12);
+}
+
+.val-input.crit-val{
+    border-color:var(--cp-red);
+    background:rgba(213, 43, 30, 0.15);
+    color:var(--cp-red);
+}
+
+.row-total{
+    font-weight:700;
+    color:var(--cp-blue);
+    font-size:.95rem;
+    min-width:60px;
+}
+
+/* Pied de tableau (Totaux par jour) */
+tfoot td{
+    position:sticky;
+    bottom:0;
+    z-index:20;
+    background:var(--sticky-bg);
+    padding:12px 6px;
+    font-weight:700;
+    text-align:center;
+    border-top:2px solid var(--border);
+    font-size:.95rem;
+}
+
+tfoot td:first-child{
+    left:0;
+    z-index:30;
+    text-align:left;
+    padding-left:15px;
+    border-right:1px solid var(--border);
+}
+
+/* Notification toast */
+.toast{
+    position:fixed;
+    bottom:80px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#1f2937;
+    color:white;
+    padding:10px 20px;
+    border-radius:25px;
+    font-size:.9rem;
+    opacity:0;
+    pointer-events:none;
+    transition:all .3s ease;
+    z-index:200;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+}
+
+.toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+/* Navigation inférieure identique à Ach.html */
+.bottom-nav{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:var(--card);
+    display:flex;
+    justify-content:space-around;
+    padding:12px 0;
+    border-top:1px solid var(--border);
+    box-shadow:0 -4px 15px rgba(0,0,0,.08);
+    z-index:100;
+}
+
+.nav-btn{
+    background:none;
+    border:none;
+    color:var(--secondary);
+    font-size:1.4rem;
+    cursor:pointer;
+    text-decoration:none;
+}
+
+.nav-btn.active{
+    color:var(--cp-red);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>📝 Saisie des volumes</h1>
+        <p>Entrée hebdomadaire par route</p>
+    </div>
+    <input type="text" id="semaineLabel" class="week-input" value="Semaine du 20 au 24 oct. 2025" placeholder="Libellé de la semaine">
+</header>
+
+<div class="summary-bar">
+    <div class="summary-card">
+        <span>Total semaine</span>
+        <strong class="blue" id="grandTotal">0</strong>
+    </div>
+    <div class="summary-card">
+        <span>Moyenne / jour</span>
+        <strong class="green" id="avgDay">0</strong>
+    </div>
+    <div class="summary-card">
+        <span>Routes critiques (≥10)</span>
+        <strong class="red" id="critCount">0</strong>
+    </div>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="searchRoute" placeholder="🔍 Filtrer une route (ex: 16)...">
+    <button class="btn btn-blue" onclick="ajouterRoute()">+ Route</button>
+    <button class="btn btn-green" onclick="exporterCSV()">📥 CSV</button>
+    <button class="btn btn-red" onclick="reinitialiser()">🗑️ Vider</button>
+    <button class="btn btn-dark" id="darkBtn">🌙</button>
+</div>
+
+<div class="table-card">
+    <div class="table-wrapper">
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Lundi</th>
+                    <th>Mardi</th>
+                    <th>Mercredi</th>
+                    <th>Jeudi</th>
+                    <th>Vendredi</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Généré dynamiquement -->
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL JOUR</td>
+                    <td id="tot-0">0</td>
+                    <td id="tot-1">0</td>
+                    <td id="tot-2">0</td>
+                    <td id="tot-3">0</td>
+                    <td id="tot-4">0</td>
+                    <td class="blue" id="tot-week">0</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div id="toast" class="toast">Données enregistrées</div>
+
+<nav class="bottom-nav">
+    <a href="Ach.html" class="nav-btn" title="Tableau de bord">🏠</a>
+    <button class="nav-btn active" title="Saisie des données">📝</button>
+    <button class="nav-btn" onclick="exporterCSV()" title="Exporter">📊</button>
+    <button class="nav-btn" onclick="sauvegarderManuel()" title="Sauvegarder">💾</button>
+</nav>
+
+<script>
+// Liste par défaut des routes (modifiable ou extensible avec le bouton "+ Route")
+const defaultRoutes = Array.from({length: 30}, (_, i) => `Route ${i + 1}`);
+const STORAGE_KEY = 'achemineurs_v2_data';
+
+let appData = {
+    semaine: 'Semaine du 20 au 24 oct. 2025',
+    routes: {}
+};
+
+// Initialisation
+function init() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        appData = JSON.parse(saved);
+        document.getElementById('semaineLabel').value = appData.semaine || '';
+    } else {
+        defaultRoutes.forEach(r => {
+            appData.routes[r] = ['', '', '', '', ''];
+        });
+    }
+    renderTable();
+    calculerTotaux();
+}
+
+// Génération des lignes du tableau
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    Object.keys(appData.routes).forEach(route => {
+        const vals = appData.routes[route];
+        const tr = document.createElement('tr');
+        tr.dataset.route = route.toLowerCase();
+
+        let cellsHtml = `<td>${route}</td>`;
+
+        for (let day = 0; day < 5; day++) {
+            const val = vals[day] !== undefined ? vals[day] : '';
+            const num = parseInt(val, 10);
+            let extraClass = '';
+            if (!isNaN(num)) {
+                if (num >= 10) extraClass = 'crit-val';
+                else if (num >= 8) extraClass = 'high-val';
+            }
+
+            cellsHtml += `
+                <td>
+                    <input type="number"
+                           inputmode="numeric"
+                           min="0"
+                           class="val-input ${extraClass}"
+                           data-route="${route}"
+                           data-day="${day}"
+                           value="${val}"
+                           placeholder="-">
+                </td>`;
+        }
+
+        cellsHtml += `<td class="row-total" id="row-tot-${route.replace(/\s+/g, '-')}">0</td>`;
+        tr.innerHTML = cellsHtml;
+        tbody.appendChild(tr);
+    });
+
+    // Attacher les écouteurs sur les champs
+    document.querySelectorAll('.val-input').forEach(input => {
+        input.addEventListener('input', handleInput);
+        // Navigation rapide au clavier (Entrée passe à la ligne suivante du même jour)
+        input.addEventListener('keydown', handleKeyNav);
+    });
+}
+
+function handleInput(e) {
+    const input = e.target;
+    const route = input.dataset.route;
+    const day = parseInt(input.dataset.day, 10);
+    const val = input.value;
+
+    appData.routes[route][day] = val;
+
+    // Mise à jour visuelle immédiate du seuil
+    const num = parseInt(val, 10);
+    input.classList.remove('high-val', 'crit-val');
+    if (!isNaN(num)) {
+        if (num >= 10) input.classList.add('crit-val');
+        else if (num >= 8) input.classList.add('high-val');
+    }
+
+    sauvegarderAuto();
+    calculerTotaux();
+}
+
+// Permet d'appuyer sur Entrée pour descendre directement à la route suivante
+function handleKeyNav(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const currentTr = e.target.closest('tr');
+        const nextTr = currentTr.nextElementSibling;
+        if (nextTr) {
+            const day = e.target.dataset.day;
+            const nextInput = nextTr.querySelector(`input[data-day="${day}"]`);
+            if (nextInput) nextInput.focus();
+        }
+    }
+}
+
+function calculerTotaux() {
+    let dayTotals = [0, 0, 0, 0, 0];
+    let grandTotal = 0;
+    let critCount = 0;
+
+    Object.keys(appData.routes).forEach(route => {
+        const vals = appData.routes[route];
+        let rowSum = 0;
+
+        for (let d = 0; d < 5; d++) {
+            const n = parseInt(vals[d], 10);
+            if (!isNaN(n)) {
+                rowSum += n;
+                dayTotals[d] += n;
+                if (n >= 10) critCount++;
+            }
+        }
+
+        grandTotal += rowSum;
+        const rowCell = document.getElementById(`row-tot-${route.replace(/\s+/g, '-')}`);
+        if (rowCell) rowCell.textContent = rowSum;
+    });
+
+    for (let d = 0; d < 5; d++) {
+        document.getElementById(`tot-${d}`).textContent = dayTotals[d];
+    }
+
+    document.getElementById('tot-week').textContent = grandTotal;
+    document.getElementById('grandTotal').textContent = grandTotal;
+    document.getElementById('avgDay').textContent = Math.round(grandTotal / 5);
+    document.getElementById('critCount').textContent = critCount;
+}
+
+function sauvegarderAuto() {
+    appData.semaine = document.getElementById('semaineLabel').value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
+
+function sauvegarderManuel() {
+    sauvegarderAuto();
+    showToast('✅ Données sauvegardées localement');
+}
+
+function ajouterRoute() {
+    const nom = prompt("Nom ou numéro de la nouvelle route (ex: Route 31) :");
+    if (nom && nom.trim() !== '') {
+        const cleanName = nom.trim();
+        if (!appData.routes[cleanName]) {
+            appData.routes[cleanName] = ['', '', '', '', ''];
+            sauvegarderAuto();
+            renderTable();
+            calculerTotaux();
+            showToast(`➕ ${cleanName} ajoutée`);
+        } else {
+            alert("Cette route existe déjà.");
+        }
+    }
+}
+
+function reinitialiser() {
+    if (confirm("Effacer toutes les valeurs saisies pour cette semaine ?")) {
+        Object.keys(appData.routes).forEach(r => {
+            appData.routes[r] = ['', '', '', '', ''];
+        });
+        sauvegarderAuto();
+        renderTable();
+        calculerTotaux();
+        showToast('🗑️ Tableau vidé');
+    }
+}
+
+function exporterCSV() {
+    let csv = "Route;Lundi;Mardi;Mercredi;Jeudi;Vendredi;Total\n";
+    Object.keys(appData.routes).forEach(route => {
+        const vals = appData.routes[route].map(v => v === '' ? 0 : parseInt(v, 10));
+        const sum = vals.reduce((a, b) => a + b, 0);
+        csv += `${route};${vals.join(';')};${sum}\n`;
+    });
+
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Volumes_Achemineurs_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📥 Fichier CSV téléchargé');
+}
+
+// Filtre de recherche rapide
+document.getElementById('searchRoute').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#tableBody tr').forEach(tr => {
+        tr.style.display = tr.dataset.route.includes(term) ? '' : 'none';
+    });
+});
+
+// Mise à jour du titre de semaine
+document.getElementById('semaineLabel').addEventListener('input', sauvegarderAuto);
+
+// Gestion du mode sombre
+document.getElementById('darkBtn').addEventListener('click', () => {
+    document.body.classList.toggle('forceDark');
+});
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+
+</body>
+</html>
