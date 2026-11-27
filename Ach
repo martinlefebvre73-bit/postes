@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Achemineurs V2</title>
+
+<meta name="theme-color" content="#D52B1E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<style>
+
+:root{
+    --cp-red:#D52B1E;
+    --cp-red-dark:#b11f15;
+    --cp-blue:#0078D4;
+    --cp-green:#107C10;
+    --cp-orange:#FF8C00;
+
+    --bg:#f3f4f6;
+    --card:#ffffff;
+    --text:#222;
+    --secondary:#666;
+    --border:#e5e7eb;
+}
+
+@media (prefers-color-scheme: dark){
+
+:root{
+    --bg:#121212;
+    --card:#1e1e1e;
+    --text:#f4f4f4;
+    --secondary:#a1a1a1;
+    --border:#333;
+}
+
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Arial,sans-serif;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    padding:12px;
+    padding-bottom:90px;
+}
+
+header{
+
+    background:linear-gradient(
+    135deg,
+    var(--cp-red),
+    var(--cp-red-dark));
+
+    color:white;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+}
+
+header h1{
+    font-size:1.6rem;
+}
+
+header p{
+    opacity:.9;
+    margin-top:8px;
+}
+
+.dashboard{
+
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+    margin-top:15px;
+}
+
+.card{
+
+    background:var(--card);
+    border-radius:18px;
+    padding:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.08);
+}
+
+.card-title{
+    font-size:.9rem;
+    color:var(--secondary);
+}
+
+.big-number{
+    margin-top:8px;
+    font-size:2rem;
+    font-weight:700;
+}
+
+.blue{
+    color:var(--cp-blue);
+}
+
+.red{
+    color:var(--cp-red);
+}
+
+.green{
+    color:var(--cp-green);
+}
+
+.orange{
+    color:var(--cp-orange);
+}
+
+.filters{
+
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:var(--bg);
+    padding-top:15px;
+    padding-bottom:10px;
+}
+
+select,input{
+
+    width:100%;
+    height:48px;
+    padding:0 12px;
+    margin-bottom:10px;
+
+    border:1px solid var(--border);
+    border-radius:12px;
+
+    background:var(--card);
+    color:var(--text);
+    font-size:16px;
+}
+
+button{
+
+    width:100%;
+    height:48px;
+
+    border:none;
+    border-radius:12px;
+
+    background:var(--cp-blue);
+    color:white;
+    font-size:15px;
+
+    cursor:pointer;
+}
+
+.section-title{
+
+    margin-top:20px;
+    margin-bottom:12px;
+    font-weight:700;
+    font-size:1.1rem;
+}
+
+.chart-card{
+
+    background:var(--card);
+    border-radius:18px;
+    padding:15px;
+}
+
+.chart-row{
+
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    height:220px;
+    margin-top:15px;
+}
+
+.bar-container{
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:18%;
+}
+
+.bar{
+
+    width:100%;
+    background:linear-gradient(
+    180deg,
+    #3498db,
+    #0078d4);
+
+    border-radius:12px 12px 0 0;
+}
+
+.volume{
+    margin-bottom:5px;
+    font-size:.8rem;
+    font-weight:700;
+}
+
+.label{
+    margin-top:8px;
+    font-size:.8rem;
+}
+
+.route-card{
+
+    background:var(--card);
+    border-radius:18px;
+    padding:15px;
+    margin-bottom:12px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+
+.route-header{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    font-weight:700;
+}
+
+.route-day{
+
+    margin-top:8px;
+    color:var(--secondary);
+}
+
+.progress{
+
+    margin-top:10px;
+    background:#d9d9d9;
+    border-radius:20px;
+    height:10px;
+    overflow:hidden;
+}
+
+.progress-fill{
+
+    height:100%;
+    border-radius:20px;
+}
+
+.critical{
+    background:var(--cp-red);
+}
+
+.high{
+    background:var(--cp-orange);
+}
+
+.normal{
+    background:var(--cp-green);
+}
+
+.badge{
+
+    padding:4px 10px;
+    border-radius:20px;
+    color:white;
+    font-size:.75rem;
+}
+
+.bottom-nav{
+
+    position:fixed;
+
+    bottom:0;
+    left:0;
+    right:0;
+
+    background:var(--card);
+
+    display:flex;
+    justify-content:space-around;
+
+    padding:12px 0;
+
+    border-top:1px solid var(--border);
+
+    box-shadow:0 -4px 15px rgba(0,0,0,.08);
+}
+
+.nav-btn{
+
+    background:none;
+    border:none;
+    color:var(--secondary);
+
+    width:auto;
+    height:auto;
+
+    font-size:1.4rem;
+}
+
+.stats-grid{
+
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+}
+
+@media(min-width:768px){
+
+.dashboard{
+    grid-template-columns:repeat(4,1fr);
+}
+
+.stats-grid{
+    grid-template-columns:repeat(2,1fr);
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>🚚 Achemineurs V2</h1>
+
+<p>
+Semaine du 20 au 24 octobre 2025
+</p>
+
+</header>
+
+<div class="dashboard">
+
+<div class="card">
+
+<div class="card-title">
+Volume total
+</div>
+
+<div class="big-number blue">
+3356
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="card-title">
+Moyenne / jour
+</div>
+
+<div class="big-number green">
+671
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="card-title">
+Pic semaine
+</div>
+
+<div class="big-number red">
+889
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="card-title">
+Minimum
+</div>
+
+<div class="big-number orange">
+293
+</div>
+
+</div>
+
+</div>
+
+<div class="filters">
+
+<select id="jour">
+
+<option value="">
+Tous les jours
+</option>
+
+<option>Lundi</option>
+<option>Mardi</option>
+<option>Mercredi</option>
+<option>Jeudi</option>
+<option>Vendredi</option>
+
+</select>
+
+<input
+id="search"
+type="text"
+placeholder="Rechercher une route">
+
+<button id="darkBtn">
+🌙 Mode sombre
+</button>
+
+</div>
+
+<div class="section-title">
+📊 Volumes hebdomadaires
+</div>
+
+<div class="chart-card">
+
+<div class="chart-row">
+
+<div class="bar-container">
+<div class="volume">293</div>
+<div class="bar" style="height:33%;"></div>
+<div class="label">Lun</div>
+</div>
+
+<div class="bar-container">
+<div class="volume">767</div>
+<div class="bar" style="height:86%;"></div>
+<div class="label">Mar</div>
+</div>
+
+<div class="bar-container">
+<div class="volume">889</div>
+<div class="bar" style="height:100%;"></div>
+<div class="label">Mer</div>
+</div>
+
+<div class="bar-container">
+<div class="volume">852</div>
+<div class="bar" style="height:96%;"></div>
+<div class="label">Jeu</div>
+</div>
+
+<div class="bar-container">
+<div class="volume">555</div>
+<div class="bar" style="height:62%;"></div>
+<div class="label">Ven</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="section-title">
+📦 Routes critiques
+</div>
+
+<div id="routes">
+
+<div class="route-card">
+
+<div class="route-header">
+
+<span>
+Route 16
+</span>
+
+<span class="badge" style="background:#D52B1E">
+11
+</span>
+
+</div>
+
+<div class="route-day">
+Mercredi
+</div>
+
+<div class="progress">
+<div class="progress-fill critical" style="width:95%"></div>
+</div>
+
+</div>
+
+<div class="route-card">
+
+<div class="route-header">
+
+<span>
+Route 20
+</span>
+
+<span class="badge" style="background:#D52B1E">
+11
+</span>
+
+</div>
+
+<div class="route-day">
+Mercredi
+</div>
+
+<div class="progress">
+<div class="progress-fill critical" style="width:95%"></div>
+</div>
+
+</div>
+
+<div class="route-card">
+
+<div class="route-header">
+
+<span>
+Route 26
+</span>
+
+<span class="badge" style="background:#FF8C00">
+8
+</span>
+
+</div>
+
+<div class="route-day">
+Mercredi
+</div>
+
+<div class="progress">
+<div class="progress-fill high" style="width:75%"></div>
+</div>
+
+</div>
+
+</div>
+
+<nav class="bottom-nav">
+
+<button class="nav-btn">🏠</button>
+<button class="nav-btn">📊</button>
+<button class="nav-btn">🚚</button>
+<button class="nav-btn">👥</button>
+<button class="nav-btn">⚙️</button>
+
+</nav>
+
+<script>
+
+const search =
+document.getElementById('search');
+
+search.addEventListener('keyup',()=>{
+
+const val =
+search.value.toLowerCase();
+
+document
+.querySelectorAll('.route-card')
+.forEach(card=>{
+
+card.style.display =
+card.innerText
+.toLowerCase()
+.includes(val)
+?
+'block'
+:
+'none';
+
+});
+
+});
+
+document
+.getElementById('darkBtn')
+.addEventListener('click',()=>{
+
+document.body.classList.toggle('forceDark');
+
+if(document.body.classList.contains('forceDark')){
+
+document.documentElement.style.setProperty('--bg','#121212');
+document.documentElement.style.setProperty('--card','#1e1e1e');
+document.documentElement.style.setProperty('--text','#f4f4f4');
+document.documentElement.style.setProperty('--secondary','#a1a1a1');
+document.documentElement.style.setProperty('--border','#333');
+
+}else{
+
+location.reload();
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
