@@ -310,16 +310,36 @@
             font-weight: 700;
             color: #334155;
         }
+        .veve-rpo-base td {
+            background: #eff6ff;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
         .day-cell {
             text-align: center;
-            cursor: pointer;
             font-weight: 700;
-            min-width: 52px;
+            min-width: 68px;
+            padding: 3px 4px !important;
             transition: background 0.15s;
-            user-select: none;
         }
-        .day-cell:hover {
-            outline: 2px solid var(--primary-light);
+        .day-select {
+            width: 100%;
+            min-width: 60px;
+            padding: 4px 2px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-weight: 800;
+            font-size: 0.82rem;
+            text-align: center;
+            text-align-last: center;
+            cursor: pointer;
+            background: transparent;
+            color: inherit;
+        }
+        .day-select:hover, .day-select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
         .code-A { background-color: #fee2e2; color: #991b1b; }
         .code-PA { background-color: #fef3c7; color: #92400e; }
@@ -390,6 +410,7 @@
         }
         @media (max-width: 1100px) {
             .dispatch-grid { grid-template-columns: repeat(2, 1fr); }
+            .effectifs-layout { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 720px) {
             .dispatch-grid { grid-template-columns: 1fr; }
@@ -524,19 +545,69 @@
             border-color: #93c5fd;
         }
 
+        .edit-highlight-box {
+            background: #fef3c7 !important;
+            border: 1.5px solid #f59e0b !important;
+        }
+
+        .print-veve-header {
+            display: none;
+        }
         @media print {
-            body { background: white; padding: 0; }
-            header, .week-bar, .tabs-bar, .status-bar, .dispatch-toolbar, .no-print { display: none !important; }
-            .container { box-shadow: none; border-radius: 0; max-width: 100%; }
-            .tab-panel { display: none !important; }
-            #panel-dispatch { display: block !important; padding: 0 !important; }
-            .dispatch-sheet { border: 2px solid #000; padding: 12px; }
-            .dispatch-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            header, .week-bar, .tabs-bar, .status-bar, .dispatch-toolbar, .quick-entry-box, .stats-grid, .veve-toolbar, .no-print {
+                display: none !important;
+            }
+            .container { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; width: 100% !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+
+            /* Mode impression Grille VÉVÉ (8.5 x 14 Legal en couleur) */
+            body.print-mode-veve .tab-panel { display: none !important; }
+            body.print-mode-veve #panel-veve { display: block !important; padding: 0 !important; }
+            body.print-mode-veve .print-veve-header {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #1e3a8a;
+                padding-bottom: 6px;
+                margin-bottom: 8px;
+            }
+            body.print-mode-veve .veve-wrapper {
+                border: 1.5px solid #1e3a8a !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+                margin-bottom: 0 !important;
+            }
+            body.print-mode-veve table.veve-table {
+                font-size: 0.74rem !important;
+                width: 100% !important;
+            }
+            body.print-mode-veve .veve-table th,
+            body.print-mode-veve .veve-table td {
+                padding: 3px 5px !important;
+                border: 1px solid #94a3b8 !important;
+            }
+            body.print-mode-veve .day-select,
+            body.print-mode-veve .versus-select {
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 0.74rem !important;
+                min-width: auto !important;
+            }
+
+            /* Mode impression Plan Commis Dispatch */
+            body:not(.print-mode-veve) .tab-panel { display: none !important; }
+            body:not(.print-mode-veve) #panel-dispatch { display: block !important; padding: 0 !important; }
+            body:not(.print-mode-veve) .dispatch-sheet { border: 2px solid #000; padding: 12px; }
+            body:not(.print-mode-veve) .dispatch-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
         }
     </style>
 
-    <!-- Firebase SDKs & Logic (Exactement la même procédure que bench (23).html, collection 'po4') -->
+    <!-- Firebase SDKs & Logic (Collection 'po4') -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -571,7 +642,7 @@
 
             // TEMPS PARTIEL JOUR
             { id: "c7", category: "TEMPS PARTIEL JOUR", anciennete: "2014-10-20", horaire: "L:4h00-10:30, 6H:30-10:30", posteId: "P:1919628 ID:7077301", nom: "MARTINE RICHER", shortName: "Martine", dispatchZone: "ACHEMINEURS", dispatchRole: "po4 tp", dispatchShift: "6h30 à 10h30", rpoHours: 4.5 },
-            { id: "c8", category: "TEMPS PARTIEL JOUR", anciennete: "2012-11-15", horaire: "L:4h00-10h30, 6h30-10h30", posteId: "P:3144828 ID:7065421", nom: "ROBERT FORTIN", shortName: "Robert", dispatchZone: "SEQUENCES", dispatchRole: "po4 tp", dispatchShift: "6h30 à 10h30", rpoHours: 4.5 },
+            { id: "c8", category: "TEMPS PARTIEL JOUR", anciennete: "2012-11-15", horaire: "L:4h00-10:30, 6h30-10:30", posteId: "P:3144828 ID:7065421", nom: "ROBERT FORTIN", shortName: "Robert", dispatchZone: "SEQUENCES", dispatchRole: "po4 tp", dispatchShift: "6h30 à 10h30", rpoHours: 4.5 },
             { id: "c9", category: "TEMPS PARTIEL JOUR", anciennete: "2011-10-23", horaire: "L:2h00-8h00, 4h00-08:00", posteId: "P:3159102 ID:7057397", nom: "POSTE VACANT (EX-ROGER)", shortName: "Kevin M (Rel.)", dispatchZone: "COLIS_AERO_1", dispatchRole: "po4 tp", dispatchShift: "4 à 8", rpoHours: 4.5 },
 
             // TCB CONSO
@@ -607,8 +678,10 @@
             { id: "7188138", nom: "GEORGES ASSOUAD (Rel. FFRS)", shortName: "ASSOUAD" }
         ];
 
-        const DAYS = ["D", "L", "M", "Me", "J", "V"];
-        const DAY_LABELS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+        // Semaine de travail : Lundi à Vendredi uniquement (colonne Dimanche retirée)
+        const DAYS = ["L", "M", "Me", "J", "V"];
+        const DAY_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+        const BASE_HOURS_PER_DAY = { L: 70.75, M: 64, Me: 64, J: 64, V: 64 };
         const ABSENCE_CODES = ["", "A", "PA", "SS", "TN", "PR", "PP", "SW", "A2", "A3"];
 
         const DISPATCH_ZONES = [
@@ -628,8 +701,10 @@
         // =========================================================================
         let currentWeekSunday = getSundayOfDate(new Date());
         let weekState = createEmptyWeekState(currentWeekSunday);
-        let activeDayIndex = 1; // 1 = Lundi par défaut sur le plan dispatch
+        let activeDayIndex = 0; // 0 = Lundi par défaut sur le plan dispatch
         let editingSlotContext = null;
+        let editingClerkIndex = null;
+        let editingRepIndex = null;
 
         function getSundayOfDate(dateObj) {
             const d = new Date(dateObj);
@@ -643,10 +718,11 @@
             return `semaine_${sundayStr}`;
         }
 
+        // Retourne les 5 jours ouvrables : Lundi (+1) à Vendredi (+5) à partir du dimanche de référence
         function getWeekDatesArray(sundayStr) {
             const base = new Date(sundayStr + "T12:00:00");
             const arr = [];
-            for (let i = 0; i < 6; i++) {
+            for (let i = 1; i <= 5; i++) {
                 const d = new Date(base);
                 d.setDate(base.getDate() + i);
                 arr.push({
@@ -663,17 +739,17 @@
                 weekSunday: sundayStr,
                 clerks: JSON.parse(JSON.stringify(DEFAULT_CLERKS)),
                 replacements: JSON.parse(JSON.stringify(DEFAULT_REPLACEMENTS)),
-                absences: {},   // { clerkId: { D: "A", L: "PA", ... } }
+                absences: {},   // { clerkId: { L: "PA", M: "PA", ... } }
                 versus: {},     // { clerkId: "GEDDES" }
-                dayVersus: {},  // { clerkId: { L: "GEDDES", M: "MASSE" } } (surcharge jour précis si nécessaire)
+                dayVersus: {},  // { clerkId: { L: "GEDDES", M: "MASSE" } }
                 bons: [],       // [ { date, nom, raison, details, numero } ]
-                reelHours: { D: "", L: "", M: "", Me: "", J: "", V: "" },
+                reelHours: { L: "", M: "", Me: "", J: "", V: "" },
                 updatedAt: new Date().toISOString()
             };
         }
 
         // =========================================================================
-        // INDICATEUR FIREBASE & AUTH (PROCÉDÉ IDENTIQUE À BENCH (23).HTML)
+        // INDICATEUR FIREBASE & AUTH (COLLECTION 'po4')
         // =========================================================================
         function setFirebaseStatusUI(status, text) {
             const dot = document.getElementById('indicatorDot');
@@ -746,7 +822,6 @@
                 };
                 setStatusMessage(`✅ Semaine du ${sundayStr} chargée depuis la collection 'po4' (${docId}).`);
             } else {
-                // Vérifie aussi par requête where("weekSunday", "==", sundayStr) au cas où
                 const q = query(collection(db, "po4"), where("weekSunday", "==", sundayStr));
                 const qSnap = await getDocs(q);
                 if (!qSnap.empty) {
@@ -762,6 +837,8 @@
                     setStatusMessage(`ℹ️ Aucune donnée enregistrée dans 'po4' pour la semaine du ${sundayStr} (nouvelle grille initialisée).`);
                 }
             }
+            cancelEditClerk();
+            cancelEditRep();
             renderAll();
         }
 
@@ -801,9 +878,9 @@
 
         function updateWeekHeaderUI() {
             const dates = getWeekDatesArray(currentWeekSunday);
-            const first = dates[0];
-            const last = dates[5];
-            document.getElementById('weekTitleBadge').textContent = `Semaine du ${first.iso} au ${last.iso} (Doc: ${getWeekDocId(currentWeekSunday)})`;
+            const first = dates[0]; // Lundi
+            const last = dates[4];  // Vendredi
+            document.getElementById('weekTitleBadge').textContent = `Semaine du Lun ${first.iso} au Ven ${last.iso} (Doc: ${getWeekDocId(currentWeekSunday)})`;
 
             const daySelect = document.getElementById('dispatchDaySelect');
             if (daySelect) {
@@ -845,7 +922,7 @@
                         let nbAbs = 0;
                         if (d.absences) {
                             Object.values(d.absences).forEach(dayMap => {
-                                nbAbs += Object.values(dayMap).filter(code => code && code.trim() !== "").length;
+                                nbAbs += DAYS.filter(dayKey => dayMap[dayKey] && dayMap[dayKey].trim() !== "").length;
                             });
                         }
                         weeks.push({
@@ -866,12 +943,13 @@
 
                 listContainer.innerHTML = '';
                 weeks.forEach(w => {
+                    const dates = getWeekDatesArray(w.weekSunday);
                     const div = document.createElement('div');
                     div.className = 'saved-week-item';
                     const updStr = w.updatedAt ? new Date(w.updatedAt).toLocaleString('fr-CA') : 'N/A';
                     div.innerHTML = `
                         <div>
-                            <strong style="color:#1e3a8a;">Semaine du ${w.weekSunday}</strong>
+                            <strong style="color:#1e3a8a;">Semaine du Lun ${dates[0].iso} au Ven ${dates[4].iso}</strong>
                             <div style="font-size:0.78rem; color:#475569;">${w.nbAbs} absence(s) enregistrée(s) • Modifié : ${updStr}</div>
                         </div>
                         <div style="display:flex; gap:6px;">
@@ -912,7 +990,7 @@
         };
 
         // =========================================================================
-        // RENDU GLOBAL & LOGIQUE MÉTIER VÉVÉ
+        // RENDU GLOBAL & LOGIQUE MÉTIER VÉVÉ (LUNDI À VENDREDI)
         // =========================================================================
         function renderAll() {
             populateQuickFormSelects();
@@ -962,7 +1040,7 @@
             if (!weekState.absences[clerkId]) weekState.absences[clerkId] = {};
 
             if (scope === "ALL_LV") {
-                ["L", "M", "Me", "J", "V"].forEach(d => {
+                DAYS.forEach(d => {
                     weekState.absences[clerkId][d] = code;
                 });
             } else {
@@ -990,11 +1068,8 @@
             await sauvegarderSemaineDansFirebase(true);
         };
 
-        window.cycleDayCode = async function(clerkId, dayKey) {
+        window.setDayCode = async function(clerkId, dayKey, nextCode) {
             if (!weekState.absences[clerkId]) weekState.absences[clerkId] = {};
-            const cur = weekState.absences[clerkId][dayKey] || "";
-            const nextIdx = (ABSENCE_CODES.indexOf(cur) + 1) % ABSENCE_CODES.length;
-            const nextCode = ABSENCE_CODES[nextIdx];
             weekState.absences[clerkId][dayKey] = nextCode;
 
             if (!nextCode && weekState.dayVersus[clerkId]) {
@@ -1010,6 +1085,47 @@
             await sauvegarderSemaineDansFirebase(true);
         };
 
+        window.imprimerGrilleVeveLegal = function() {
+            const dates = getWeekDatesArray(currentWeekSunday);
+            const printTitle = document.getElementById('printVeveWeekLabel');
+            if (printTitle && dates.length >= 5) {
+                printTitle.textContent = `Semaine du Lundi ${dates[0].iso} au Vendredi ${dates[4].iso}`;
+            }
+
+            let dynamicPageStyle = document.getElementById('dynamicPrintPageStyle');
+            if (!dynamicPageStyle) {
+                dynamicPageStyle = document.createElement('style');
+                dynamicPageStyle.id = 'dynamicPrintPageStyle';
+                document.head.appendChild(dynamicPageStyle);
+            }
+            dynamicPageStyle.textContent = `@page { size: 8.5in 14in portrait; margin: 0.35in; }`;
+
+            document.body.classList.add('print-mode-veve');
+            const cleanup = () => {
+                document.body.classList.remove('print-mode-veve');
+                window.removeEventListener('afterprint', cleanup);
+            };
+            window.addEventListener('afterprint', cleanup);
+            setTimeout(() => {
+                window.print();
+            }, 80);
+        };
+
+        window.imprimerPlanDispatch = function() {
+            let dynamicPageStyle = document.getElementById('dynamicPrintPageStyle');
+            if (!dynamicPageStyle) {
+                dynamicPageStyle = document.createElement('style');
+                dynamicPageStyle.id = 'dynamicPrintPageStyle';
+                document.head.appendChild(dynamicPageStyle);
+            }
+            dynamicPageStyle.textContent = `@page { size: letter landscape; margin: 0.35in; }`;
+
+            document.body.classList.remove('print-mode-veve');
+            setTimeout(() => {
+                window.print();
+            }, 80);
+        };
+
         window.setWeekVersus = async function(clerkId, repShortName) {
             if (!repShortName) {
                 delete weekState.versus[clerkId];
@@ -1023,8 +1139,7 @@
         };
 
         function detectReplacementConflicts() {
-            // Vérifie si un même remplaçant est assigné à deux commis absents le même jour
-            const conflicts = new Set(); // clerkId en conflit
+            const conflicts = new Set();
             DAYS.forEach(d => {
                 const usage = {};
                 weekState.clerks.forEach(c => {
@@ -1044,19 +1159,39 @@
             return conflicts;
         }
 
+        function computeDailyRpoNet(dayKey) {
+            // Base officielle : Lundi = 70.75 h, Mardi à Vendredi = 64.00 h
+            // On déduit les heures des postes en absence NON couverts ce jour-là
+            const base = BASE_HOURS_PER_DAY[dayKey] || 64;
+            let uncoveredDeduction = 0;
+
+            weekState.clerks.forEach(c => {
+                const hrs = parseFloat(c.rpoHours) || 0;
+                if (hrs > 0) {
+                    const code = (weekState.absences[c.id] && weekState.absences[c.id][dayKey]) || "";
+                    const rep = (weekState.dayVersus[c.id] && weekState.dayVersus[c.id][dayKey]) || weekState.versus[c.id] || "";
+                    if (code && !rep) {
+                        uncoveredDeduction += hrs;
+                    }
+                }
+            });
+
+            return Math.max(0, base - uncoveredDeduction);
+        }
+
         function renderVeveTable() {
             const thead = document.getElementById('veveTableHead');
             const tbody = document.getElementById('veveTableBody');
             const dates = getWeekDatesArray(currentWeekSunday);
             const conflicts = detectReplacementConflicts();
 
+            // 10 colonnes au total (colonne Dimanche retirée : L, M, Me, J, V uniquement)
             thead.innerHTML = `
                 <tr>
                     <th>Ancienneté</th>
                     <th>Horaire</th>
                     <th>Poste / ID</th>
                     <th>Noms</th>
-                    <th>D</th>
                     <th>L</th>
                     <th>M</th>
                     <th>Me</th>
@@ -1077,7 +1212,7 @@
             categories.forEach(cat => {
                 const catTr = document.createElement('tr');
                 catTr.className = 'veve-cat-row';
-                catTr.innerHTML = `<td colspan="11">${cat}</td>`;
+                catTr.innerHTML = `<td colspan="10">${cat}</td>`;
                 tbody.appendChild(catTr);
 
                 const clerksInCat = weekState.clerks.filter(c => c.category === cat);
@@ -1091,7 +1226,15 @@
                     const dayCellsHtml = DAYS.map(d => {
                         const code = absMap[d] || "";
                         const cls = code ? (ABSENCE_CODES.includes(code) ? `code-${code}` : 'code-OTHER') : '';
-                        return `<td class="day-cell ${cls}" onclick="cycleDayCode('${c.id}', '${d}')" title="Cliquer pour changer le code d'absence (${DAY_LABELS[DAYS.indexOf(d)]})">${code}</td>`;
+                        const codeOptions = ABSENCE_CODES.map(ac =>
+                            `<option value="${ac}" ${code === ac ? 'selected' : ''}>${ac === '' ? '—' : ac}</option>`
+                        ).join('');
+                        return `
+                            <td class="day-cell ${cls}" title="Code d'absence (${DAY_LABELS[DAYS.indexOf(d)]})">
+                                <select class="day-select" onchange="setDayCode('${c.id}', '${d}', this.value)">
+                                    ${codeOptions}
+                                </select>
+                            </td>`;
                     }).join('');
 
                     const optionsHtml = [`<option value="">${hasAbsence ? '⚠️ À couvrir' : '--'}</option>`]
@@ -1116,38 +1259,41 @@
                     tbody.appendChild(tr);
                 });
 
-                // Lignes RPO / Réel après TCB CONSO comme dans le fichier VÉVÉ
+                // Lignes Base RPO, RPO Couvert & Réel après TCB CONSO (Lundi: 70.75, Mardi à Vendredi: 64)
                 if (cat === "TCB CONSO") {
-                    const rpoTotals = DAYS.map(d => {
-                        let sum = 0;
-                        weekState.clerks.forEach(c => {
-                            if (c.rpoHours > 0) {
-                                const code = (weekState.absences[c.id] && weekState.absences[c.id][d]) || "";
-                                const rep = (weekState.dayVersus[c.id] && weekState.dayVersus[c.id][d]) || weekState.versus[c.id] || "";
-                                if (!code || rep) sum += c.rpoHours;
-                            }
-                        });
-                        return sum.toFixed(2);
-                    });
+                    const baseRowTr = document.createElement('tr');
+                    baseRowTr.className = 'veve-rpo-base';
+                    baseRowTr.innerHTML = `
+                        <td colspan="4" style="text-align:right;">Base RPO (Heures prévues) :</td>
+                        ${DAYS.map(d => `<td style="text-align:center;">${BASE_HOURS_PER_DAY[d].toFixed(2)}</td>`).join('')}
+                        <td style="font-size:0.76rem; color:#475569;">Total sem. : 326.75 h</td>
+                    `;
+                    tbody.appendChild(baseRowTr);
 
-                    const rpoTr = document.createElement('tr');
-                    rpoTr.className = 'veve-rpo-row';
-                    rpoTr.innerHTML = `
-                        <td colspan="4" style="text-align:right;">RPO (Heures couvertes) :</td>
-                        ${rpoTotals.map(v => `<td style="text-align:center;">${v}</td>`).join('')}
+                    const rpoNetTr = document.createElement('tr');
+                    rpoNetTr.className = 'veve-rpo-row';
+                    rpoNetTr.innerHTML = `
+                        <td colspan="4" style="text-align:right;">RPO Couvert (Net) :</td>
+                        ${DAYS.map(d => {
+                            const net = computeDailyRpoNet(d);
+                            const base = BASE_HOURS_PER_DAY[d];
+                            const color = net < base ? '#dc2626' : '#059669';
+                            return `<td style="text-align:center; color:${color};">${net.toFixed(2)}</td>`;
+                        }).join('')}
                         <td></td>
                     `;
-                    tbody.appendChild(rpoTr);
+                    tbody.appendChild(rpoNetTr);
 
                     const reelTr = document.createElement('tr');
                     reelTr.className = 'veve-rpo-row';
                     reelTr.innerHTML = `
                         <td colspan="4" style="text-align:right;">Réel :</td>
                         ${DAYS.map(d => `
-                            <td style="padding:2px;">
+                            <td style="padding:2px; text-align:center;">
                                 <input type="text" value="${(weekState.reelHours && weekState.reelHours[d]) || ''}" 
                                     onchange="updateReelHours('${d}', this.value)"
-                                    style="width:52px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; padding:2px; font-size:0.8rem;">
+                                    placeholder="${BASE_HOURS_PER_DAY[d]}"
+                                    style="width:58px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; padding:2px; font-size:0.8rem;">
                             </td>
                         `).join('')}
                         <td></td>
@@ -1222,12 +1368,18 @@
         function renderDispatchPlan() {
             const grid = document.getElementById('dispatchGrid');
             const titleDate = document.getElementById('dispatchHeaderDate');
+            const baseBadge = document.getElementById('dispatchHeaderBaseHours');
             if (!grid || !titleDate) return;
 
             const dates = getWeekDatesArray(currentWeekSunday);
-            const dayObj = dates[activeDayIndex] || dates[1];
+            const dayObj = dates[activeDayIndex] || dates[0];
             const dayKey = DAYS[activeDayIndex] || "L";
             titleDate.textContent = `${DAY_LABELS[activeDayIndex]} ${dayObj.iso}`;
+            if (baseBadge) {
+                const baseH = BASE_HOURS_PER_DAY[dayKey];
+                const netH = computeDailyRpoNet(dayKey);
+                baseBadge.textContent = `Base heures : ${baseH.toFixed(2)} h | Couvert : ${netH.toFixed(2)} h`;
+            }
 
             grid.innerHTML = '';
 
@@ -1340,7 +1492,7 @@
         };
 
         // =========================================================================
-        // ONGLET EFFECTIFS & REMPLAÇANTS
+        // ONGLET EFFECTIFS & REMPLAÇANTS (AJOUT + MODIFICATION + SUPPRESSION)
         // =========================================================================
         function renderEffectifsPanel() {
             const cBody = document.getElementById('effectifsClerksBody');
@@ -1349,81 +1501,222 @@
 
             cBody.innerHTML = '';
             weekState.clerks.forEach((c, idx) => {
+                const isEditing = editingClerkIndex === idx;
                 const tr = document.createElement('tr');
+                if (isEditing) tr.style.background = '#fef3c7';
                 tr.innerHTML = `
                     <td>${c.category}</td>
-                    <td><strong>${c.nom}</strong></td>
-                    <td>${c.horaire}</td>
-                    <td>${c.dispatchZone}</td>
-                    <td>${c.dispatchShift}</td>
-                    <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="supprimerTitulaire(${idx})">Suppr.</button></td>
+                    <td>
+                        <strong>${c.nom}</strong>
+                        <div style="font-size:0.74rem; color:#64748b;">Plan : ${c.shortName} | ${c.posteId || '-'}</div>
+                    </td>
+                    <td>${c.horaire || '-'}</td>
+                    <td>${c.dispatchZone} <span style="font-size:0.74rem; color:#475569;">(${c.dispatchRole || 'po4 tp'})</span></td>
+                    <td>${c.dispatchShift || '-'}</td>
+                    <td style="text-align:center;">${(parseFloat(c.rpoHours) || 0).toFixed(2)} h</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button class="btn btn-warning btn-sm" onclick="editTitulaire(${idx})">Modifier</button>
+                        <button class="btn btn-danger btn-sm" onclick="supprimerTitulaire(${idx})">Suppr.</button>
+                    </td>
                 `;
                 cBody.appendChild(tr);
             });
 
             rBody.innerHTML = '';
             weekState.replacements.forEach((r, idx) => {
+                const isEditing = editingRepIndex === idx;
                 const tr = document.createElement('tr');
+                if (isEditing) tr.style.background = '#fef3c7';
                 tr.innerHTML = `
-                    <td>${r.id}</td>
+                    <td>${r.id || '-'}</td>
                     <td><strong>${r.nom}</strong></td>
                     <td>${r.shortName}</td>
-                    <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="supprimerRemplacant(${idx})">Suppr.</button></td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button class="btn btn-warning btn-sm" onclick="editRemplacant(${idx})">Modifier</button>
+                        <button class="btn btn-danger btn-sm" onclick="supprimerRemplacant(${idx})">Suppr.</button>
+                    </td>
                 `;
                 rBody.appendChild(tr);
             });
         }
 
-        window.ajouterTitulaire = async function(e) {
+        window.editTitulaire = function(idx) {
+            const c = weekState.clerks[idx];
+            if (!c) return;
+            editingClerkIndex = idx;
+
+            document.getElementById('newClerkCat').value = c.category || 'TEMPS PLEIN JOUR';
+            document.getElementById('newClerkNom').value = c.nom || '';
+            document.getElementById('newClerkShort').value = c.shortName || '';
+            document.getElementById('newClerkHoraire').value = c.horaire || '';
+            document.getElementById('newClerkZone').value = c.dispatchZone || 'AO_AERO_1';
+            document.getElementById('newClerkRole').value = c.dispatchRole || 'po4 tp';
+            document.getElementById('newClerkShift').value = c.dispatchShift || '';
+            document.getElementById('newClerkRpoHours').value = c.rpoHours !== undefined ? c.rpoHours : 8;
+            document.getElementById('newClerkAnciennete').value = c.anciennete || '-';
+            document.getElementById('newClerkPosteId').value = c.posteId || '';
+
+            const formBox = document.getElementById('addClerkForm');
+            formBox.classList.add('edit-highlight-box');
+            const submitBtn = document.getElementById('btnSubmitClerk');
+            submitBtn.textContent = "💾 Mettre à jour";
+            submitBtn.className = "btn btn-warning";
+            document.getElementById('btnCancelClerkEdit').style.display = 'inline-flex';
+
+            renderEffectifsPanel();
+            formBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        window.cancelEditClerk = function() {
+            editingClerkIndex = null;
+            const formBox = document.getElementById('addClerkForm');
+            if (formBox) {
+                formBox.reset();
+                formBox.classList.remove('edit-highlight-box');
+            }
+            const rpoInp = document.getElementById('newClerkRpoHours');
+            if (rpoInp) rpoInp.value = "8";
+            const submitBtn = document.getElementById('btnSubmitClerk');
+            if (submitBtn) {
+                submitBtn.textContent = "+ Ajouter Titulaire";
+                submitBtn.className = "btn btn-primary";
+            }
+            const cancelBtn = document.getElementById('btnCancelClerkEdit');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            renderEffectifsPanel();
+        };
+
+        window.enregistrerTitulaire = async function(e) {
             e.preventDefault();
             const category = document.getElementById('newClerkCat').value;
             const nom = document.getElementById('newClerkNom').value.trim().toUpperCase();
             const shortName = document.getElementById('newClerkShort').value.trim();
             const horaire = document.getElementById('newClerkHoraire').value.trim();
-            const posteId = document.getElementById('newClerkPosteId').value.trim();
             const dispatchZone = document.getElementById('newClerkZone').value;
+            const dispatchRole = document.getElementById('newClerkRole').value.trim() || "po4 tp";
             const dispatchShift = document.getElementById('newClerkShift').value.trim();
+            const rpoHours = parseFloat(document.getElementById('newClerkRpoHours').value) || 0;
+            const anciennete = document.getElementById('newClerkAnciennete').value.trim() || "-";
+            const posteId = document.getElementById('newClerkPosteId').value.trim();
 
             if (!nom || !shortName) return;
-            weekState.clerks.push({
-                id: "c_" + Date.now(),
-                category,
-                anciennete: "-",
-                horaire,
-                posteId,
-                nom,
-                shortName,
-                dispatchZone,
-                dispatchRole: "po4 tp",
-                dispatchShift: dispatchShift || horaire,
-                rpoHours: 8
-            });
-            document.getElementById('addClerkForm').reset();
+
+            if (editingClerkIndex !== null && weekState.clerks[editingClerkIndex]) {
+                const existing = weekState.clerks[editingClerkIndex];
+                weekState.clerks[editingClerkIndex] = {
+                    ...existing,
+                    category,
+                    anciennete,
+                    horaire,
+                    posteId,
+                    nom,
+                    shortName,
+                    dispatchZone,
+                    dispatchRole,
+                    dispatchShift: dispatchShift || horaire,
+                    rpoHours
+                };
+                cancelEditClerk();
+            } else {
+                weekState.clerks.push({
+                    id: "c_" + Date.now(),
+                    category,
+                    anciennete,
+                    horaire,
+                    posteId,
+                    nom,
+                    shortName,
+                    dispatchZone,
+                    dispatchRole,
+                    dispatchShift: dispatchShift || horaire,
+                    rpoHours
+                });
+                document.getElementById('addClerkForm').reset();
+                document.getElementById('newClerkRpoHours').value = "8";
+            }
+
             renderAll();
             await sauvegarderSemaineDansFirebase(true);
         };
 
         window.supprimerTitulaire = async function(idx) {
             if (!confirm("Supprimer ce titulaire de la grille de cette semaine ?")) return;
+            if (editingClerkIndex === idx) cancelEditClerk();
             weekState.clerks.splice(idx, 1);
             renderAll();
             await sauvegarderSemaineDansFirebase(true);
         };
 
-        window.ajouterRemplacant = async function(e) {
+        window.editRemplacant = function(idx) {
+            const r = weekState.replacements[idx];
+            if (!r) return;
+            editingRepIndex = idx;
+
+            document.getElementById('newRepId').value = r.id || '';
+            document.getElementById('newRepNom').value = r.nom || '';
+            document.getElementById('newRepShort').value = r.shortName || '';
+
+            const formBox = document.getElementById('addRepForm');
+            formBox.classList.add('edit-highlight-box');
+            const submitBtn = document.getElementById('btnSubmitRep');
+            submitBtn.textContent = "💾 Mettre à jour";
+            submitBtn.className = "btn btn-warning";
+            document.getElementById('btnCancelRepEdit').style.display = 'inline-flex';
+
+            renderEffectifsPanel();
+        };
+
+        window.cancelEditRep = function() {
+            editingRepIndex = null;
+            const formBox = document.getElementById('addRepForm');
+            if (formBox) {
+                formBox.reset();
+                formBox.classList.remove('edit-highlight-box');
+            }
+            const submitBtn = document.getElementById('btnSubmitRep');
+            if (submitBtn) {
+                submitBtn.textContent = "+ Ajouter";
+                submitBtn.className = "btn btn-primary";
+            }
+            const cancelBtn = document.getElementById('btnCancelRepEdit');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            renderEffectifsPanel();
+        };
+
+        window.enregistrerRemplacant = async function(e) {
             e.preventDefault();
             const id = document.getElementById('newRepId').value.trim();
             const nom = document.getElementById('newRepNom').value.trim().toUpperCase();
             const shortName = document.getElementById('newRepShort').value.trim().toUpperCase();
             if (!nom || !shortName) return;
 
-            weekState.replacements.push({ id, nom, shortName });
-            document.getElementById('addRepForm').reset();
+            if (editingRepIndex !== null && weekState.replacements[editingRepIndex]) {
+                const oldShort = weekState.replacements[editingRepIndex].shortName;
+                weekState.replacements[editingRepIndex] = { id, nom, shortName };
+
+                // Met à jour les assignations existantes si le nom Versus a changé
+                if (oldShort && oldShort !== shortName) {
+                    Object.keys(weekState.versus).forEach(cid => {
+                        if (weekState.versus[cid] === oldShort) weekState.versus[cid] = shortName;
+                    });
+                    Object.keys(weekState.dayVersus).forEach(cid => {
+                        Object.keys(weekState.dayVersus[cid]).forEach(dk => {
+                            if (weekState.dayVersus[cid][dk] === oldShort) weekState.dayVersus[cid][dk] = shortName;
+                        });
+                    });
+                }
+                cancelEditRep();
+            } else {
+                weekState.replacements.push({ id, nom, shortName });
+                document.getElementById('addRepForm').reset();
+            }
+
             renderAll();
             await sauvegarderSemaineDansFirebase(true);
         };
 
         window.supprimerRemplacant = async function(idx) {
+            if (editingRepIndex === idx) cancelEditRep();
             weekState.replacements.splice(idx, 1);
             renderAll();
             await sauvegarderSemaineDansFirebase(true);
@@ -1466,12 +1759,15 @@
 
         window.exportWeekCSV = function() {
             const dates = getWeekDatesArray(currentWeekSunday);
-            let csv = `Catégorie,Ancienneté,Horaire,Poste/ID,Nom,D (${dates[0].iso}),L (${dates[1].iso}),M (${dates[2].iso}),Me (${dates[3].iso}),J (${dates[4].iso}),V (${dates[5].iso}),Versus\n`;
+            let csv = `Catégorie,Ancienneté,Horaire,Poste/ID,Nom,L (${dates[0].iso}),M (${dates[1].iso}),Me (${dates[2].iso}),J (${dates[3].iso}),V (${dates[4].iso}),Versus\n`;
             weekState.clerks.forEach(c => {
                 const a = weekState.absences[c.id] || {};
                 const v = weekState.versus[c.id] || "";
-                csv += `"${c.category}","${c.anciennete}","${c.horaire}","${c.posteId}","${c.nom}","${a.D||''}","${a.L||''}","${a.M||''}","${a.Me||''}","${a.J||''}","${a.V||''}","${v}"\n`;
+                csv += `"${c.category}","${c.anciennete}","${c.horaire}","${c.posteId}","${c.nom}","${a.L||''}","${a.M||''}","${a.Me||''}","${a.J||''}","${a.V||''}","${v}"\n`;
             });
+            csv += `"Base RPO (Heures prévues)","","","","","70.75","64.00","64.00","64.00","64.00","326.75"\n`;
+            csv += `"RPO Couvert (Net)","","","","",${DAYS.map(d => `"${computeDailyRpoNet(d).toFixed(2)}"`).join(',')},""\n`;
+
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1489,7 +1785,7 @@
     <header>
         <div class="header-left">
             <h1>Gestion des Absences (VÉVÉ) & Plan Commis Dispatch</h1>
-            <p>Enregistrement hebdomadaire des absences, assignation des remplaçants et transposition automatique sur le plan Dispatch</p>
+            <p>Enregistrement hebdomadaire (Lundi à Vendredi), assignation des remplaçants et transposition automatique sur le plan Dispatch</p>
             <div class="firebase-indicator">
                 <span id="indicatorDot" class="indicator-dot"></span>
                 <span id="indicatorText">Connexion...</span>
@@ -1498,6 +1794,7 @@
         <div class="header-actions">
             <button class="btn btn-info" onclick="openRecupererModal()">🔄 Récupérer / Afficher par semaine</button>
             <button id="btnSaveWeek" class="btn btn-success" onclick="sauvegarderSemaineDansFirebase(false)">💾 Sauvegarder dans 'po4'</button>
+            <button class="btn" style="background:#7c3aed; color:white;" onclick="imprimerGrilleVeveLegal()">🖨️ Imprimer Grille (8,5 × 14)</button>
             <button class="btn btn-warning" onclick="exportWeekCSV()">📥 Exporter CSV</button>
         </div>
     </header>
@@ -1510,13 +1807,13 @@
             <span id="weekTitleBadge" class="week-badge">Semaine en cours</span>
         </div>
         <div style="font-size: 0.82rem; color: #334155; font-weight: 600;">
-            Collection Firestore : <code style="background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1;">po4</code>
+            Base heures : <strong>Lun 70.75 h</strong> | <strong>Mar–Ven 64.00 h/j</strong> • Collection : <code style="background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1;">po4</code>
         </div>
     </div>
 
     <div class="status-bar">
         <span id="firebaseStatus">Connexion à Firebase en cours...</span>
-        <span style="color:#64748b; font-size:0.8rem;">Astuce : Cliquez directement sur une cellule jour (D à V) pour faire défiler les codes (A, PA, SS, TN, PR, PP, SW...).</span>
+        <span style="color:#64748b; font-size:0.8rem;">Astuce : Sélectionnez directement le code d'absence (A, PA, SS, TN, PR, PP, SW, A2, A3) dans la liste déroulante de chaque case jour.</span>
     </div>
 
     <div class="tabs-bar">
@@ -1531,7 +1828,7 @@
     <div id="panel-veve" class="tab-panel active">
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Jours d'absence (Semaine)</div>
+                <div class="stat-label">Jours d'absence (Lun–Ven)</div>
                 <div class="stat-value" id="statTotalAbs">0</div>
             </div>
             <div class="stat-card green">
@@ -1559,7 +1856,6 @@
                     <label for="quickScopeSelect">Jour(s)</label>
                     <select id="quickScopeSelect" class="form-select">
                         <option value="ALL_LV">Toute la semaine (Lun à Ven)</option>
-                        <option value="D">Dimanche (D)</option>
                         <option value="L">Lundi (L)</option>
                         <option value="M">Mardi (M)</option>
                         <option value="Me">Mercredi (Me)</option>
@@ -1588,6 +1884,21 @@
                     <button type="submit" class="btn btn-primary" style="width:100%;">Appliquer & Sauvegarder</button>
                 </div>
             </form>
+        </div>
+
+        <div class="veve-toolbar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <strong style="color:#1e3a8a; font-size:0.95rem;">Grille hebdomadaire des commis (VÉVÉ)</strong>
+            <button type="button" class="btn" style="background:#7c3aed; color:white;" onclick="imprimerGrilleVeveLegal()">🖨️ Imprimer la grille en couleur (8,5 × 14)</button>
+        </div>
+
+        <div class="print-veve-header">
+            <div>
+                <h2 style="font-size:1.15rem; color:#1e3a8a; margin:0;">BOOKING COMMIS STANDING (VÉVÉ) — POSTES CANADA</h2>
+                <span style="font-size:0.78rem; color:#475569;">Dépôt Aéroport • Base : Lun 70.75 h | Mar–Ven 64.00 h</span>
+            </div>
+            <div style="text-align:right;">
+                <strong id="printVeveWeekLabel" style="font-size:0.9rem; color:#0f172a;"></strong>
+            </div>
         </div>
 
         <div class="veve-wrapper">
@@ -1652,10 +1963,10 @@
                 <label for="dispatchDaySelect" style="font-weight:700; color:#1e3a8a;">Jour affiché sur le plan :</label>
                 <select id="dispatchDaySelect" class="form-select" onchange="onDispatchDayChange(this.value)"></select>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                 <span style="font-size:0.8rem; background:#dcfce7; color:#166534; padding:4px 8px; border-radius:4px; font-weight:600;">🔄 Vert = Remplacé</span>
                 <span style="font-size:0.8rem; background:#fef2f2; color:#991b1b; padding:4px 8px; border-radius:4px; font-weight:600; border:1px dashed #dc2626;">⚠️ Rouge = À couvrir</span>
-                <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer le Plan</button>
+                <button class="btn btn-primary" onclick="imprimerPlanDispatch()">🖨️ Imprimer le Plan</button>
             </div>
         </div>
 
@@ -1667,7 +1978,7 @@
                 </div>
                 <div style="text-align:right;">
                     <div id="dispatchHeaderDate" style="font-size:1.15rem; font-weight:800; color:#1e3a8a;"></div>
-                    <div style="font-size:0.8rem; color:#64748b;">Plan Commis Dispatch</div>
+                    <div id="dispatchHeaderBaseHours" style="font-size:0.82rem; font-weight:700; color:#059669;"></div>
                 </div>
             </div>
 
@@ -1676,40 +1987,77 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- ONGLET 3 : GESTION DES EFFECTIFS & REMPLAÇANTS                      -->
+    <!-- ONGLET 3 : GESTION DES EFFECTIFS & REMPLAÇANTS (AVEC MODIFICATION)  -->
     <!-- =================================================================== -->
     <div id="panel-effectifs" class="tab-panel">
-        <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:24px;">
+        <div class="effectifs-layout" style="display:grid; grid-template-columns: 1.55fr 1fr; gap:24px;">
             <div>
-                <h3 style="color:var(--primary); margin-bottom:10px;">Titulaires & Postes (Semaine courante)</h3>
-                <form id="addClerkForm" onsubmit="ajouterTitulaire(event)" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:12px;">
-                    <select id="newClerkCat" class="form-select">
-                        <option value="BUNK">BUNK</option>
-                        <option value="TEMPS PLEIN JOUR" selected>TEMPS PLEIN JOUR</option>
-                        <option value="TEMPS PARTIEL JOUR">TEMPS PARTIEL JOUR</option>
-                        <option value="TCB CONSO">TCB CONSO</option>
-                        <option value="RELÈVE">RELÈVE</option>
-                        <option value="FACT. ASSISTANT (FA)">FACT. ASSISTANT (FA)</option>
-                        <option value="FFRS">FFRS</option>
-                    </select>
-                    <input type="text" id="newClerkNom" class="form-control" placeholder="Nom complet" required>
-                    <input type="text" id="newClerkShort" class="form-control" placeholder="Nom court (Plan)" required>
-                    <input type="text" id="newClerkHoraire" class="form-control" placeholder="Horaire (ex: 04H:00-12:00)">
-                    <select id="newClerkZone" class="form-select">
-                        <option value="AO_AERO_1">Zone: AO aero 1</option>
-                        <option value="AO_AERO_2">Zone: AO aero 2</option>
-                        <option value="COLIS_AERO_1">Zone: Colis aero 1</option>
-                        <option value="COLIS_AERO_2">Zone: Colis aero 2</option>
-                        <option value="SEQUENCES">Zone: Sequencés</option>
-                        <option value="ACHEMINEURS">Zone: Achemineurs</option>
-                        <option value="CONSO">Zone: Conso</option>
-                        <option value="FA">Zone: FA</option>
-                        <option value="BUNK">Zone: Bunk</option>
-                        <option value="AUCUNE">Aucune zone plan</option>
-                    </select>
-                    <input type="text" id="newClerkShift" class="form-control" placeholder="Quart plan (ex: 4 à 12)">
-                    <input type="text" id="newClerkPosteId" class="form-control" placeholder="P: / ID:" style="grid-column: span 2;">
-                    <button type="submit" class="btn btn-primary">+ Ajouter Titulaire</button>
+                <h3 style="color:var(--primary); margin-bottom:10px;">Titulaires & Postes (Ajout & Modification)</h3>
+                <form id="addClerkForm" onsubmit="enregistrerTitulaire(event)" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
+                    <div class="form-group">
+                        <label>Catégorie</label>
+                        <select id="newClerkCat" class="form-select">
+                            <option value="BUNK">BUNK</option>
+                            <option value="TEMPS PLEIN JOUR" selected>TEMPS PLEIN JOUR</option>
+                            <option value="TEMPS PARTIEL JOUR">TEMPS PARTIEL JOUR</option>
+                            <option value="TCB CONSO">TCB CONSO</option>
+                            <option value="RELÈVE">RELÈVE</option>
+                            <option value="FACT. ASSISTANT (FA)">FACT. ASSISTANT (FA)</option>
+                            <option value="FFRS">FFRS</option>
+                            <option value="REL. FFRS">REL. FFRS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom complet</label>
+                        <input type="text" id="newClerkNom" class="form-control" placeholder="Ex: CHANTAL MEUNIER" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom court (Plan Dispatch)</label>
+                        <input type="text" id="newClerkShort" class="form-control" placeholder="Ex: Chantal" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Horaire VÉVÉ</label>
+                        <input type="text" id="newClerkHoraire" class="form-control" placeholder="Ex: 04H:00-12:00">
+                    </div>
+                    <div class="form-group">
+                        <label>Zone Dispatch</label>
+                        <select id="newClerkZone" class="form-select">
+                            <option value="AO_AERO_1">Zone: AO aero 1</option>
+                            <option value="AO_AERO_2">Zone: AO aero 2</option>
+                            <option value="COLIS_AERO_1">Zone: Colis aero 1</option>
+                            <option value="COLIS_AERO_2">Zone: Colis aero 2</option>
+                            <option value="SEQUENCES">Zone: Sequencés</option>
+                            <option value="ACHEMINEURS">Zone: Achemineurs</option>
+                            <option value="CONSO">Zone: Conso</option>
+                            <option value="FA">Zone: FA</option>
+                            <option value="BUNK">Zone: Bunk</option>
+                            <option value="AUCUNE">Aucune zone plan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quart plan (ex: 4 à 12)</label>
+                        <input type="text" id="newClerkShift" class="form-control" placeholder="Ex: 4 à 12">
+                    </div>
+                    <div class="form-group">
+                        <label>Rôle (ex: po4 tp / pt)</label>
+                        <input type="text" id="newClerkRole" class="form-control" value="po4 tp" placeholder="po4 tp">
+                    </div>
+                    <div class="form-group">
+                        <label>Heures RPO / jour</label>
+                        <input type="number" step="0.25" min="0" max="12" id="newClerkRpoHours" class="form-control" value="8">
+                    </div>
+                    <div class="form-group">
+                        <label>Ancienneté</label>
+                        <input type="text" id="newClerkAnciennete" class="form-control" placeholder="AAAA-MM-JJ ou -">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Poste / ID</label>
+                        <input type="text" id="newClerkPosteId" class="form-control" placeholder="Ex: P:0365637 ID:2988666">
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:end;">
+                        <button type="submit" id="btnSubmitClerk" class="btn btn-primary" style="flex:1; justify-content:center;">+ Ajouter Titulaire</button>
+                        <button type="button" id="btnCancelClerkEdit" class="btn btn-secondary" onclick="cancelEditClerk()" style="display:none;">Annuler</button>
+                    </div>
                 </form>
 
                 <div style="overflow-x:auto;">
@@ -1717,11 +2065,12 @@
                         <thead>
                             <tr>
                                 <th>Catégorie</th>
-                                <th>Nom</th>
+                                <th>Nom & Plan</th>
                                 <th>Horaire</th>
                                 <th>Zone Dispatch</th>
                                 <th>Quart</th>
-                                <th>Action</th>
+                                <th>Heures/j</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="effectifsClerksBody"></tbody>
@@ -1730,12 +2079,24 @@
             </div>
 
             <div>
-                <h3 style="color:var(--primary); margin-bottom:10px;">Liste des Remplaçants (Versus)</h3>
-                <form id="addRepForm" onsubmit="ajouterRemplacant(event)" style="display:grid; grid-template-columns: 1fr 1.5fr 1fr auto; gap:8px; background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:12px;">
-                    <input type="text" id="newRepId" class="form-control" placeholder="ID">
-                    <input type="text" id="newRepNom" class="form-control" placeholder="Nom complet" required>
-                    <input type="text" id="newRepShort" class="form-control" placeholder="Nom Versus" required>
-                    <button type="submit" class="btn btn-primary">+ Ajouter</button>
+                <h3 style="color:var(--primary); margin-bottom:10px;">Liste des Remplaçants (Ajout & Modification)</h3>
+                <form id="addRepForm" onsubmit="enregistrerRemplacant(event)" style="display:grid; grid-template-columns: 1fr 1.5fr 1fr; gap:8px; background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:12px; border:1px solid #cbd5e1;">
+                    <div class="form-group">
+                        <label>ID</label>
+                        <input type="text" id="newRepId" class="form-control" placeholder="ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Nom complet</label>
+                        <input type="text" id="newRepNom" class="form-control" placeholder="Nom complet" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom Versus</label>
+                        <input type="text" id="newRepShort" class="form-control" placeholder="Nom Versus" required>
+                    </div>
+                    <div style="grid-column: span 3; display:flex; gap:6px; justify-content:flex-end;">
+                        <button type="button" id="btnCancelRepEdit" class="btn btn-secondary" onclick="cancelEditRep()" style="display:none;">Annuler</button>
+                        <button type="submit" id="btnSubmitRep" class="btn btn-primary">+ Ajouter Remplaçant</button>
+                    </div>
                 </form>
 
                 <table class="veve-table">
@@ -1744,7 +2105,7 @@
                             <th>ID</th>
                             <th>Nom</th>
                             <th>Nom Versus</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="effectifsRepsBody"></tbody>
