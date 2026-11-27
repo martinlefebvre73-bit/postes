@@ -4,8 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feuille de Contrôle & Accueil CQ</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS local -->
     <link rel="stylesheet" href="style2.css">
+    <style>
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 10mm;
+            }
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            /* Masquer les éléments d'interface non pertinents à l'impression */
+            .no-print,
+            #open-search-modal,
+            #live-clock,
+            #add-cq-row,
+            #add-ramassage-row,
+            #add-blp-row,
+            .remove-row-btn,
+            .remove-ram-btn,
+            .remove-blp-btn,
+            #btn-dictation,
+            #search-modal,
+            #toast-notification,
+            #chef-stats-container,
+            #route-auto-status {
+                display: none !important;
+            }
+            header {
+                background: #0f172a !important;
+                color: #ffffff !important;
+                padding: 8px 12px !important;
+            }
+            main {
+                max-width: 100% !important;
+                padding: 8px 0 !important;
+                margin: 0 !important;
+            }
+            .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm {
+                box-shadow: none !important;
+            }
+            .rounded-2xl, .rounded-xl {
+                border-radius: 6px !important;
+            }
+            #cq-form {
+                padding: 12px !important;
+                gap: 12px !important;
+            }
+            #cq-form > div {
+                margin-top: 10px !important;
+                padding-top: 10px !important;
+            }
+            input, select, textarea {
+                border: 1px solid #94a3b8 !important;
+                background: #ffffff !important;
+                padding: 4px 8px !important;
+                font-size: 12px !important;
+            }
+            /* Éviter de couper une ligne au milieu d'un saut de page */
+            .cq-row, .ramassage-row, .blp-row {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                padding: 8px !important;
+            }
+            footer {
+                margin-top: 12px !important;
+                padding: 6px 0 !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-full flex flex-col justify-between">
 
@@ -19,6 +90,10 @@
                 </div>
             </div>
             <div class="flex items-center space-x-3">
+                <button type="button" id="header-print-btn" class="no-print bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center space-x-1.5 shadow-sm" title="Imprimer la feuille">
+                    <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Imprimer</span>
+                </button>
                 <button type="button" id="open-search-modal" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center space-x-1.5 shadow-sm">
                     <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     <span>Récupération / Modification</span>
@@ -343,10 +418,16 @@
                     </select>
                 </div>
 
-                <div class="pt-4 flex items-center justify-between">
-                    <button type="button" id="reset-btn" class="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100 transition shadow-sm">
-                        Réinitialiser / Nouveau
-                    </button>
+                <div class="no-print pt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="reset-btn" class="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100 transition shadow-sm">
+                            Réinitialiser / Nouveau
+                        </button>
+                        <button type="button" id="print-btn" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium transition shadow-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            <span>Imprimer</span>
+                        </button>
+                    </div>
                     <button type="submit" id="submit-btn" class="bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-medium px-6 py-3 rounded-xl shadow-lg shadow-brand-500/25 transition transform active:scale-95 text-sm flex items-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         <span id="submit-btn-text">Enregistrer dans Firebase</span>
@@ -433,6 +514,13 @@
         const db = getFirestore(app);
         const COLLECTION_NAME = "acceuilcq";
         const RESTRUCTURATION_COLLECTION = "restructuration";
+
+        // Impression directe sans validation des champs requis
+        function imprimerFeuille() {
+            window.print();
+        }
+        document.getElementById('print-btn')?.addEventListener('click', imprimerFeuille);
+        document.getElementById('header-print-btn')?.addEventListener('click', imprimerFeuille);
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('mode') === 'chef') {
