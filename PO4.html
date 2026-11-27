@@ -1295,7 +1295,7 @@
                         const code = absMap[d] || "";
                         const cls = code ? (ABSENCE_CODES.includes(code) ? `code-${code}` : 'code-OTHER') : '';
                         const codeOptions = ABSENCE_CODES.map(ac =>
-                            `<option value="${ac}" ${code === ac ? 'selected' : ''}>${ac === '' ? '—' : ac}</option>`
+                            `<option value="${ac}" ${code === ac ? 'selected' : ''}>${ac === '' ? '' : ac}</option>`
                         ).join('');
                         return `
                             <td class="day-cell ${cls}" title="Code d'absence (${DAY_LABELS[DAYS.indexOf(d)]})">
